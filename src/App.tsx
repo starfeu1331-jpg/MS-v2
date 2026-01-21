@@ -1,10 +1,11 @@
 import { useState, lazy, Suspense } from 'react'
-import { BarChart3, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown } from 'lucide-react'
+import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone } from 'lucide-react'
 import FileUploader from './components/FileUploader'
 
 // Lazy loading des composants pour accélérer le chargement initial
 const Dashboard = lazy(() => import('./components/Dashboard'))
 const WebDashboard = lazy(() => import('./components/WebDashboard'))
+const SearchPanel = lazy(() => import('./components/SearchPanel'))
 const RFMAnalysis = lazy(() => import('./components/RFMAnalysis'))
 const SubFamilyAnalysis = lazy(() => import('./components/SubFamilyAnalysis'))
 const CrossSellingAnalysis = lazy(() => import('./components/CrossSellingAnalysis'))
@@ -13,9 +14,10 @@ const ABCAnalysis = lazy(() => import('./components/ABCAnalysis'))
 const KingQuentin = lazy(() => import('./components/KingQuentin'))
 const StorePerformance = lazy(() => import('./components/StorePerformance'))
 const ForecastAnomalies = lazy(() => import('./components/ForecastAnomalies'))
+const SocialMediaInsights = lazy(() => import('./components/SocialMediaInsights'))
 const ExportData = lazy(() => import('./components/ExportData'))
 
-type TabType = 'dashboard' | 'web' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'stores' | 'forecast' | 'exports'
+type TabType = 'dashboard' | 'web' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'stores' | 'forecast' | 'social' | 'exports'
 
 function App() {
   const [data, setData] = useState<any>(null)
@@ -63,6 +65,17 @@ function App() {
               >
                 <Globe className="w-5 h-5" />
                 {sidebarOpen && <span>E-Commerce</span>}
+              </button>
+              <button
+                onClick={() => setActiveTab('search')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+                  activeTab === 'search'
+                    ? 'bg-blue-500 text-white'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                }`}
+              >
+                <Search className="w-5 h-5" />
+                {sidebarOpen && <span>Recherche</span>}
               </button>
               
               {sidebarOpen && <div className="px-4 py-2"><p className="text-xs text-zinc-600 font-semibold uppercase">Analyses Avancées</p></div>}
@@ -156,6 +169,17 @@ function App() {
                 {sidebarOpen && <span>Prévisions</span>}
               </button>
               <button
+                onClick={() => setActiveTab('social')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+                  activeTab === 'social'
+                    ? 'bg-pink-500 text-white'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                }`}
+              >
+                <Megaphone className="w-5 h-5" />
+                {sidebarOpen && <span>Réseaux Sociaux</span>}
+              </button>
+              <button
                 onClick={() => setActiveTab('exports')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'exports'
@@ -195,6 +219,7 @@ function App() {
               {!data && 'Bienvenue'}
               {data && activeTab === 'dashboard' && 'Vue d\'ensemble'}
               {data && activeTab === 'web' && 'Web Dashboard'}
+              {data && activeTab === 'search' && 'Recherche'}
               {data && activeTab === 'rfm' && 'Segmentation RFM'}
               {data && activeTab === 'subFamilies' && 'Sous-familles'}
               {data && activeTab === 'crossSelling' && 'Analyse Cross-Selling'}
@@ -203,7 +228,7 @@ function App() {
               {data && activeTab === 'kingquentin' && 'King Quentin 👑'}
               {data && activeTab === 'stores' && 'Performance Magasins'}
               {data && activeTab === 'forecast' && 'Prévisions & Anomalies'}
-              {data && activeTab === 'exports' && 'Exports'}
+              {data && activeTab === 'social' && 'Réseaux Sociaux'}
               {data && activeTab === 'exports' && 'Exports de données'}
             </h1>
           </div>
@@ -231,7 +256,7 @@ function App() {
             }>
               {activeTab === 'dashboard' && <Dashboard data={data} onNavigate={setActiveTab} />}
               {activeTab === 'web' && <WebDashboard data={data} />}
-              {activeTab === 'web' && <WebDashboard data={data} />}
+              {activeTab === 'search' && <SearchPanel data={data} />}
               {activeTab === 'rfm' && <RFMAnalysis data={data} />}
               {activeTab === 'subFamilies' && <SubFamilyAnalysis data={data} />}
               {activeTab === 'crossSelling' && <CrossSellingAnalysis data={data} />}
@@ -240,7 +265,7 @@ function App() {
               {activeTab === 'kingquentin' && <KingQuentin data={data} />}
               {activeTab === 'stores' && <StorePerformance data={data} />}
               {activeTab === 'forecast' && <ForecastAnomalies data={data} />}
-              {activeTab === 'exports' && <ExportData data={data} />}
+              {activeTab === 'social' && <SocialMediaInsights data={data} />}
               {activeTab === 'exports' && <ExportData data={data} />}
             </Suspense>
           )}

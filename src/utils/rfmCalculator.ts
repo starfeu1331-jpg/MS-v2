@@ -18,8 +18,13 @@ export interface RFMSegment {
   icon: string
 }
 
-export function calculateClientRFM(clientData: any, allClientsData: Map<string, any>): RFMSegment | null {
+export function calculateClientRFM(clientData: any, allClientsData: any[] | Map<string, any>): RFMSegment | null {
   if (!clientData || !clientData.achats || clientData.achats.length === 0) return null
+  
+  // Convertir Map en array si nécessaire
+  const allClientsArray = allClientsData instanceof Map 
+    ? Array.from(allClientsData.values())
+    : allClientsData
   
   const today = new Date()
   
@@ -39,7 +44,7 @@ export function calculateClientRFM(clientData: any, allClientsData: Map<string, 
   const allFrequencies: number[] = []
   const allMonetaries: number[] = []
   
-  allClientsData.forEach((client: any) => {
+  allClientsArray.forEach((client: any) => {
     if (!client.achats || client.achats.length === 0) return
     
     let clientLastDate: Date | null = null
