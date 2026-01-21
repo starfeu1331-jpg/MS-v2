@@ -21,55 +21,115 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
     )
   }
   
-  // KPIs Globaux
-  const totalCA = Object.values(data.familles).reduce((sum: number, f: any) => sum + f.ca, 0)
-  const uniqueTickets = new Set(data.allTickets.map((t: any) => t.ticket))
-  const totalTransactions = uniqueTickets.size
-  const panierMoyen = totalCA / totalTransactions
+  // KPIs séparés Magasin et Web
+  const totalCAMagasin = Object.values(data.famillesMag || data.familles).reduce((sum: number, f: any) => sum + f.ca, 0)
+  const totalCAWeb = data.webStats?.ca || 0
+  const totalCA = totalCAMagasin + totalCAWeb
+  
+  // Transactions magasin uniquement (pas web)
+  const ticketsMagasin = data.allTickets.filter((t: any) => t.magasin !== 'WEB')
+  const uniqueTicketsMag = new Set(ticketsMagasin.map((t: any) => t.ticket))
+  const totalTransactionsMag = uniqueTicketsMag.size
+  
+  // Transactions web uniquement
+  const totalTransactionsWeb = data.webStats?.tickets?.size || 0
+  
+  const panierMoyenMag = totalTransactionsMag > 0 ? totalCAMagasin / totalTransactionsMag : 0
+  const panierMoyenWeb = totalTransactionsWeb > 0 ? totalCAWeb / totalTransactionsWeb : 0
   const nbClients = data.allClients.size
   
-  // Calcul RFM simplifié pour overview
+  // Calcul RFM exact identique à RFMAnalysis
   const calculateQuickRFM = () => {
     const segments = {
+      ultraChampions: 0,
       champions: 0,
       loyaux: 0,
-      risque: 0,
-      perdus: 0,
       nouveaux: 0,
-      occasionnels: 0
+      occasionnels: 0,
+      risque: 0,
+      perdus: 0
     }
     
     const today = new Date()
+    const clients: any[] = []
     
+    const parseDate = (dateStr: string) => {
+      if (!dateStr) return null
+      const [day, month, year] = dateStr.split('/')
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    }
+    
+    // Collecter tous les clients avec données brutes
     data.allClients.forEach((client: any) => {
       if (!client.achats || client.achats.length === 0) return
       
-      const parseDate = (dateStr: string) => {
-        if (!dateStr) return null
-        const [day, month, year] = dateStr.split('/')
-        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      let lastDate: Date | null = null
+      
+      for (const achat of client.achats) {
+        const d = parseDate(achat.date)
+        if (d && (!lastDate || d > lastDate)) lastDate = d
       }
       
-      const lastPurchase = client.achats.reduce((latest: any, achat: any) => {
-        const achatDate = parseDate(achat.date)
-        return !latest || (achatDate && achatDate > latest) ? achatDate : latest
-      }, null)
-      
-      const recency = lastPurchase ? Math.floor((today.getTime() - lastPurchase.getTime()) / (1000 * 60 * 60 * 24)) : 9999
+      const recency = lastDate ? Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)) : 9999
       const frequency = client.achats.length
       const monetary = client.ca_total || 0
       
-      // Scoring simplifié
-      const R = recency < 30 ? 5 : recency < 90 ? 4 : recency < 180 ? 3 : recency < 365 ? 2 : 1
-      const F = frequency >= 10 ? 5 : frequency >= 5 ? 4 : frequency >= 3 ? 3 : frequency >= 2 ? 2 : 1
-      const M = monetary >= 1000 ? 5 : monetary >= 500 ? 4 : monetary >= 200 ? 3 : monetary >= 50 ? 2 : 1
+      if (monetary <= 0) return
       
-      if (R >= 4 && F >= 4 && M >= 4) segments.champions++
+      clients.push({ recency, frequency, monetary })
+    })
+    
+    if (clients.length === 0) return segments
+    
+    // Calculer les quintiles
+    const recencyValues = clients.map(c => c.recency).sort((a, b) => a - b)
+    const frequencyValues = clients.map(c => c.frequency).sort((a, b) => b - a)
+    const monetaryValues = clients.map(c => c.monetary).sort((a, b) => b - a)
+    
+    const getQuintileThresholds = (sortedValues: number[]) => {
+      const len = sortedValues.length
+      return [
+        sortedValues[Math.floor(len * 0.2)],
+        sortedValues[Math.floor(len * 0.4)],
+        sortedValues[Math.floor(len * 0.6)],
+        sortedValues[Math.floor(len * 0.8)]
+      ]
+    }
+    
+    const recencyThresholds = getQuintileThresholds(recencyValues)
+    const frequencyThresholds = getQuintileThresholds(frequencyValues)
+    const monetaryThresholds = getQuintileThresholds(monetaryValues)
+    
+    const getQuintile = (value: number, thresholds: number[], reverse = false) => {
+      if (!reverse) {
+        if (value >= thresholds[0]) return 5
+        if (value >= thresholds[1]) return 4
+        if (value >= thresholds[2]) return 3
+        if (value >= thresholds[3]) return 2
+        return 1
+      } else {
+        if (value <= thresholds[0]) return 5
+        if (value <= thresholds[1]) return 4
+        if (value <= thresholds[2]) return 3
+        if (value <= thresholds[3]) return 2
+        return 1
+      }
+    }
+    
+    // Assigner scores et segments
+    clients.forEach(client => {
+      const R = getQuintile(client.recency, recencyThresholds, true)
+      const F = getQuintile(client.frequency, frequencyThresholds)
+      const M = getQuintile(client.monetary, monetaryThresholds)
+      
+      // Segmentation identique à RFMAnalysis
+      if (R === 5 && F === 5 && M === 5) segments.ultraChampions++
+      else if (R >= 4 && F >= 4 && M >= 4) segments.champions++
+      else if (R >= 4 && F === 3) segments.nouveaux++
+      else if (R === 3 && F === 3) segments.occasionnels++
       else if (R >= 3 && F >= 3 && M >= 3) segments.loyaux++
-      else if (R <= 2 && F >= 3) segments.risque++
-      else if (R <= 2 && F <= 2) segments.perdus++
-      else if (F === 1) segments.nouveaux++
-      else segments.occasionnels++
+      else if (F >= 3 && R <= 2) segments.risque++
+      else segments.perdus++
     })
     
     return segments
@@ -192,49 +252,144 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
         </div>
       </div>
 
-      {/* KPIs Principaux */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPIs Principaux - Magasin */}
+      <div className="glass rounded-3xl p-6 border border-zinc-800 mb-6">
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <Store className="w-5 h-5 text-blue-400" />
+          Magasins Physiques
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">CA Magasins</p>
+                <p className="text-3xl font-semibold text-white">{formatEuro(totalCAMagasin)}</p>
+                <p className="text-xs text-zinc-400 mt-2">
+                  {((totalCAMagasin / totalCA) * 100).toFixed(1)}% du total
+                </p>
+              </div>
+              <div className="p-3 bg-blue-500/20 rounded-xl">
+                <Euro className="w-6 h-6 text-blue-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Transactions</p>
+                <p className="text-3xl font-semibold text-white">{totalTransactionsMag.toLocaleString('fr-FR')}</p>
+                <p className="text-xs text-zinc-400 mt-2">
+                  {Math.round(totalTransactionsMag / nbClients * 10) / 10} par client
+                </p>
+              </div>
+              <div className="p-3 bg-cyan-500/20 rounded-xl">
+                <ShoppingCart className="w-6 h-6 text-cyan-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Panier Moyen</p>
+                <p className="text-3xl font-semibold text-white">{formatEuro(panierMoyenMag)}</p>
+                <p className="text-xs text-zinc-400 mt-2">
+                  Par transaction
+                </p>
+              </div>
+              <div className="p-3 bg-teal-500/20 rounded-xl">
+                <TrendingUp className="w-6 h-6 text-teal-400" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Magasins</p>
+                <p className="text-3xl font-semibold text-white">{topMagasins.length}</p>
+                <p className="text-xs text-zinc-400 mt-2">
+                  Points de vente
+                </p>
+              </div>
+              <div className="p-3 bg-indigo-500/20 rounded-xl">
+                <Store className="w-6 h-6 text-indigo-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* KPIs Web */}
+      {totalCAWeb > 0 && (
+        <div className="glass rounded-3xl p-6 border border-zinc-800 mb-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <Globe className="w-5 h-5 text-cyan-400" />
+            E-Commerce
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">CA Web</p>
+                  <p className="text-3xl font-semibold text-white">{formatEuro(totalCAWeb)}</p>
+                  <p className="text-xs text-cyan-400 mt-2 font-semibold">
+                    {((totalCAWeb / totalCA) * 100).toFixed(1)}% du total
+                  </p>
+                </div>
+                <div className="p-3 bg-cyan-500/20 rounded-xl">
+                  <Euro className="w-6 h-6 text-cyan-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Commandes</p>
+                  <p className="text-3xl font-semibold text-white">{totalTransactionsWeb.toLocaleString('fr-FR')}</p>
+                  <p className="text-xs text-zinc-400 mt-2">
+                    En ligne
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-500/20 rounded-xl">
+                  <ShoppingCart className="w-6 h-6 text-blue-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Panier Moyen</p>
+                  <p className="text-3xl font-semibold text-white">{formatEuro(panierMoyenWeb)}</p>
+                  <p className="text-xs text-zinc-400 mt-2">
+                    Par commande
+                  </p>
+                </div>
+                <div className="p-3 bg-teal-500/20 rounded-xl">
+                  <TrendingUp className="w-6 h-6 text-teal-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Résumé Global */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Chiffre d'Affaires</p>
+              <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">CA Total Global</p>
               <p className="text-3xl font-semibold text-white">{formatEuro(totalCA)}</p>
-              <p className="text-xs text-emerald-400 mt-2 font-semibold">
-                Web: {formatEuro(data.webStats.ca)} ({((data.webStats.ca / totalCA) * 100).toFixed(1)}%)
-              </p>
-            </div>
-            <div className="p-3 bg-blue-500/20 rounded-xl">
-              <Euro className="w-6 h-6 text-blue-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Transactions</p>
-              <p className="text-3xl font-semibold text-white">{totalTransactions.toLocaleString('fr-FR')}</p>
               <p className="text-xs text-zinc-400 mt-2">
-                {Math.round(totalTransactions / nbClients * 10) / 10} par client
+                Magasins + Web
               </p>
             </div>
-            <div className="p-3 bg-cyan-500/20 rounded-xl">
-              <ShoppingCart className="w-6 h-6 text-cyan-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card glass rounded-2xl shadow-lg p-6 card-hover border border-zinc-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Panier Moyen</p>
-              <p className="text-3xl font-semibold text-white">{formatEuro(panierMoyen)}</p>
-              <p className="text-xs text-zinc-400 mt-2">
-                Par transaction
-              </p>
-            </div>
-            <div className="p-3 bg-teal-500/20 rounded-xl">
-              <TrendingUp className="w-6 h-6 text-teal-400" />
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl">
+              <Euro className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -245,7 +400,7 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
               <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide mb-2">Clients Uniques</p>
               <p className="text-3xl font-semibold text-white">{nbClients.toLocaleString('fr-FR')}</p>
               <p className="text-xs text-purple-400 mt-2 font-semibold">
-                {rfmSegments.champions} Champions ⭐
+                {rfmSegments.ultraChampions + rfmSegments.champions} Top Clients ⭐
               </p>
             </div>
             <div className="p-3 bg-purple-500/20 rounded-xl">
@@ -277,26 +432,21 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
           )}
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+          <div className="bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-2xl p-5 border border-yellow-500/20">
+            <p className="text-xs text-zinc-400 font-semibold mb-2">👑 Ultra Champions</p>
+            <p className="text-3xl font-semibold text-white">{rfmSegments.ultraChampions}</p>
+            <p className="text-xs text-yellow-400 mt-1">Perfection 555</p>
+          </div>
           <div className="bg-emerald-500/10 rounded-2xl p-5 border border-emerald-500/20">
             <p className="text-xs text-zinc-400 font-semibold mb-2">🏆 Champions</p>
             <p className="text-3xl font-semibold text-white">{rfmSegments.champions}</p>
-            <p className="text-xs text-emerald-400 mt-1">Meilleurs clients</p>
+            <p className="text-xs text-emerald-400 mt-1">Meilleurs</p>
           </div>
           <div className="bg-blue-500/10 rounded-2xl p-5 border border-blue-500/20">
             <p className="text-xs text-zinc-400 font-semibold mb-2">💙 Loyaux</p>
             <p className="text-3xl font-semibold text-white">{rfmSegments.loyaux}</p>
-            <p className="text-xs text-blue-400 mt-1">Réguliers</p>
-          </div>
-          <div className="bg-orange-500/10 rounded-2xl p-5 border border-orange-500/20">
-            <p className="text-xs text-zinc-400 font-semibold mb-2">⚠️ À Risque</p>
-            <p className="text-3xl font-semibold text-white">{rfmSegments.risque}</p>
-            <p className="text-xs text-orange-400 mt-1">À réactiver</p>
-          </div>
-          <div className="bg-red-500/10 rounded-2xl p-5 border border-red-500/20">
-            <p className="text-xs text-zinc-400 font-semibold mb-2">❌ Perdus</p>
-            <p className="text-3xl font-semibold text-white">{rfmSegments.perdus}</p>
-            <p className="text-xs text-red-400 mt-1">Inactifs</p>
+            <p className="text-xs text-blue-400 mt-1">Fidèles</p>
           </div>
           <div className="bg-cyan-500/10 rounded-2xl p-5 border border-cyan-500/20">
             <p className="text-xs text-zinc-400 font-semibold mb-2">✨ Nouveaux</p>
@@ -307,6 +457,16 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
             <p className="text-xs text-zinc-400 font-semibold mb-2">🔄 Occasionnels</p>
             <p className="text-3xl font-semibold text-white">{rfmSegments.occasionnels}</p>
             <p className="text-xs text-zinc-400 mt-1">Irréguliers</p>
+          </div>
+          <div className="bg-orange-500/10 rounded-2xl p-5 border border-orange-500/20">
+            <p className="text-xs text-zinc-400 font-semibold mb-2">⚠️ À Risque</p>
+            <p className="text-3xl font-semibold text-white">{rfmSegments.risque}</p>
+            <p className="text-xs text-orange-400 mt-1">À réactiver</p>
+          </div>
+          <div className="bg-red-500/10 rounded-2xl p-5 border border-red-500/20">
+            <p className="text-xs text-zinc-400 font-semibold mb-2">❌ Perdus</p>
+            <p className="text-3xl font-semibold text-white">{rfmSegments.perdus}</p>
+            <p className="text-xs text-red-400 mt-1">Inactifs</p>
           </div>
         </div>
       </div>

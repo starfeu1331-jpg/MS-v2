@@ -7,17 +7,20 @@ interface FileUploaderProps {
 }
 
 export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
-  const [files, setFiles] = useState<{ file1: File | null; file2: File | null; fileWeb: File | null; fileCatalogueWeb: File | null }>({
-    file1: null,
-    file2: null,
+  const [files, setFiles] = useState<{ fileMagasins: File[]; fileWeb: File | null; fileCatalogueWeb: File | null }>({
+    fileMagasins: [],
     fileWeb: null,
     fileCatalogueWeb: null,
   })
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState('')
 
-  const handleFileChange = (fileNum: 'file1' | 'file2' | 'fileWeb' | 'fileCatalogueWeb', file: File | null) => {
-    setFiles(prev => ({ ...prev, [fileNum]: file }))
+  const handleFileChange = (fileType: 'fileMagasins' | 'fileWeb' | 'fileCatalogueWeb', fileList: File[] | File | null) => {
+    if (fileType === 'fileMagasins' && Array.isArray(fileList)) {
+      setFiles(prev => ({ ...prev, fileMagasins: fileList }))
+    } else if (fileType !== 'fileMagasins') {
+      setFiles(prev => ({ ...prev, [fileType]: fileList as File | null }))
+    }
   }
 
   const processData = (allData: any[]) => {
@@ -444,8 +447,8 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
   }
 
   const loadFiles = async () => {
-    if (!files.file1) {
-      alert('Veuillez sélectionner au moins le fichier 1')
+    if (files.fileMagasins.length === 0) {
+      alert('Veuillez sélectionner au moins un fichier magasin')
       return
     }
 
@@ -482,69 +485,51 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
     }
   }
   
-  const continueLoading = () => {
-    setProgress('📂 Lecture du fichier 1...')
+  const continueLoading = async () => {
+    let allData: any[] = []
 
-    if (!files.file1) return
+    // Charger tous les fichiers magasins
+    for (let i = 0; i < files.fileMagasins.length; i++) {
+      const file = files.fileMagasins[i]
+      setProgress(`📂 Lecture fichier magasin ${i + 1}/${files.fileMagasins.length}...`)
+      
+      await new Promise<void>((resolve) => {
+        Papa.parse(file, {
+          header: true,
+          delimiter: ';',
+          skipEmptyLines: true,
+          complete: (results) => {
+            allData = allData.concat(results.data)
+            setProgress(`✅ Fichier ${i + 1}: ${results.data.length.toLocaleString()} lignes`)
+            resolve()
+          },
+        })
+      })
+    }
 
-    Papa.parse(files.file1, {
-      header: true,
-      delimiter: ';',
-      skipEmptyLines: true,
-      complete: (results1) => {
-        let allData = results1.data
-        setProgress(`✅ Fichier 1: ${allData.length.toLocaleString()} lignes`)
+    setProgress(`✅ Magasins: ${allData.length.toLocaleString()} lignes au total`)
 
-        if (files.file2) {
-          setProgress('📂 Lecture du fichier 2...')
-          Papa.parse(files.file2, {
-            header: true,
-            delimiter: ';',
-            skipEmptyLines: true,
-            complete: (results2) => {
-              allData = allData.concat(results2.data)
-              setProgress(`✅ Magasins: ${allData.length.toLocaleString()} lignes`)
-              
-              if (files.fileWeb) {
-                setProgress('🌐 Lecture du fichier Web...')
-                Papa.parse(files.fileWeb, {
-                  header: true,
-                  delimiter: ',',
-                  skipEmptyLines: true,
-                  complete: (results3) => {
-                    console.log('🌐 CSV Web parsé - Première ligne:', results3.data[0])
-                    console.log('🌐 Colonnes détectées:', Object.keys(results3.data[0] || {}))
-                    allData = allData.concat(results3.data)
-                    setProgress(`✅ Total: ${allData.length.toLocaleString()} lignes`)
-                    processData(allData)
-                    setLoading(false)
-                  },
-                })
-              } else {
-                processData(allData)
-                setLoading(false)
-              }
-            },
-          })
-        } else if (files.fileWeb) {
-          setProgress('🌐 Lecture du fichier Web...')
-          Papa.parse(files.fileWeb, {
-            header: true,
-            delimiter: ',',
-            skipEmptyLines: true,
-            complete: (results2) => {
-              allData = allData.concat(results2.data)
-              setProgress(`✅ Total: ${allData.length.toLocaleString()} lignes`)
-              processData(allData)
-              setLoading(false)
-            },
-          })
-        } else {
-          processData(allData)
-          setLoading(false)
-        }
-      },
-    })
+    // Charger le fichier Web si présent
+    if (files.fileWeb) {
+      setProgress('🌐 Lecture du fichier Web...')
+      await new Promise<void>((resolve) => {
+        Papa.parse(files.fileWeb!, {
+          header: true,
+          delimiter: ',',
+          skipEmptyLines: true,
+          complete: (results) => {
+            console.log('🌐 CSV Web parsé - Première ligne:', results.data[0])
+            console.log('🌐 Colonnes détectées:', Object.keys(results.data[0] || {}))
+            allData = allData.concat(results.data)
+            setProgress(`✅ Total: ${allData.length.toLocaleString()} lignes`)
+            resolve()
+          },
+        })
+      })
+    }
+
+    processData(allData)
+    setLoading(false)
   }
 
   return (
@@ -566,68 +551,43 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          {/* Fichiers Magasins (sélection multiple) */}
           <div className="group">
             <label className="block text-sm font-semibold text-zinc-300 mb-3">
-              Fichier Principal
+              Fichiers Magasins (1 ou 2)
             </label>
             <div
-              onClick={() => document.getElementById('file1')?.click()}
+              onClick={() => document.getElementById('fileMagasins')?.click()}
               className="relative border-2 border-dashed border-zinc-700 rounded-2xl p-8 text-center hover:border-blue-500 hover:bg-zinc-800/50 transition-all duration-300 cursor-pointer"
             >
-              {files.file1 ? (
+              {files.fileMagasins.length > 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3">
                   <CheckCircle className="w-8 h-8 text-green-500" />
-                  <span className="font-medium text-white break-all px-2">{files.file1.name}</span>
-                  <span className="text-xs text-zinc-500">
-                    {(files.file1.size / 1024 / 1024).toFixed(2)} MB
+                  <span className="font-medium text-white break-all px-2">
+                    {files.fileMagasins.length} fichier{files.fileMagasins.length > 1 ? 's' : ''}
                   </span>
+                  <div className="text-xs text-zinc-500 max-w-full overflow-hidden">
+                    {files.fileMagasins.map((f, i) => (
+                      <div key={i} className="truncate">{f.name}</div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="text-zinc-500 group-hover:text-blue-400 transition-colors">
                   <FileText className="w-12 h-12 mx-auto mb-3" />
-                  <p className="text-sm font-medium">Cliquez ou glissez-déposez</p>
+                  <p className="text-sm font-medium">Sélectionnez 1 ou 2 fichiers</p>
+                  <p className="text-xs text-zinc-600 mt-2">En même temps</p>
                 </div>
               )}
             </div>
             <input
-              id="file1"
+              id="fileMagasins"
               type="file"
               accept=".csv"
+              multiple
               className="hidden"
-              onChange={(e) => handleFileChange('file1', e.target.files?.[0] || null)}
-            />
-          </div>
-
-          <div className="group">
-            <label className="block text-sm font-semibold text-zinc-300 mb-3">
-              Fichier Complémentaire <span className="text-zinc-600 text-xs font-normal">(optionnel)</span>
-            </label>
-            <div
-              onClick={() => document.getElementById('file2')?.click()}
-              className="relative border-2 border-dashed border-zinc-700 rounded-2xl p-8 text-center hover:border-cyan-500 hover:bg-zinc-800/50 transition-all duration-300 cursor-pointer"
-            >
-              {files.file2 ? (
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                  <span className="font-medium text-white break-all px-2">{files.file2.name}</span>
-                  <span className="text-xs text-zinc-500">
-                    {(files.file2.size / 1024 / 1024).toFixed(2)} MB
-                  </span>
-                </div>
-              ) : (
-                <div className="text-zinc-500 group-hover:text-cyan-400 transition-colors">
-                  <FileText className="w-12 h-12 mx-auto mb-3" />
-                  <p className="text-sm font-medium">Cliquez ou glissez-déposez</p>
-                </div>
-              )}
-            </div>
-            <input
-              id="file2"
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={(e) => handleFileChange('file2', e.target.files?.[0] || null)}
+              onChange={(e) => handleFileChange('fileMagasins', Array.from(e.target.files || []))}
             />
           </div>
 
@@ -698,7 +658,7 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
           </div>
         </div>
 
-        {files.file1 && (
+        {files.fileMagasins.length > 0 && (
           <div className="space-y-4">
             <button
               onClick={loadFiles}

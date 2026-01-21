@@ -1,4 +1,4 @@
-import { Package, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Globe, Store } from 'lucide-react'
 import { useState } from 'react'
 
 interface SubFamilyAnalysisProps {
@@ -8,6 +8,7 @@ interface SubFamilyAnalysisProps {
 export default function SubFamilyAnalysis({ data }: SubFamilyAnalysisProps) {
   const [cacTotal, setCacTotal] = useState(25)
   const [isEditingCAC, setIsEditingCAC] = useState(false)
+  const [showWeb, setShowWeb] = useState(false) // Toggle Web/Magasin
 
   if (!data || !data.allClients) {
     return (
@@ -25,7 +26,7 @@ export default function SubFamilyAnalysis({ data }: SubFamilyAnalysisProps) {
   // Coûts marketing 2025
   const MARKETING_COST_TOTAL = 971290
 
-  const analyzeSubFamilies = () => {
+  const analyzeSubFamilies = (webOnly: boolean = false) => {
     const subFamilyStats: Record<string, {
       famille: string
       sousFamille: string
@@ -34,10 +35,13 @@ export default function SubFamilyAnalysis({ data }: SubFamilyAnalysisProps) {
       tickets: Set<string>
     }> = {}
 
-    // Collecter TOUTES les données (pas seulement allClients qui n'a que les cartes fidélité)
-    // On utilise allTickets qui contient TOUTES les lignes (web + magasin)
-    if (data.allTickets && data.allTickets.length > 0) {
-      data.allTickets.forEach((ticket: any) => {
+    // Filtrer les tickets selon le toggle
+    const filteredTickets = data.allTickets.filter((t: any) => 
+      webOnly ? t.magasin === 'WEB' : t.magasin !== 'WEB'
+    )
+
+    if (filteredTickets && filteredTickets.length > 0) {
+      filteredTickets.forEach((ticket: any) => {
         const famille = ticket.famille || 'Non classé'
         const sousFamille = ticket.sousFamille || 'Non classé'
         const key = `${famille}|||${sousFamille}`
@@ -64,11 +68,8 @@ export default function SubFamilyAnalysis({ data }: SubFamilyAnalysisProps) {
     }
 
     // Calculer le nombre total de tickets (passages)
-    const allTicketsUniques = new Set(data.allTickets.map((t: any) => t.ticket).filter((t: string) => t && t !== 'N/A'))
+    const allTicketsUniques = new Set(filteredTickets.map((t: any) => t.ticket).filter((t: string) => t && t !== 'N/A'))
     const totalTickets = allTicketsUniques.size
-
-    // Pas de calcul automatique du CAC, on utilise la valeur éditable
-    // const cacTotal = totalTickets > 0 ? MARKETING_COST_TOTAL / totalTickets : 0
 
     // Convertir en tableau et calculer les métriques
     const results = Object.entries(subFamilyStats).map(([, stats]) => {
@@ -100,7 +101,7 @@ export default function SubFamilyAnalysis({ data }: SubFamilyAnalysisProps) {
     }
   }
 
-  const analysis = analyzeSubFamilies()
+  const analysis = analyzeSubFamilies(showWeb)
   const { subFamilies, totalTickets } = analysis
 
   const totalCA = subFamilies.reduce((sum, sf) => sum + sf.ca, 0)
@@ -111,14 +112,38 @@ export default function SubFamilyAnalysis({ data }: SubFamilyAnalysisProps) {
     <div className="space-y-6">
       {/* En-tête avec KPIs CAC */}
       <div className="glass rounded-3xl p-8 border border-zinc-800">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl">
-            <Package className="w-8 h-8 text-white" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl">
+              <Package className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-white">Analyse Sous-Familles</h2>
+              <p className="text-zinc-400">Rentabilité par sous-famille vs Coût d'Acquisition Client (CAC)</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-bold text-white">Analyse Sous-Familles</h2>
-            <p className="text-zinc-400">Rentabilité par sous-famille vs Coût d'Acquisition Client (CAC)</p>
-          </div>
+          
+          {/* Toggle Web/Magasin */}
+          <button
+            onClick={() => setShowWeb(!showWeb)}
+            className={`flex items-center gap-3 px-5 py-3 rounded-xl font-medium transition-all border-2 ${
+              showWeb
+                ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300'
+                : 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+            }`}
+          >
+            {showWeb ? (
+              <>
+                <Globe className="w-5 h-5" />
+                <span>E-Commerce</span>
+              </>
+            ) : (
+              <>
+                <Store className="w-5 h-5" />
+                <span>Magasins</span>
+              </>
+            )}
+          </button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
