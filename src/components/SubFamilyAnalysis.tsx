@@ -122,6 +122,7 @@ export default function SubFamilyAnalysis({ data, showWebData = false }: SubFami
               <p className="text-zinc-400">Rentabilité par sous-famille vs Coût d'Acquisition Client (CAC)</p>
             </div>
           </div>
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 rounded-2xl p-4 border border-purple-600/30">

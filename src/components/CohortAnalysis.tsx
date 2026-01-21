@@ -2,9 +2,10 @@ import { TrendingUp, Calendar, Target } from 'lucide-react'
 
 interface CohortAnalysisProps {
   data: any
+  showWebData?: boolean
 }
 
-export default function CohortAnalysis({ data }: CohortAnalysisProps) {
+export default function CohortAnalysis({ data, showWebData }: CohortAnalysisProps) {
   if (!data || !data.cohortes) {
     return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Chargement...</div></div>
   }

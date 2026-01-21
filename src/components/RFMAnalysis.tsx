@@ -39,7 +39,7 @@ export default function RFMAnalysis({ data, onSearchClient, showWebData }: RFMAn
         
         // Filtrer les achats selon le toggle Web/Magasin
         const achatsFiltered = client.achats.filter((achat: any) => {
-          if (showWebData) {
+          if (showWebData === true) {
             return achat.magasin === 'WEB'
           } else {
             return achat.magasin !== 'WEB'
