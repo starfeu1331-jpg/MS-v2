@@ -5,6 +5,7 @@ import SegmentDetail from './SegmentDetail'
 interface RFMAnalysisProps {
   data: any
   onSearchClient?: (carte: string) => void
+  showWebData?: boolean
 }
 
 const parseDate = (dateStr: string): Date | null => {
@@ -14,7 +15,7 @@ const parseDate = (dateStr: string): Date | null => {
   return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
 }
 
-export default function RFMAnalysis({ data, onSearchClient }: RFMAnalysisProps) {
+export default function RFMAnalysis({ data, onSearchClient, showWebData }: RFMAnalysisProps) {
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null)
   const [showSegmentDetail, setShowSegmentDetail] = useState(false)
   
@@ -36,21 +37,34 @@ export default function RFMAnalysis({ data, onSearchClient }: RFMAnalysisProps) 
       data.allClients.forEach((client: any, carte: string) => {
         if (!client.achats || client.achats.length === 0) return
         
+        // Filtrer les achats selon le toggle Web/Magasin
+        const achatsFiltered = client.achats.filter((achat: any) => {
+          if (showWebData) {
+            return achat.magasin === 'WEB'
+          } else {
+            return achat.magasin !== 'WEB'
+          }
+        })
+        
+        if (achatsFiltered.length === 0) return
+        
         let lastDate: Date | null = null
         let firstDate: Date | null = null
+        let caTotal = 0
         
-        for (const achat of client.achats) {
+        for (const achat of achatsFiltered) {
           const d = parseDate(achat.date)
           if (d) {
             if (!lastDate || d > lastDate) lastDate = d
             if (!firstDate || d < firstDate) firstDate = d
           }
+          caTotal += achat.ca_total || 0
         }
         
         const recency = lastDate ? Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)) : 9999
         const daysSinceFirst = firstDate ? Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) : 9999
-        const frequency = client.achats.length
-        const monetary = client.ca_total || 0
+        const frequency = achatsFiltered.length
+        const monetary = caTotal
         
         // Ignorer les clients avec CA négatif ou nul pour l'analyse RFM
         if (monetary <= 0) return
