@@ -22,12 +22,12 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
   }
   
   // KPIs séparés Magasin et Web
-  const totalCAMagasin = Object.values(data.famillesMag || data.familles).reduce((sum: number, f: any) => sum + f.ca, 0)
+  const totalCAMagasin = Object.values(data.famillesMag || data.familles || {}).reduce((sum: number, f: any) => sum + (f?.ca || 0), 0)
   const totalCAWeb = data.webStats?.ca || 0
   const totalCA = totalCAMagasin + totalCAWeb
   
   // Transactions magasin uniquement (pas web)
-  const ticketsMagasin = data.allTickets.filter((t: any) => t.magasin !== 'WEB')
+  const ticketsMagasin = (data.allTickets || []).filter((t: any) => t.magasin !== 'WEB')
   const uniqueTicketsMag = new Set(ticketsMagasin.map((t: any) => t.ticket))
   const totalTransactionsMag = uniqueTicketsMag.size
   
@@ -36,7 +36,7 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
   
   const panierMoyenMag = totalTransactionsMag > 0 ? totalCAMagasin / totalTransactionsMag : 0
   const panierMoyenWeb = totalTransactionsWeb > 0 ? totalCAWeb / totalTransactionsWeb : 0
-  const nbClients = data.allClients.size
+  const nbClients = data.allClients?.size || 0
   
   // Calcul RFM exact identique à RFMAnalysis
   const calculateQuickRFM = () => {
@@ -49,6 +49,8 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
       risque: 0,
       perdus: 0
     }
+    
+    if (!data.allClients || data.allClients.size === 0) return segments
     
     const today = new Date()
     const clients: any[] = []
@@ -141,6 +143,8 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
   const analyzeSubFamilies = () => {
     const subFams: any = {}
     
+    if (!data.allTickets || data.allTickets.length === 0) return []
+    
     data.allTickets.forEach((ticket: any) => {
       const key = `${ticket.famille}|${ticket.sousFamille}`
       if (!subFams[key]) {
@@ -152,15 +156,15 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
           passages: new Set()
         }
       }
-      subFams[key].ca += ticket.ca
-      subFams[key].volume += ticket.quantite
-      subFams[key].passages.add(ticket.ticket)
+      subFams[key].ca += ticket.ca || 0
+      subFams[key].volume += ticket.quantite || 0
+      if (ticket.ticket) subFams[key].passages.add(ticket.ticket)
     })
     
     return Object.values(subFams)
       .map((sf: any) => ({
         ...sf,
-        panierMoyen: sf.ca / sf.passages.size
+        panierMoyen: sf.passages.size > 0 ? sf.ca / sf.passages.size : 0
       }))
       .sort((a: any, b: any) => b.ca - a.ca)
   }
@@ -204,26 +208,30 @@ export default function Dashboard({ data, onNavigate }: DashboardProps) {
   const produitsFollie = getProduitsFollie()
 
   // Top Magasins
-  const topMagasins = Object.entries(data.geo.magasins)
-    .map(([mag, stats]: [string, any]) => ({ mag, ca: stats.ca, volume: stats.volume }))
-    .filter(m => !m.mag.startsWith('M41') && !m.mag.startsWith('M42')) // Exclure dépôts web
-    .sort((a, b) => b.ca - a.ca)
-    .slice(0, 5)
+  const topMagasins = data.geo?.magasins 
+    ? Object.entries(data.geo.magasins)
+        .map(([mag, stats]: [string, any]) => ({ mag, ca: stats.ca || 0, volume: stats.volume || 0 }))
+        .filter(m => !m.mag.startsWith('M41') && !m.mag.startsWith('M42')) // Exclure dépôts web
+        .sort((a, b) => b.ca - a.ca)
+        .slice(0, 5)
+    : []
 
   // Évolution mensuelle
-  const saisonData = Object.entries(data.saison)
-    .map(([month, familles]: [string, any]) => {
-      const total = Object.values(familles).reduce((sum: number, ca: any) => sum + ca, 0)
-      return { month, ca: total }
-    })
-    .sort((a, b) => a.month.localeCompare(b.month))
+  const saisonData = data.saison 
+    ? Object.entries(data.saison)
+        .map(([month, familles]: [string, any]) => {
+          const total = Object.values(familles).reduce((sum: number, ca: any) => sum + (ca || 0), 0)
+          return { month, ca: total }
+        })
+        .sort((a, b) => a.month.localeCompare(b.month))
+    : []
   
   // Calcul de la tendance (3 derniers mois)
   const recentMonths = saisonData.slice(-3)
-  const avgRecent = recentMonths.reduce((sum, m) => sum + m.ca, 0) / recentMonths.length
+  const avgRecent = recentMonths.length > 0 ? recentMonths.reduce((sum, m) => sum + m.ca, 0) / recentMonths.length : 0
   const previousMonths = saisonData.slice(-6, -3)
   const avgPrevious = previousMonths.length > 0 ? previousMonths.reduce((sum, m) => sum + m.ca, 0) / previousMonths.length : avgRecent
-  const tendance = ((avgRecent - avgPrevious) / avgPrevious) * 100
+  const tendance = avgPrevious > 0 ? ((avgRecent - avgPrevious) / avgPrevious) * 100 : 0
 
   const formatEuro = (value: number) => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}€`
 
