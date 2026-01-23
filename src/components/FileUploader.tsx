@@ -14,12 +14,41 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
   })
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState('')
+  const [dragOver, setDragOver] = useState<string | null>(null)
 
   const handleFileChange = (fileType: 'fileMagasins' | 'fileWeb' | 'fileCatalogueWeb', fileList: File[] | File | null) => {
     if (fileType === 'fileMagasins' && Array.isArray(fileList)) {
       setFiles(prev => ({ ...prev, fileMagasins: fileList }))
     } else if (fileType !== 'fileMagasins') {
       setFiles(prev => ({ ...prev, [fileType]: fileList as File | null }))
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent, fileType: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(fileType)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, fileType: 'fileMagasins' | 'fileWeb' | 'fileCatalogueWeb') => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(null)
+
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(file => file.name.endsWith('.csv'))
+    
+    if (droppedFiles.length === 0) return
+
+    if (fileType === 'fileMagasins') {
+      handleFileChange('fileMagasins', droppedFiles)
+    } else {
+      handleFileChange(fileType, droppedFiles[0])
     }
   }
 
@@ -560,7 +589,14 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
             </label>
             <div
               onClick={() => document.getElementById('fileMagasins')?.click()}
-              className="relative border-2 border-dashed border-zinc-700 rounded-2xl p-8 text-center hover:border-blue-500 hover:bg-zinc-800/50 transition-all duration-300 cursor-pointer"
+              onDragOver={(e) => handleDragOver(e, 'fileMagasins')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'fileMagasins')}
+              className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer ${
+                dragOver === 'fileMagasins' 
+                  ? 'border-blue-500 bg-blue-500/10 scale-105' 
+                  : 'border-zinc-700 hover:border-blue-500 hover:bg-zinc-800/50'
+              }`}
             >
               {files.fileMagasins.length > 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3">
@@ -593,7 +629,16 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
           </div>
 
           {/* Fichier WEB (optionnel) */}
-          <div className="glass rounded-3xl p-6 border border-zinc-800 hover:border-cyan-500/50 transition-all duration-300 group">
+          <div 
+            className={`glass rounded-3xl p-6 border transition-all duration-300 group ${
+              dragOver === 'fileWeb'
+                ? 'border-cyan-500 bg-cyan-500/10 scale-105'
+                : 'border-zinc-800 hover:border-cyan-500/50'
+            }`}
+            onDragOver={(e) => handleDragOver(e, 'fileWeb')}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, 'fileWeb')}
+          >
             <label
               htmlFor="fileWeb"
               className="cursor-pointer flex flex-col items-center justify-center space-y-4"
@@ -626,7 +671,16 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
           </div>
           
           {/* Fichier Catalogue Web (optionnel) */}
-          <div className="glass rounded-3xl p-6 border border-zinc-800 hover:border-yellow-500/50 transition-all duration-300 group">
+          <div 
+            className={`glass rounded-3xl p-6 border transition-all duration-300 group ${
+              dragOver === 'fileCatalogueWeb'
+                ? 'border-yellow-500 bg-yellow-500/10 scale-105'
+                : 'border-zinc-800 hover:border-yellow-500/50'
+            }`}
+            onDragOver={(e) => handleDragOver(e, 'fileCatalogueWeb')}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, 'fileCatalogueWeb')}
+          >
             <label
               htmlFor="fileCatalogueWeb"
               className="cursor-pointer flex flex-col items-center justify-center space-y-4"
