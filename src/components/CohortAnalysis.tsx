@@ -2,7 +2,6 @@ import { TrendingUp, Calendar, Target } from 'lucide-react'
 
 interface CohortAnalysisProps {
   data: any
-  showWebData?: boolean
 }
 
 export default function CohortAnalysis({ data, showWebData }: CohortAnalysisProps) {

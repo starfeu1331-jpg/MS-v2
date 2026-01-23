@@ -97,7 +97,7 @@ export default function Dashboard({ data, onNavigate, showWebData }: DashboardPr
       }, null)
       
       // Calculer le CA total des achats filtrés
-      const caTotal = achatsFiltered.reduce((sum, achat) => sum + (achat.ca || 0), 0)
+      const caTotal = achatsFiltered.reduce((sum: number, achat: any) => sum + (achat.ca || 0), 0)
       
       const recency = lastPurchase ? Math.floor((today.getTime() - lastPurchase.getTime()) / (1000 * 60 * 60 * 24)) : 9999
       const frequency = achatsFiltered.length
