@@ -43,60 +43,61 @@ module.exports = async (req, res) => {
 
     console.log('📊 Chargement des clients et transactions...')
     
-    // Requête optimisée : agrégation directe dans PostgreSQL
+    // Stratégie optimisée: calculer les quintiles directement en SQL avec NTILE
+    // Au lieu de charger tout en mémoire puis calculer côté Node
     let clientsData
     
+    const baseQuery = `
+      WITH client_metrics AS (
+        SELECT 
+          c.carte::text,
+          c.ville::text,
+          COUNT(t.id)::int as frequency,
+          SUM(t.ca)::numeric as monetary,
+          EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
+          EXTRACT(DAY FROM (CURRENT_DATE - MIN(t.date)))::int as days_since_first,
+          MAX(t.date)::text as last_date,
+          MIN(t.date)::text as first_date
+        FROM clients c
+        INNER JOIN transactions t ON c.carte = t.carte
+        {{WHERE_CLAUSE}}
+        GROUP BY c.carte, c.ville
+        HAVING SUM(t.ca) > 0
+      ),
+      rfm_scores AS (
+        SELECT 
+          carte,
+          ville,
+          frequency,
+          monetary,
+          recency,
+          days_since_first,
+          last_date,
+          first_date,
+          -- Calcul des scores R, F, M avec NTILE (quintiles)
+          -- NTILE(5) divise en 5 groupes égaux
+          (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r,
+          NTILE(5) OVER (ORDER BY frequency DESC)::int as f,
+          NTILE(5) OVER (ORDER BY monetary DESC)::int as m
+        FROM client_metrics
+      )
+      SELECT * FROM rfm_scores
+      ORDER BY carte
+    `
+    
     if (showWebOnly) {
-      clientsData = await prisma.$queryRaw`
-        SELECT 
-          c.carte::text,
-          c.ville::text,
-          COUNT(t.id)::int as nb_transactions,
-          SUM(t.ca)::numeric as ca_total,
-          MAX(t.date)::date as last_purchase_date,
-          MIN(t.date)::date as first_purchase_date
-        FROM clients c
-        INNER JOIN transactions t ON c.carte = t.carte
-        WHERE t.depot = 'WEB'
-        GROUP BY c.carte, c.ville
-        HAVING SUM(t.ca) > 0
-        ORDER BY c.carte
-      `
+      const query = baseQuery.replace('{{WHERE_CLAUSE}}', "WHERE t.depot = 'WEB'")
+      clientsData = await prisma.$queryRawUnsafe(query)
     } else if (showMagasinOnly) {
-      clientsData = await prisma.$queryRaw`
-        SELECT 
-          c.carte::text,
-          c.ville::text,
-          COUNT(t.id)::int as nb_transactions,
-          SUM(t.ca)::numeric as ca_total,
-          MAX(t.date)::date as last_purchase_date,
-          MIN(t.date)::date as first_purchase_date
-        FROM clients c
-        INNER JOIN transactions t ON c.carte = t.carte
-        WHERE t.depot != 'WEB'
-        GROUP BY c.carte, c.ville
-        HAVING SUM(t.ca) > 0
-        ORDER BY c.carte
-      `
+      const query = baseQuery.replace('{{WHERE_CLAUSE}}', "WHERE t.depot != 'WEB'")
+      clientsData = await prisma.$queryRawUnsafe(query)
     } else {
-      clientsData = await prisma.$queryRaw`
-        SELECT 
-          c.carte::text,
-          c.ville::text,
-          COUNT(t.id)::int as nb_transactions,
-          SUM(t.ca)::numeric as ca_total,
-          MAX(t.date)::date as last_purchase_date,
-          MIN(t.date)::date as first_purchase_date
-        FROM clients c
-        INNER JOIN transactions t ON c.carte = t.carte
-        GROUP BY c.carte, c.ville
-        HAVING SUM(t.ca) > 0
-        ORDER BY c.carte
-      `
+      const query = baseQuery.replace('{{WHERE_CLAUSE}}', '')
+      clientsData = await prisma.$queryRawUnsafe(query)
     }
 
     const clientsArray = serializeJSON(clientsData)
-    console.log(`✅ ${clientsArray.length} clients chargés`)
+    console.log(`✅ ${clientsArray.length} clients chargés avec scores R, F, M calculés en SQL`)
 
     if (clientsArray.length === 0) {
       return res.status(200).json({ 
@@ -109,95 +110,47 @@ module.exports = async (req, res) => {
       })
     }
 
-    // Étape 2: Calculer R, F, M pour chaque client
+    // Les scores R, F, M sont déjà calculés par SQL avec NTILE
+    // On a juste besoin d'assigner les segments
     const clients = clientsArray.map(client => {
-      const lastDate = parseDate(client.last_purchase_date)
-      const firstDate = parseDate(client.first_purchase_date)
+      const R = client.r
+      const F = client.f
+      const M = client.m
+      const RFM = R * 100 + F * 10 + M
+
+      let segment = ''
       
-      const recency = lastDate 
-        ? Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
-        : 9999
-      
-      const daysSinceFirst = firstDate
-        ? Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24))
-        : 9999
+      // Segmentation RFM (ordre important: du plus spécifique au plus général)
+      if (R === 5 && F === 5 && M === 5) {
+        segment = 'Ultra Champions'
+      } else if (R >= 4 && F >= 4 && M >= 4) {
+        segment = 'Champions'
+      } else if (R >= 4 && F === 3) {
+        segment = 'Nouveaux'
+      } else if (R === 3 && F === 3) {
+        segment = 'Occasionnels'
+      } else if (R >= 3 && F >= 3 && M >= 3) {
+        segment = 'Loyaux'
+      } else if (F >= 3 && R <= 2) {
+        segment = 'À Risque'
+      } else {
+        segment = 'Perdus'
+      }
 
       return {
         carte: client.carte,
         ville: client.ville || '-',
-        recency,
-        frequency: client.nb_transactions,
-        monetary: client.ca_total,
-        daysSinceFirst,
-        firstDate: firstDate ? firstDate.toLocaleDateString('fr-FR') : '-',
-        lastDate: lastDate ? lastDate.toLocaleDateString('fr-FR') : '-'
-      }
-    })
-
-    // Étape 3: Calculer les quintiles (seuils pour R, F, M)
-    const recencyValues = clients.map(c => c.recency).sort((a, b) => a - b)
-    const frequencyValues = clients.map(c => c.frequency).sort((a, b) => b - a)
-    const monetaryValues = clients.map(c => c.monetary).sort((a, b) => b - a)
-
-    const getQuintileThresholds = (sortedValues) => {
-      const len = sortedValues.length
-      return [
-        sortedValues[Math.floor(len * 0.2)],
-        sortedValues[Math.floor(len * 0.4)],
-        sortedValues[Math.floor(len * 0.6)],
-        sortedValues[Math.floor(len * 0.8)]
-      ]
-    }
-
-    const recencyThresholds = getQuintileThresholds(recencyValues)
-    const frequencyThresholds = getQuintileThresholds(frequencyValues)
-    const monetaryThresholds = getQuintileThresholds(monetaryValues)
-
-    console.log('📈 Seuils Récence (jours):', recencyThresholds)
-    console.log('📈 Seuils Fréquence (achats):', frequencyThresholds)
-    console.log('📈 Seuils Monétaire (€):', monetaryThresholds)
-
-    // Fonction pour obtenir le score de quintile
-    const getQuintile = (value, thresholds, reverse = false) => {
-      if (!reverse) {
-        // Pour F et M: plus la valeur est haute, plus le score est haut
-        if (value >= thresholds[0]) return 5 // Top 20%
-        if (value >= thresholds[1]) return 4 // 20-40%
-        if (value >= thresholds[2]) return 3 // 40-60%
-        if (value >= thresholds[3]) return 2 // 60-80%
-        return 1 // Bottom 20%
-      } else {
-        // Pour R: plus la valeur est basse, plus le score est haut
-        if (value <= thresholds[0]) return 5 // Top 20% (plus récents)
-        if (value <= thresholds[1]) return 4
-        if (value <= thresholds[2]) return 3
-        if (value <= thresholds[3]) return 2
-        return 1 // Bottom 20% (plus anciens)
-      }
-    }
-
-    // Étape 4: Assigner les scores et segments à chaque client
-    clients.forEach(client => {
-      client.R = getQuintile(client.recency, recencyThresholds, true)
-      client.F = getQuintile(client.frequency, frequencyThresholds)
-      client.M = getQuintile(client.monetary, monetaryThresholds)
-      client.RFM = client.R * 100 + client.F * 10 + client.M
-
-      // Segmentation RFM (ordre important: du plus spécifique au plus général)
-      if (client.R === 5 && client.F === 5 && client.M === 5) {
-        client.segment = 'Ultra Champions'
-      } else if (client.R >= 4 && client.F >= 4 && client.M >= 4) {
-        client.segment = 'Champions'
-      } else if (client.R >= 4 && client.F === 3) {
-        client.segment = 'Nouveaux'
-      } else if (client.R === 3 && client.F === 3) {
-        client.segment = 'Occasionnels'
-      } else if (client.R >= 3 && client.F >= 3 && client.M >= 3) {
-        client.segment = 'Loyaux'
-      } else if (client.F >= 3 && client.R <= 2) {
-        client.segment = 'À Risque'
-      } else {
-        client.segment = 'Perdus'
+        recency: client.recency,
+        frequency: client.frequency,
+        monetary: parseFloat(client.monetary),
+        daysSinceFirst: client.days_since_first,
+        firstDate: client.first_date,
+        lastDate: client.last_date,
+        R,
+        F,
+        M,
+        RFM,
+        segment
       }
     })
 
@@ -241,11 +194,6 @@ module.exports = async (req, res) => {
         totalClients,
         totalCA,
         segments: segmentStats
-      },
-      thresholds: {
-        recency: recencyThresholds,
-        frequency: frequencyThresholds,
-        monetary: monetaryThresholds
       }
     })
 
