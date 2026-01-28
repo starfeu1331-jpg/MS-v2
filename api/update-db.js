@@ -20,19 +20,28 @@ const parseCSV = (filePath) => {
 
 const handleDailyUpdate = async (files) => {
   console.log('📅 Mise à jour quotidienne...')
+  console.log('🔍 files:', Object.keys(files))
+  console.log('🔍 prisma:', typeof prisma, prisma ? 'OK' : 'NULL')
   
   if (!files.transactions) {
     throw new Error('Fichier transactions.csv manquant')
   }
 
-  // 🔍 Récupérer la date maximale actuelle dans la BDD
-  const maxDateResult = await prisma.transactions.findFirst({
-    select: { date: true },
-    orderBy: { date: 'desc' }
-  })
-  
-  const maxDate = maxDateResult?.date
-  console.log(`📅 Date max actuelle dans la BDD: ${maxDate ? maxDate.toISOString().split('T')[0] : 'aucune'}`)
+  try {
+    // 🔍 Récupérer la date maximale actuelle dans la BDD
+    console.log('🔍 Tentative prisma.transactions.findFirst...')
+    const maxDateResult = await prisma.transactions.findFirst({
+      select: { date: true },
+      orderBy: { date: 'desc' }
+    })
+    console.log('✅ findFirst OK, result:', maxDateResult)
+    
+    const maxDate = maxDateResult?.date
+    console.log(`📅 Date max actuelle dans la BDD: ${maxDate ? maxDate.toISOString().split('T')[0] : 'aucune'}`)
+  } catch (error) {
+    console.error('❌ Erreur findFirst:', error.message)
+    throw error
+  }
 
   let totalInserted = 0
   let totalFiltered = 0
