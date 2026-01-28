@@ -323,7 +323,6 @@ export default function ABCAnalysis() {
         ) : (
           <div className="text-center text-zinc-400 py-20">Aucune donnée à afficher</div>
         )}
-        </Suspense>
       </div>
       
       {/* Tableau détaillé */}
