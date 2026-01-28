@@ -57,6 +57,21 @@ export default async function handler(req, res) {
       LIMIT 50
     `;
 
+    const produitsMagasin = await prisma.$queryRaw`
+      SELECT 
+        TO_CHAR(t.date, 'YYYY-MM') as month,
+        p.id as code,
+        p.famille,
+        p.sous_famille as "sousFamille",
+        SUM(t.ca)::float as ca,
+        COUNT(*)::int as volume
+      FROM transactions t
+      JOIN produits p ON t.produit = p.id
+      WHERE t.depot != 'WEB' AND t.carte != '0'
+      GROUP BY TO_CHAR(t.date, 'YYYY-MM'), p.id, p.famille, p.sous_famille
+      ORDER BY month DESC, ca DESC
+    `;
+
     const topZones = await prisma.$queryRaw`
       SELECT 
         SUBSTRING(c.cp, 1, 2) as dept,
@@ -97,6 +112,19 @@ export default async function handler(req, res) {
       };
     });
 
+    const produitsMagasinObj = {};
+    produitsMagasin.forEach(p => {
+      if (!produitsMagasinObj[p.month]) {
+        produitsMagasinObj[p.month] = {};
+      }
+      produitsMagasinObj[p.month][p.code] = {
+        ca: p.ca || 0,
+        volume: p.volume || 0,
+        famille: p.famille || 'Non défini',
+        sousFamille: p.sousFamille || 'Non défini'
+      };
+    });
+
     const zonesObj = {};
     topZones.forEach(z => {
       zonesObj[z.dept] = {
@@ -123,7 +151,7 @@ export default async function handler(req, res) {
         volume: webStats[0]?.volume || 0
       },
       produitsWeb: produitsWebObj,
-      produitsMagasin: {},
+      produitsMagasin: produitsMagasinObj,
       zones: zonesObj
     };
 
