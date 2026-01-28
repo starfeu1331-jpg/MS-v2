@@ -9,9 +9,16 @@ export default async function handler(req, res) {
 
   try {
     const { magasin } = req.query
-    const magasinFilter = magasin === 'WEB' ? 'WEB' : (magasin === 'MAGASIN' ? { not: 'WEB' } : undefined)
 
     console.log('🔄 API Cross-Selling: Requête reçue', { magasin })
+
+    // Construire la condition WHERE selon le filtre magasin
+    let whereClause = "WHERE t.ca > 0 AND t.facture IS NOT NULL"
+    if (magasin === 'WEB') {
+      whereClause += " AND t.depot = 'WEB'"
+    } else if (magasin === 'MAGASIN') {
+      whereClause += " AND t.depot != 'WEB'"
+    }
 
     // Query pour obtenir les associations de produits par ticket
     const query = `
@@ -25,9 +32,7 @@ export default async function handler(req, res) {
         SUM(t.ca) as ca_ticket
       FROM transactions t
       LEFT JOIN produits p ON t.produit = p.code
-      WHERE t.ca > 0 AND t.facture IS NOT NULL
-        ${magasinFilter === 'WEB' ? "AND t.depot = 'WEB'" : ''}
-        ${magasinFilter && magasinFilter.not ? "AND t.depot != 'WEB'" : ''}
+      ${whereClause}
       GROUP BY t.facture, t.date
       HAVING COUNT(DISTINCT t.produit) > 1
       ORDER BY t.date DESC

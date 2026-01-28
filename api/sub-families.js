@@ -9,9 +9,16 @@ export default async function handler(req, res) {
 
   try {
     const { magasin } = req.query
-    const magasinFilter = magasin === 'WEB' ? 'WEB' : (magasin === 'MAGASIN' ? { not: 'WEB' } : undefined)
 
     console.log('🔄 API Sub-Families: Requête reçue', { magasin })
+
+    // Construire la condition WHERE selon le filtre magasin
+    let whereClause = "WHERE t.ca > 0"
+    if (magasin === 'WEB') {
+      whereClause += " AND t.depot = 'WEB'"
+    } else if (magasin === 'MAGASIN') {
+      whereClause += " AND t.depot != 'WEB'"
+    }
 
     // Query pour obtenir les statistiques par sous-famille
     const query = `
@@ -23,9 +30,7 @@ export default async function handler(req, res) {
         COUNT(DISTINCT t.facture) as nb_tickets
       FROM transactions t
       LEFT JOIN produits p ON t.produit = p.code
-      WHERE t.ca > 0
-        ${magasinFilter === 'WEB' ? "AND t.depot = 'WEB'" : ''}
-        ${magasinFilter && magasinFilter.not ? "AND t.depot != 'WEB'" : ''}
+      ${whereClause}
       GROUP BY p.famille, p.sous_famille
       ORDER BY ca DESC
     `
@@ -38,9 +43,7 @@ export default async function handler(req, res) {
     const totalTicketsQuery = `
       SELECT COUNT(DISTINCT facture) as total
       FROM transactions
-      WHERE ca > 0
-        ${magasinFilter === 'WEB' ? "AND depot = 'WEB'" : ''}
-        ${magasinFilter && magasinFilter.not ? "AND depot != 'WEB'" : ''}
+      ${whereClause}
     `
     
     const totalTicketsResult = await prisma.$queryRawUnsafe(totalTicketsQuery)
