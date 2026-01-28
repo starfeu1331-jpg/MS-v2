@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const client = await prisma.clients.findUnique({
+    const client = await prisma.client.findUnique({
       where: { carte: carte }
     })
     
