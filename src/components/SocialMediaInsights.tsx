@@ -6,6 +6,31 @@ interface SocialMediaInsightsProps {
 }
 
 export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) {
+  // Module désactivé - nécessite des données de réseaux sociaux non disponibles
+  return (
+    <div className="flex items-center justify-center min-h-[600px]">
+      <div className="text-center max-w-2xl p-12 glass rounded-3xl border border-zinc-800">
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <Instagram className="w-12 h-12 text-pink-500" />
+          <Facebook className="w-12 h-12 text-blue-500" />
+        </div>
+        <h3 className="text-2xl font-bold text-white mb-4">Module Réseaux Sociaux</h3>
+        <p className="text-zinc-400 mb-6">
+          Ce module nécessite des données de réseaux sociaux (Instagram, Facebook) qui ne sont pas encore intégrées à la base de données.
+        </p>
+        <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800 text-left">
+          <p className="text-sm text-zinc-500 font-semibold mb-2">Données requises :</p>
+          <ul className="text-sm text-zinc-400 space-y-2">
+            <li>• Posts Instagram/Facebook avec engagement</li>
+            <li>• Conversion des posts en ventes</li>
+            <li>• Données démographiques des followers</li>
+            <li>• Campagnes publicitaires et ROI</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+
   const [selectedMonth, setSelectedMonth] = useState<string>('')
 
   if (!data || !data.allClients) {
