@@ -286,6 +286,32 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Bannière info scripts */}
+          <div className="mb-4 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <Database className="w-5 h-5 text-blue-400 mt-0.5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-blue-400 mb-1">📦 Fichiers volumineux ?</p>
+                <p className="text-xs text-zinc-400 mb-2">
+                  Pour les exports Sage (&gt;5 MB), utilise les scripts Terminal (beaucoup plus rapide) :
+                </p>
+                <code className="text-xs font-mono text-emerald-400 bg-zinc-900 px-2 py-1 rounded">
+                  ./scripts/update-workflow.sh
+                </code>
+                <a 
+                  href="https://github.com/starfeu1331-jpg/MS-v2/blob/main/GUIDE_MISE_A_JOUR.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-3 text-xs text-blue-400 hover:underline"
+                >
+                  📖 Guide complet
+                </a>
+              </div>
+            </div>
+          </div>
+
           {updateSuccess && (
             <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
               <div className="flex items-center gap-3">
