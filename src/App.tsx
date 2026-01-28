@@ -18,8 +18,9 @@ const StorePerformance = lazy(() => import('./components/StorePerformance'))
 const ForecastAnomalies = lazy(() => import('./components/ForecastAnomalies'))
 const SocialMediaInsights = lazy(() => import('./components/SocialMediaInsights'))
 const ExportData = lazy(() => import('./components/ExportData'))
+const SettingsView = lazy(() => import('./components/Settings'))
 
-type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'stores' | 'forecast' | 'social' | 'exports'
+type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'stores' | 'forecast' | 'social' | 'exports' | 'settings'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
@@ -211,7 +212,12 @@ function App() {
               {sidebarOpen && <div className="px-4 py-2 mt-4"><p className="text-xs text-zinc-600 font-semibold uppercase">Paramètres</p></div>}
               
               <button
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"
+                onClick={() => setActiveTab('settings')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+                  activeTab === 'settings'
+                    ? 'bg-zinc-500 text-white'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                }`}
               >
                 <Settings className="w-5 h-5" />
                 {sidebarOpen && <span>Paramètres</span>}
@@ -245,6 +251,7 @@ function App() {
               {activeTab === 'forecast' && 'Prévisions & Anomalies'}
               {activeTab === 'social' && 'Réseaux Sociaux'}
               {activeTab === 'exports' && 'Exports de données'}
+              {activeTab === 'settings' && 'Paramètres'}
             </h1>
           </div>
           
@@ -459,6 +466,7 @@ function App() {
             {activeTab === 'forecast' && <ForecastAnomalies />}
             {activeTab === 'social' && <SocialMediaInsights data={null} />}
             {activeTab === 'exports' && <ExportData data={null} />}
+            {activeTab === 'settings' && <SettingsView />}
           </Suspense>
         </main>
       </div>
