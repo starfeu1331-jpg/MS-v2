@@ -288,7 +288,10 @@ export default async function handler(req, res) {
     console.error('❌ Erreur update-db:', error)
     res.status(500).json({
       error: 'Erreur lors de la mise à jour',
-      message: error.message
+      message: error.message,
+      stack: error.stack,
+      prismaAvailable: !!prisma,
+      prismaType: typeof prisma
     })
   }
 }
