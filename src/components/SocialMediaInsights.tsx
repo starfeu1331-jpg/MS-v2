@@ -2,25 +2,57 @@ import { useState, useEffect } from 'react'
 import { Instagram, Facebook, TrendingUp, MapPin, Target, Megaphone, ShoppingBag, Store } from 'lucide-react'
 
 interface SocialMediaInsightsProps {
-  data: any
+  data?: any
 }
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://ms-v2.vercel.app'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// Cache global
+let marketingCache: { data: any; timestamp: number } | null = null
 
 export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) {
   const [selectedMonth, setSelectedMonth] = useState<string>('')
   const [loadedData, setLoadedData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Charger les données si non fournies
+  // Charger les données depuis l'API
   useEffect(() => {
-    if (data) {
-      setLoadedData(data)
-      setLoading(false)
-      return
+    const loadData = async () => {
+      try {
+        // Vérifier le cache
+        const now = Date.now()
+        if (marketingCache && (now - marketingCache.timestamp < CACHE_DURATION)) {
+          console.log('🔍 Marketing: Utilisation cache')
+          setLoadedData(marketingCache.data)
+          setLoading(false)
+          return
+        }
+
+        console.log('🔄 Marketing: Chargement depuis API')
+        setLoading(true)
+        
+        const response = await fetch(`${API_URL}/api/marketing`)
+        if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
+        
+        const result = await response.json()
+        
+        // Mettre en cache
+        marketingCache = { data: result, timestamp: Date.now() }
+        
+        setLoadedData(result)
+        console.log('✅ Marketing: Données chargées')
+      } catch (err: any) {
+        console.error('❌ Erreur chargement Marketing:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    // Module désactivé - nécessite migration complète vers API
-    setLoading(false)
-  }, [data])
+    loadData()
+  }, [])
 
   if (loading) {
     return (
@@ -30,40 +62,15 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
     )
   }
 
+  if (error) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-red-400">Erreur: {error}</div></div>
+  }
+
   if (!loadedData || !loadedData.allClients) {
-    return (
-      <div className="flex items-center justify-center min-h-[600px]">
-        <div className="text-center max-w-2xl p-12 glass rounded-3xl border border-zinc-800">
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <Instagram className="w-12 h-12 text-pink-500" />
-            <Facebook className="w-12 h-12 text-blue-500" />
-            <Megaphone className="w-12 h-12 text-purple-500" />
-          </div>
-          <h3 className="text-2xl font-bold text-white mb-4">Recommandations Marketing</h3>
-          <p className="text-zinc-400 mb-6">
-            Ce module analyse vos ventes pour générer des recommandations Instagram, Facebook et Google Ads personnalisées.
-          </p>
-          <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800 text-left">
-            <p className="text-sm text-zinc-500 font-semibold mb-2">Module temporairement désactivé</p>
-            <p className="text-sm text-zinc-400">
-              L'ancien système chargeait toutes les données clients en mémoire. 
-              Avec PostgreSQL, ce module nécessite une refonte pour fonctionner efficacement avec l'API.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Aucune donnée</div></div>
   }
 
   const actualData = loadedData
-
-  if (!actualData || !actualData.allClients) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
-      </div>
-    )
-  }
 
   const formatEuro = (value: number) => {
     if (!value || isNaN(value)) return '0€'
@@ -87,9 +94,9 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
     // Les achats web sont soit sans carte, soit combinés différemment
     // On distribue le CA web proportionnellement au volume de transactions
     
-    const webCATotal = data.webStats?.ca || 0
+    const webCATotal = actualData.webStats?.ca || 0
     
-    data.allClients.forEach((client: any) => {
+    actualData.allClients.forEach((client: any) => {
       if (client.achats) {
         client.achats.forEach((achat: any) => {
           if (achat.date && achat.date !== 'N/A') {
@@ -202,7 +209,7 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
     
     // Utiliser data.produitsWeb (pré-calculé depuis l'import) pour les produits web
     // et monthData.produits_magasin pour les produits magasin
-    const topProduitsWeb = getTopProducts(data.produitsWeb || {}, 3)
+    const topProduitsWeb = getTopProducts(actualData.produitsWeb || {}, 3)
     const topProduitsStore = getTopProducts(monthData.produits_magasin, 3)
     const topZones = getTopZones(monthData.zones, 3)
 
