@@ -32,19 +32,19 @@ export default function ExportData({ data }: ExportDataProps) {
   // Export KPIs
   const exportKPIs = () => {
     const famillesArray = (data.familles && typeof data.familles === 'object') ? Object.values(data.familles) : []
-    const totalCA = famillesArray.reduce((sum: number, f: any) => sum + (Number(f?.ca) || 0), 0)
-    const totalTransactions = famillesArray.reduce((sum: number, f: any) => sum + (Number(f?.volume) || 0), 0)
-    const panierMoyen = totalCA / (totalTransactions || 1)
+    const totalCA: number = famillesArray.reduce((sum: number, f: any) => sum + (Number(f?.ca) || 0), 0)
+    const totalTransactions: number = famillesArray.reduce((sum: number, f: any) => sum + (Number(f?.volume) || 0), 0)
+    const panierMoyen: number = Number(totalCA) / Number(totalTransactions || 1)
     const nbClients = Number(data.allClients?.size) || 0
     const tauxFidelite = ((Number(data.fidelite?.oui) || 0) / ((Number(data.fidelite?.oui) || 0) + (Number(data.fidelite?.non) || 0) || 1)) * 100
     
     const kpis = [{
       Indicateur: 'CA Total',
-      Valeur: formatEuro(totalCA),
+      Valeur: formatEuro(Number(totalCA)),
       Type: 'Financier'
     }, {
       Indicateur: 'Transactions',
-      Valeur: totalTransactions.toLocaleString('fr-FR'),
+      Valeur: Number(totalTransactions).toLocaleString('fr-FR'),
       Type: 'Volume'
     }, {
       Indicateur: 'Panier Moyen',
