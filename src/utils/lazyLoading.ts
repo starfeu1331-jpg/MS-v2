@@ -11,7 +11,7 @@ export const lazyWithSuspense = (
   const LazyComponent = lazy(component)
   return {
     Component: LazyComponent,
-    WithSuspense: ({ ...props }: any) => (
+    WithSuspense: (props: any) => (
       <Suspense fallback={fallback}>
         <LazyComponent {...props} />
       </Suspense>
