@@ -10,9 +10,20 @@ interface RFMAnalysisProps {
 
 const parseDate = (dateStr: string): Date | null => {
   if (!dateStr || dateStr === 'N/A') return null
-  const [day, month, year] = dateStr.split('/')
-  if (!day || !month || !year) return null
-  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+  
+  // Support format ISO (YYYY-MM-DD) ET format français (DD/MM/YYYY)
+  if (dateStr.includes('-')) {
+    // Format ISO: 2022-01-03
+    const date = new Date(dateStr)
+    return isNaN(date.getTime()) ? null : date
+  } else if (dateStr.includes('/')) {
+    // Format français: 03/01/2022
+    const [day, month, year] = dateStr.split('/')
+    if (!day || !month || !year) return null
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+  }
+  
+  return null
 }
 
 export default function RFMAnalysis({ data, onSearchClient, showWebData }: RFMAnalysisProps) {

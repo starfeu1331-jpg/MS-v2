@@ -1,5 +1,6 @@
 import { Store, Target } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { Suspense } from 'react'
+import { LazyBarChart as BarChart, LazyBar as Bar, LazyXAxis as XAxis, LazyYAxis as YAxis, LazyCartesianGrid as CartesianGrid, LazyTooltip as Tooltip, LazyResponsiveContainer as ResponsiveContainer, ChartFallback } from '../utils/lazyRecharts'
 
 interface StorePerformanceProps {
   data: any
@@ -116,37 +117,39 @@ export default function StorePerformance({ data }: StorePerformanceProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass rounded-3xl p-8 border border-zinc-800">
           <h3 className="text-xl font-bold text-white mb-6">Comparaison CA</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={webVsMagData}>
-              <defs>
-                <linearGradient id="colorMag" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.9}/>
-                  <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.9}/>
-                </linearGradient>
-                <linearGradient id="colorWeb" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a855f7" stopOpacity={0.9}/>
-                  <stop offset="100%" stopColor="#ec4899" stopOpacity={0.9}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis dataKey="name" stroke="#71717a" />
-              <YAxis tickFormatter={formatEuro} stroke="#71717a" />
-              <Tooltip 
-                formatter={(value: any) => formatEuro(value)}
-                contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #27272a',
-                  borderRadius: '12px',
-                  color: '#ffffff'
-                }}
-              />
-              <Bar dataKey="ca" radius={[8, 8, 0, 0]}>
-                {webVsMagData.map((_, index) => (
-                  <Bar key={index} fill={index === 0 ? 'url(#colorMag)' : 'url(#colorWeb)'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<ChartFallback />}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={webVsMagData}>
+                <defs>
+                  <linearGradient id="colorMag" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.9}/>
+                    <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.9}/>
+                  </linearGradient>
+                  <linearGradient id="colorWeb" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity={0.9}/>
+                    <stop offset="100%" stopColor="#ec4899" stopOpacity={0.9}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="name" stroke="#71717a" />
+                <YAxis tickFormatter={formatEuro} stroke="#71717a" />
+                <Tooltip 
+                  formatter={(value: any) => formatEuro(value)}
+                  contentStyle={{
+                    backgroundColor: '#18181b',
+                    border: '1px solid #27272a',
+                    borderRadius: '12px',
+                    color: '#ffffff'
+                  }}
+                />
+                <Bar dataKey="ca" radius={[8, 8, 0, 0]}>
+                  {webVsMagData.map((_, index) => (
+                    <Bar key={index} fill={index === 0 ? 'url(#colorMag)' : 'url(#colorWeb)'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Suspense>
         </div>
         
         <div className="space-y-4">

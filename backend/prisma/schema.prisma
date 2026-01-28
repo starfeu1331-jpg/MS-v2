@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  carte          String   @id @map("carte")
+  dateCreation   String?  @map("date_creation")
+  statut         String?
+  dateValidite   String?  @map("date_validite")
+  civilite       String?
+  dateNaissance  String?  @map("date_naissance")
+  sexe           String?
+  nomAdresse     String?  @map("nom_adresse")
+  adresse        String?
+  adresse2       String?  @map("adresse_2")
+  adresse4       String?  @map("adresse_4")
+  cp             String?
+  ville          String?
+  
+  transactions   Transaction[]
+  
+  @@map("clients")
+}
+
+model Produit {
+  id                    String   @id
+  famille               String
+  sousFamille           String?  @map("sous_famille")
+  sousSousFamille       String?  @map("sous_sous_famille")
+  sousSousSousFamille   String?  @map("sous_sous_sous_famille")
+  
+  transactions          Transaction[]
+  
+  @@map("produits")
+}
+
+model Magasin {
+  code       String   @id
+  zone       String?
+  nom        String
+  adresse1   String?  @map("adresse_1")
+  adresse2   String?  @map("adresse_2")
+  adresse3   String?  @map("adresse_3")
+  cp         String?
+  ville      String?
+  
+  transactions   Transaction[]
+  
+  @@map("magasins")
+}
+
+model Transaction {
+  id          BigInt   @id @default(autoincrement())
+  facture     String
+  carte       String
+  depot       String
+  date        DateTime
+  produit     String
+  quantite    Float
+  prix        Float
+  ca          Float
+  isWeb       Boolean  @map("is_web")
+  ville       String?
+  cp          String?
+  
+  client      Client?  @relation(fields: [carte], references: [carte])
+  produitRef  Produit? @relation(fields: [produit], references: [id])
+  magasin     Magasin? @relation(fields: [depot], references: [code])
+  
+  @@index([date])
+  @@index([carte])
+  @@index([produit])
+  @@index([depot])
+  @@index([facture])
+  @@map("transactions")
+}

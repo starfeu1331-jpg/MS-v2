@@ -1,9 +1,12 @@
-import { useState, lazy, Suspense } from 'react'
-import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone } from 'lucide-react'
-import FileUploader from './components/FileUploader'
+import { useState, lazy, Suspense, useEffect, useRef } from 'react'
+import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone, Calendar, ChevronDown } from 'lucide-react'
+import { LoadingFallback, SkeletonLoader } from './components/LoadingFallback'
 
-// Lazy loading des composants pour accélérer le chargement initial
-const Dashboard = lazy(() => import('./components/Dashboard'))
+// Lazy loading des composants - 100% PostgreSQL
+// Composants principaux
+const DashboardV2 = lazy(() => import('./components/DashboardV2'))
+
+// Composants secondaires - chargement différé
 const SearchPanel = lazy(() => import('./components/SearchPanel'))
 const RFMAnalysis = lazy(() => import('./components/RFMAnalysis'))
 const SubFamilyAnalysis = lazy(() => import('./components/SubFamilyAnalysis'))
@@ -19,10 +22,32 @@ const ExportData = lazy(() => import('./components/ExportData'))
 type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'stores' | 'forecast' | 'social' | 'exports'
 
 function App() {
-  const [data, setData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [currentPeriod, setCurrentPeriod] = useState({ type: 'year', value: 2025 })
   const [showWebData, setShowWebData] = useState(false)
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false)
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+  const [showPeriodMenu, setShowPeriodMenu] = useState(false)
+  const periodMenuRef = useRef<HTMLDivElement>(null)
+
+  // Fermer le menu au clic extérieur
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (periodMenuRef.current && !periodMenuRef.current.contains(event.target as Node)) {
+        setShowPeriodMenu(false)
+      }
+    }
+
+    if (showPeriodMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showPeriodMenu])
 
   return (
     <div className="min-h-screen bg-zinc-950 flex">
@@ -46,9 +71,8 @@ function App() {
           </div>
 
           {/* Navigation */}
-          {data && (
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-              <button
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+            <button
                 onClick={() => setActiveTab('dashboard')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'dashboard'
@@ -193,7 +217,7 @@ function App() {
                 {sidebarOpen && <span>Paramètres</span>}
               </button>
             </nav>
-          )}
+
         </div>
       </aside>
 
@@ -209,82 +233,233 @@ function App() {
               {sidebarOpen ? <X className="w-5 h-5 text-zinc-400" /> : <Menu className="w-5 h-5 text-zinc-400" />}
             </button>
             <h1 className="text-2xl font-bold text-white">
-              {!data && 'Bienvenue'}
-              {data && activeTab === 'dashboard' && 'Vue d\'ensemble'}
-              {data && activeTab === 'search' && 'Recherche'}
-              {data && activeTab === 'rfm' && 'Segmentation RFM'}
-              {data && activeTab === 'subFamilies' && 'Sous-familles'}
-              {data && activeTab === 'crossSelling' && 'Analyse Cross-Selling'}
-              {data && activeTab === 'cohortes' && 'Analyse de Cohortes'}
-              {data && activeTab === 'abc' && 'ABC Analysis'}
-              {data && activeTab === 'kingquentin' && 'King Quentin 👑'}
-              {data && activeTab === 'stores' && 'Performance Magasins'}
-              {data && activeTab === 'forecast' && 'Prévisions & Anomalies'}
-              {data && activeTab === 'social' && 'Réseaux Sociaux'}
-              {data && activeTab === 'exports' && 'Exports de données'}
+              {activeTab === 'dashboard' && 'Vue d\'ensemble'}
+              {activeTab === 'search' && 'Recherche'}
+              {activeTab === 'rfm' && 'Segmentation RFM'}
+              {activeTab === 'subFamilies' && 'Sous-familles'}
+              {activeTab === 'crossSelling' && 'Analyse Cross-Selling'}
+              {activeTab === 'cohortes' && 'Analyse de Cohortes'}
+              {activeTab === 'abc' && 'ABC Analysis'}
+              {activeTab === 'kingquentin' && 'King Quentin 👑'}
+              {activeTab === 'stores' && 'Performance Magasins'}
+              {activeTab === 'forecast' && 'Prévisions & Anomalies'}
+              {activeTab === 'social' && 'Réseaux Sociaux'}
+              {activeTab === 'exports' && 'Exports de données'}
             </h1>
           </div>
-          {data && (
-            <div className="flex items-center gap-4">
-              {/* Toggle Web/Magasin */}
-              <button
-                onClick={() => setShowWebData(!showWebData)}
-                disabled={!data.webStats || data.webStats.ca === 0}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all border ${
-                  !data.webStats || data.webStats.ca === 0
-                    ? 'bg-zinc-800/50 border-zinc-700 text-zinc-600 cursor-not-allowed'
-                    : showWebData
-                    ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/30'
-                    : 'bg-blue-500/20 border-blue-500/50 text-blue-300 hover:bg-blue-500/30'
-                }`}
+          
+          <div className="flex items-center gap-4">
+            {/* Sélecteur de période - Dropdown */}
+          {activeTab === 'dashboard' && (
+            <div className="relative" ref={periodMenuRef}>
+              <button 
+                onClick={() => setShowPeriodMenu(!showPeriodMenu)}
+                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-white font-medium transition-all"
               >
-                {showWebData ? (
-                  <>
-                    <Globe className="w-4 h-4" />
-                    <span className="text-sm">Web</span>
-                  </>
-                ) : (
-                  <>
-                    <Store className="w-4 h-4" />
-                    <span className="text-sm">Magasin</span>
-                  </>
-                )}
+                <Calendar className="w-4 h-4" />
+                <span>
+                  {currentPeriod.type === 'year' && `${currentPeriod.value}`}
+                  {currentPeriod.type === 'months' && `${currentPeriod.value} mois`}
+                  {currentPeriod.type === 'all' && 'Tout'}
+                  {currentPeriod.type === 'custom' && currentPeriod.label}
+                </span>
+                <ChevronDown className="w-4 h-4" />
               </button>
-              
-              <div className="glass px-4 py-2 rounded-lg">
-                <p className="text-sm text-zinc-400">Période analysée</p>
-                <p className="text-lg font-bold text-white">
-                  {data.dateRange.min} - {data.dateRange.max}
-                </p>
-              </div>
+
+              {/* Dropdown menu */}
+              {showPeriodMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-50">
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        setCurrentPeriod({ type: 'months', value: 3 })
+                        setShowPeriodMenu(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 transition-all ${
+                        currentPeriod.type === 'months' && currentPeriod.value === 3
+                          ? 'bg-blue-600 text-white'
+                          : 'text-zinc-300 hover:bg-zinc-800'
+                      }`}
+                    >
+                      3 derniers mois
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentPeriod({ type: 'months', value: 6 })
+                        setShowPeriodMenu(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 transition-all ${
+                        currentPeriod.type === 'months' && currentPeriod.value === 6
+                          ? 'bg-blue-600 text-white'
+                          : 'text-zinc-300 hover:bg-zinc-800'
+                      }`}
+                    >
+                      6 derniers mois
+                    </button>
+                    <div className="border-t border-zinc-700 my-1"></div>
+                    <button
+                      onClick={() => {
+                        setCurrentPeriod({ type: 'year', value: 2024 })
+                        setShowPeriodMenu(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 transition-all ${
+                        currentPeriod.type === 'year' && currentPeriod.value === 2024
+                          ? 'bg-blue-600 text-white'
+                          : 'text-zinc-300 hover:bg-zinc-800'
+                      }`}
+                    >
+                      Année 2024
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentPeriod({ type: 'year', value: 2025 })
+                        setShowPeriodMenu(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 transition-all ${
+                        currentPeriod.type === 'year' && currentPeriod.value === 2025
+                          ? 'bg-blue-600 text-white'
+                          : 'text-zinc-300 hover:bg-zinc-800'
+                      }`}
+                    >
+                      Année 2025
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentPeriod({ type: 'all', value: 'all' })
+                        setShowPeriodMenu(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 transition-all ${
+                        currentPeriod.type === 'all'
+                          ? 'bg-blue-600 text-white'
+                          : 'text-zinc-300 hover:bg-zinc-800'
+                      }`}
+                    >
+                      Toutes les périodes
+                    </button>
+                    <div className="border-t border-zinc-700 my-1"></div>
+                    <button
+                      onClick={() => {
+                        setShowCustomDatePicker(!showCustomDatePicker)
+                        setShowPeriodMenu(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 transition-all ${
+                        showCustomDatePicker
+                          ? 'bg-purple-600 text-white'
+                          : 'text-zinc-300 hover:bg-zinc-800'
+                      }`}
+                    >
+                      Période personnalisée...
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Custom date picker popup */}
+              {showCustomDatePicker && (
+                <div className="absolute top-full right-0 mt-2 bg-zinc-900 border border-zinc-700 rounded-xl p-4 shadow-2xl z-50 w-80">
+                  <h3 className="text-white font-bold mb-3">Sélectionner une période</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-zinc-400 text-xs mb-1 block font-medium">Date de début</label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-zinc-400 text-xs mb-1 block font-medium">Date de fin</label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowCustomDatePicker(false)}
+                        className="flex-1 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-white text-sm transition-all"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (customStartDate && customEndDate) {
+                            const startObj = new Date(customStartDate);
+                            const endObj = new Date(customEndDate);
+                            if (startObj <= endObj) {
+                              setCurrentPeriod({ 
+                                type: 'custom', 
+                                value: `${customStartDate}_${customEndDate}`,
+                                label: `${new Date(customStartDate).toLocaleDateString('fr-FR')} - ${new Date(customEndDate).toLocaleDateString('fr-FR')}`
+                              })
+                              setShowCustomDatePicker(false)
+                            } else {
+                              alert('La date de début doit être avant la date de fin')
+                            }
+                          } else {
+                            alert('Veuillez sélectionner les deux dates')
+                          }
+                        }}
+                        className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium text-sm transition-all"
+                      >
+                        Appliquer
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowCustomDatePicker(false)}
+                    className="absolute top-2 right-2 text-zinc-400 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
           )}
+            
+            {/* Toggle Web/Magasin */}
+            <button
+              onClick={() => setShowWebData(!showWebData)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all border text-sm ${
+                showWebData
+                  ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/30'
+                  : 'bg-blue-500/20 border-blue-500/50 text-blue-300 hover:bg-blue-500/30'
+              }`}
+            >
+              {showWebData ? (
+                <>
+                  <Globe className="w-4 h-4" />
+                  <span>Web</span>
+                </>
+              ) : (
+                <>
+                  <Store className="w-4 h-4" />
+                  <span>Magasin</span>
+                </>
+              )}
+            </button>
+          </div>
         </header>
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-6 bg-zinc-950">
-          {!data ? (
-            <FileUploader onDataLoaded={setData} />
-          ) : (
-            <Suspense fallback={
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
-            }>
-              {activeTab === 'dashboard' && <Dashboard data={data} onNavigate={setActiveTab} showWebData={showWebData} />}
-              {activeTab === 'search' && <SearchPanel data={data} />}
-              {activeTab === 'rfm' && <RFMAnalysis data={data} showWebData={showWebData} />}
-              {activeTab === 'subFamilies' && <SubFamilyAnalysis data={data} showWebData={showWebData} />}
-              {activeTab === 'crossSelling' && <CrossSellingAnalysis data={data} />}
-              {activeTab === 'cohortes' && <CohortAnalysis data={data} />}
-              {activeTab === 'abc' && <ABCAnalysis data={data} />}
-              {activeTab === 'kingquentin' && <KingQuentin data={data} />}
-              {activeTab === 'stores' && <StorePerformance data={data} />}
-              {activeTab === 'forecast' && <ForecastAnomalies data={data} />}
-              {activeTab === 'social' && <SocialMediaInsights data={data} />}
-              {activeTab === 'exports' && <ExportData data={data} />}
-            </Suspense>
-          )}
+          <Suspense fallback={<LoadingFallback />}>
+            {activeTab === 'dashboard' && <DashboardV2 period={currentPeriod} onNavigate={setActiveTab} />}
+            {activeTab === 'search' && <SearchPanel data={null} />}
+            {activeTab === 'rfm' && <RFMAnalysis data={null} showWebData={showWebData} />}
+            {activeTab === 'subFamilies' && <SubFamilyAnalysis data={null} showWebData={showWebData} />}
+            {activeTab === 'crossSelling' && <CrossSellingAnalysis data={null} />}
+            {activeTab === 'cohortes' && <CohortAnalysis data={null} />}
+            {activeTab === 'abc' && <ABCAnalysis data={null} />}
+            {activeTab === 'kingquentin' && <KingQuentin data={null} />}
+            {activeTab === 'stores' && <StorePerformance data={null} />}
+            {activeTab === 'forecast' && <ForecastAnomalies data={null} />}
+            {activeTab === 'social' && <SocialMediaInsights data={null} />}
+            {activeTab === 'exports' && <ExportData data={null} />}
+          </Suspense>
         </main>
       </div>
     </div>

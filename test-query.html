@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test DuckDB Query</title>
+</head>
+<body>
+    <h1>Test DuckDB-WASM Query</h1>
+    <pre id="output"></pre>
+    
+    <script type="module">
+        import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.31.1/+esm';
+        
+        const output = document.getElementById('output');
+        
+        async function test() {
+            try {
+                output.textContent += '🦆 Initialisation DuckDB...\n';
+                
+                const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+                const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+                
+                const worker_url = URL.createObjectURL(
+                    new Blob([`importScripts("${bundle.mainWorker}");`], {
+                        type: 'text/javascript',
+                    })
+                );
+                
+                const worker = new Worker(worker_url);
+                const logger = new duckdb.ConsoleLogger();
+                
+                const db = new duckdb.AsyncDuckDB(logger, worker);
+                await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+                
+                const conn = await db.connect();
+                
+                output.textContent += '✅ DuckDB initialisé\n\n';
+                
+                // Charger le fichier Parquet
+                output.textContent += '📥 Chargement Parquet...\n';
+                const response = await fetch('/data/transactions.parquet');
+                const buffer = await response.arrayBuffer();
+                await db.registerFileBuffer('transactions.parquet', new Uint8Array(buffer));
+                
+                output.textContent += '✅ Parquet chargé\n\n';
+                
+                // Créer la table
+                await conn.query(`CREATE TABLE IF NOT EXISTS transactions AS SELECT * FROM read_parquet('transactions.parquet')`);
+                output.textContent += '✅ Table créée\n\n';
+                
+                // Tester différentes méthodes de lecture
+                output.textContent += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                output.textContent += 'TEST 1: Query simple COUNT\n';
+                output.textContent += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                
+                const countResult = await conn.query(`SELECT COUNT(*) as count FROM transactions WHERE date >= '2025-01-01' AND date <= '2025-12-31'`);
+                const countArray = countResult.toArray();
+                output.textContent += `Count array length: ${countArray.length}\n`;
+                output.textContent += `Count value: ${JSON.stringify(countArray[0])}\n\n`;
+                
+                output.textContent += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                output.textContent += 'TEST 2: Query avec LIMIT 10\n';
+                output.textContent += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                
+                const limitResult = await conn.query(`SELECT facture, date, ca FROM transactions WHERE date >= '2025-01-01' AND date <= '2025-12-31' LIMIT 10`);
+                const limitArray = limitResult.toArray();
+                output.textContent += `Limit array length: ${limitArray.length}\n`;
+                output.textContent += `First row: ${JSON.stringify(limitArray[0])}\n`;
+                output.textContent += `Type of first row: ${typeof limitArray[0]}\n`;
+                output.textContent += `Keys: ${Object.keys(limitArray[0]).join(', ')}\n\n`;
+                
+                output.textContent += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                output.textContent += 'TEST 3: Iteration sur batches\n';
+                output.textContent += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                
+                const result = await conn.query(`SELECT facture, date, ca FROM transactions WHERE date >= '2025-01-01' AND date <= '2025-12-31' LIMIT 20`);
+                let totalRows = 0;
+                for await (const batch of result) {
+                    output.textContent += `Batch numRows: ${batch.numRows}\n`;
+                    output.textContent += `Batch type: ${batch.constructor.name}\n`;
+                    
+                    const batchArray = batch.toArray();
+                    output.textContent += `Batch toArray() length: ${batchArray.length}\n`;
+                    if (batchArray.length > 0) {
+                        output.textContent += `First item type: ${typeof batchArray[0]}\n`;
+                        output.textContent += `First item: ${JSON.stringify(batchArray[0])}\n`;
+                    }
+                    totalRows += batchArray.length;
+                }
+                output.textContent += `Total rows from batches: ${totalRows}\n\n`;
+                
+                output.textContent += '✅ Tests terminés\n';
+                
+            } catch (error) {
+                output.textContent += `\n❌ Erreur: ${error.message}\n${error.stack}\n`;
+            }
+        }
+        
+        test();
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { TrendingUp, AlertTriangle, Activity, Zap } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { LazyLineChart as LineChart, LazyLine as Line, LazyXAxis as XAxis, LazyYAxis as YAxis, LazyCartesianGrid as CartesianGrid, LazyTooltip as Tooltip, LazyResponsiveContainer as ResponsiveContainer, ChartFallback } from '../utils/lazyRecharts'
 
 interface ForecastAnomaliesProps {
   data: any
@@ -171,48 +171,50 @@ export default function ForecastAnomalies({ data }: ForecastAnomaliesProps) {
           <TrendingUp className="w-6 h-6 text-cyan-400" />
           <h3 className="text-xl font-bold text-white">Évolution & Prévisions (3 mois)</h3>
         </div>
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={allData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-            <XAxis dataKey="month" angle={-45} textAnchor="end" height={90} fontSize={10} stroke="#71717a" />
-            <YAxis tickFormatter={formatEuro} stroke="#71717a" />
-            <Tooltip 
-              formatter={(value: any) => value ? formatEuro(value) : 'N/A'}
-              contentStyle={{
-                backgroundColor: '#18181b',
-                border: '1px solid #27272a',
-                borderRadius: '12px',
-                color: '#ffffff'
-              }}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="ca" 
-              stroke="#3b82f6" 
-              strokeWidth={3}
-              dot={{ fill: '#3b82f6', r: 4 }}
-              name="CA Réel"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="movingAvg" 
-              stroke="#10b981" 
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={false}
-              name="Moyenne Mobile (3 mois)"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="forecast" 
-              stroke="#06b6d4" 
-              strokeWidth={3}
-              strokeDasharray="8 4"
-              dot={{ fill: '#06b6d4', r: 5 }}
-              name="Prévision"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<ChartFallback />}>
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={allData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <XAxis dataKey="month" angle={-45} textAnchor="end" height={90} fontSize={10} stroke="#71717a" />
+              <YAxis tickFormatter={formatEuro} stroke="#71717a" />
+              <Tooltip 
+                formatter={(value: any) => value ? formatEuro(value) : 'N/A'}
+                contentStyle={{
+                  backgroundColor: '#18181b',
+                  border: '1px solid #27272a',
+                  borderRadius: '12px',
+                  color: '#ffffff'
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="ca" 
+                stroke="#3b82f6" 
+                strokeWidth={3}
+                dot={{ fill: '#3b82f6', r: 4 }}
+                name="CA Réel"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="movingAvg" 
+                stroke="#10b981" 
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                name="Moyenne Mobile (3 mois)"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="forecast" 
+                stroke="#06b6d4" 
+                strokeWidth={3}
+                strokeDasharray="8 4"
+                dot={{ fill: '#06b6d4', r: 5 }}
+                name="Prévision"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Suspense>
       </div>
       
       {/* Anomalies détectées */}

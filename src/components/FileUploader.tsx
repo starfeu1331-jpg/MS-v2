@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Upload, FileText, CheckCircle } from 'lucide-react'
+import { Upload, FileText, CheckCircle, Database } from 'lucide-react'
 import Papa from 'papaparse'
 
 interface FileUploaderProps {
@@ -7,21 +7,26 @@ interface FileUploaderProps {
 }
 
 export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
-  const [files, setFiles] = useState<{ fileMagasins: File[]; fileWeb: File | null; fileCatalogueWeb: File | null }>({
-    fileMagasins: [],
-    fileWeb: null,
-    fileCatalogueWeb: null,
+  const [files, setFiles] = useState<{
+    fileTransactions: File | null
+    fileClients: File | null
+    fileProduits: File | null
+    fileMagasins: File | null
+  }>({
+    fileTransactions: null,
+    fileClients: null,
+    fileProduits: null,
+    fileMagasins: null,
   })
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState('')
   const [dragOver, setDragOver] = useState<string | null>(null)
 
-  const handleFileChange = (fileType: 'fileMagasins' | 'fileWeb' | 'fileCatalogueWeb', fileList: File[] | File | null) => {
-    if (fileType === 'fileMagasins' && Array.isArray(fileList)) {
-      setFiles(prev => ({ ...prev, fileMagasins: fileList }))
-    } else if (fileType !== 'fileMagasins') {
-      setFiles(prev => ({ ...prev, [fileType]: fileList as File | null }))
-    }
+  const handleFileChange = (
+    fileType: 'fileTransactions' | 'fileClients' | 'fileProduits' | 'fileMagasins',
+    file: File | null
+  ) => {
+    setFiles((prev) => ({ ...prev, [fileType]: file }))
   }
 
   const handleDragOver = (e: React.DragEvent, fileType: string) => {
@@ -36,30 +41,157 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
     setDragOver(null)
   }
 
-  const handleDrop = (e: React.DragEvent, fileType: 'fileMagasins' | 'fileWeb' | 'fileCatalogueWeb') => {
+  const handleDrop = (
+    e: React.DragEvent,
+    fileType: 'fileTransactions' | 'fileClients' | 'fileProduits' | 'fileMagasins'
+  ) => {
     e.preventDefault()
     e.stopPropagation()
     setDragOver(null)
 
-    const droppedFiles = Array.from(e.dataTransfer.files).filter(file => file.name.endsWith('.csv'))
-    
-    if (droppedFiles.length === 0) return
+    const droppedFiles = Array.from(e.dataTransfer.files)
+    const validFile = droppedFiles.find(
+      (file) => file.name.endsWith('.csv') || file.name.endsWith('.xlsx')
+    )
 
-    if (fileType === 'fileMagasins') {
-      handleFileChange('fileMagasins', droppedFiles)
-    } else {
-      handleFileChange(fileType, droppedFiles[0])
+    if (validFile) {
+      handleFileChange(fileType, validFile)
     }
   }
 
-  const processData = (allData: any[]) => {
-    setProgress('🔄 Traitement des données...')
+  const parseExcelFile = async (file: File): Promise<any[]> => {
+    // Lazy load XLSX uniquement quand nécessaire
+    const XLSX = await import('xlsx')
     
-    // Debug: Afficher les colonnes du CSV
-    if (allData.length > 0) {
-      console.log('📋 Colonnes trouvées dans le CSV:', Object.keys(allData[0]))
-    }
-    
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+          const workbook = XLSX.read(data, { type: 'array' })
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet)
+          resolve(jsonData)
+        } catch (error) {
+          reject(error)
+        }
+      }
+      reader.onerror = reject
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
+  const parseCSVFile = (file: File, encoding: string = 'utf-8'): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        delimiter: ';',
+        encoding: encoding,
+        skipEmptyLines: true,
+        complete: (results) => resolve(results.data),
+        error: (error) => reject(error),
+      })
+    })
+  }
+
+  const processData = async (
+    transactions: any[],
+    clients: any[],
+    produits: any[],
+    magasins: any[]
+  ) => {
+    setProgress('🔄 Construction des maps de référence...')
+
+    // Maps de référence
+    const clientsMap = new Map()
+    const produitsMap = new Map()
+    const magasinsMap = new Map()
+
+    console.log('📊 Données reçues:')
+    console.log('  Transactions:', transactions.length)
+    console.log('  Clients:', clients.length)
+    console.log('  Produits:', produits.length)
+    console.log('  Magasins:', magasins.length)
+
+    // Indexer les clients FIDELES uniquement (carte != 0)
+    // Les non-fidèles n'ont pas d'infos client à joindre
+    clients.forEach((client, idx) => {
+      const clientKeys = Object.keys(client)
+      
+      // Debug première ligne
+      if (idx === 0) {
+        console.log('🔍 Clés client CSV:', clientKeys)
+        console.log('🔍 Premier client:', client)
+      }
+      
+      // Détecter les colonnes dynamiquement
+      const carteColKey = clientKeys.find(k => k.includes('Carte') && k.includes('lit')) || clientKeys[0]
+      const dateCreationKey = clientKeys.find(k => k.includes('Date') && k.includes('ation')) || clientKeys[1]
+      const sexeKey = clientKeys.find(k => k.includes('Sexe')) || clientKeys[6]
+      const dateNaissanceKey = clientKeys.find(k => k.includes('naissance')) || clientKeys[5]
+      const cpKey = clientKeys.find(k => k.includes('C.P') || k.includes('CP')) || clientKeys[11]
+      const villeKey = clientKeys.find(k => k.includes('Ville')) || clientKeys[12]
+      
+      const carteKey = String(client[carteColKey] || '').trim()
+      
+      if (idx === 0) {
+        console.log('🔍 Extraction client:', {
+          carteKey,
+          sexe: client[sexeKey],
+          cp: client[cpKey],
+          ville: client[villeKey]
+        })
+      }
+      
+      if (carteKey && carteKey !== '0' && carteKey !== '') {
+        clientsMap.set(carteKey, {
+          carte: carteKey,
+          dateCreation: client[dateCreationKey] || '',
+          sexe: client[sexeKey] || '',
+          dateNaissance: client[dateNaissanceKey] || '',
+          cp: String(client[cpKey] || '').trim(),
+          ville: client[villeKey] || '',
+        })
+      }
+    })
+
+    // Indexer les produits
+    produits.forEach((produit) => {
+      const produitId = String(produit['N° Produit'] || '').trim()
+      if (produitId) {
+        produitsMap.set(produitId, {
+          id: produitId,
+          famille: produit['Famille'] || 'Inconnu',
+          sousFamille: produit['Sous famille'] || '',
+          sousSousFamille: produit['Sous sous famille'] || '',
+          sousSousSousFamille: produit['Sous sous sous famille'] || '',
+        })
+      }
+    })
+
+    // Indexer les magasins
+    magasins.forEach((mag) => {
+      const depotId = String(mag['N° Dépôt'] || '').trim()
+      if (depotId) {
+        magasinsMap.set(depotId, {
+          code: depotId,
+          nom: mag['Intitulé dépôt'] || `M${depotId}`,
+          zone: mag['Zones magasin'] || '',
+          ville: mag['Ville'] || '',
+          cp: mag['CP'] || '',
+        })
+      }
+    })
+
+    console.log('📋 Maps créées:')
+    console.log('  Clients indexés:', clientsMap.size)
+    console.log('  Produits indexés:', produitsMap.size)
+    console.log('  Magasins indexés:', magasinsMap.size)
+    console.log('  Exemples de clés magasins:', Array.from(magasinsMap.keys()).slice(0, 5))
+    console.log('  Exemple mapping:', Array.from(magasinsMap.entries()).slice(0, 2))
+
+    setProgress('🔄 Traitement des transactions...')
+
     const processed = {
       allTickets: [] as any[],
       allClients: new Map(),
@@ -74,7 +206,7 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
       fideliteWeb: { oui: 0, non: 0, oui_ca: 0, non_ca: 0 },
       geo: { cp: {} as any, magasins: {} as any },
       webStats: { ca: 0, volume: 0, tickets: new Set(), ticketsUniques: 0 },
-      catalogueWeb: {} as any, // Nouveau: catalogue des produits dispo sur le web
+      catalogueWeb: {} as any,
       crossSell: {} as any,
       crossSellMag: {} as any,
       crossSellWeb: {} as any,
@@ -93,627 +225,610 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
       cohortes: {} as any,
       clientsFirstPurchase: new Map(),
       dateRange: { min: 'N/A', max: 'N/A' },
-      lastImportDate: ''
+      lastImportDate: '',
     }
 
-    console.log('📊 Début traitement:', allData.length, 'lignes')
-    
-    allData.forEach((row: any, index: number) => {
-      if (index % 10000 === 0) {
-        console.log(`⏳ Traitement ligne ${index}/${allData.length}`)
+    let minDate: Date | null = null
+    let maxDate: Date | null = null
+    const ticketsMap = new Map() // Pour grouper par N° Facture
+    let lignesIgnorees = 0
+
+    // Traiter les transactions
+    for (let i = 0; i < transactions.length; i++) {
+      if (i % 50000 === 0) {
+        setProgress(`🔄 Traitement: ${Math.round((i / transactions.length) * 100)}%`)
+        await new Promise((resolve) => setTimeout(resolve, 0))
+      }
+
+      const row = transactions[i]
+      
+      // Debug: afficher les clés exactes de la première ligne
+      if (i === 0) {
+        console.log('🔍 Clés disponibles dans row:', Object.keys(row))
+        console.log('🔍 Premier row complet:', row)
+        console.log('🔍 Test accès facture avec clé attendue:', row['N° Facture client'])
+        console.log('🔍 Test accès avec première clé:', row[Object.keys(row)[1]])
       }
       
-      // Détecter le format du CSV (magasin vs web)
-      // Vérifier avec et sans guillemets car Papa Parse peut les inclure
-      const isWebFormat = 'categorie' in row || 'magasin' in row || '"categorie"' in row || '"magasin"' in row
+      // Utiliser les clés EXACTES telles qu'elles sont dans le CSV
+      const rowKeys = Object.keys(row)
+      const carteKey = rowKeys.find(k => k.includes('Carte') && k.includes('lit')) || rowKeys[0]
+      const factureKey = rowKeys.find(k => k.includes('Facture')) || rowKeys[1]
+      const depotKey = rowKeys.find(k => k.includes('p�t') || k.includes('Dépôt')) || rowKeys[2]
+      const dateKey = rowKeys.find(k => k.includes('Date') && k.includes('facture')) || rowKeys[3]
+      const produitKey = rowKeys.find(k => k.includes('Produit')) || rowKeys[4]
+      const quantiteKey = rowKeys.find(k => k.includes('Quantit') || k.includes('unitaire')) || rowKeys[5]
+      const prixKey = rowKeys.find(k => k.includes('Prix') || k.includes('vente')) || rowKeys[6]
       
-      const famille = isWebFormat ? (row['categorie'] || row['"categorie"']) : row['Famille Produit']
-      const sousFamille = isWebFormat ? null : row['S/Famille Produit']
-      const magasin = isWebFormat ? (row['magasin'] || row['"magasin"'] || 'WEB') : row['Magasin']
-      const fidelite = isWebFormat ? (row['carte_fidelite'] && row['carte_fidelite'] !== '' ? 'Oui' : 'Non') : row['Client Fidélité']
-      const carte = isWebFormat ? (row['carte_fidelite'] || row['"carte_fidelite"']) : row['N° Carte de fidélité']
-      const cp = isWebFormat ? (row['cp'] || row['"cp"']) : row['C.P Fidélité']
-      const ville = isWebFormat ? (row['ville'] || row['"ville"']) : row['Ville Fidélité']
-      const caStr = isWebFormat ? (row['ca_ttc'] || row['"ca_ttc"']) : row['CA Ventes TTC Période 1']
-      const ticket = isWebFormat ? (row['numero_ticket'] || row['"numero_ticket"']) : row['N° Ticket']
-      const produit = isWebFormat ? (row['code_article'] || row['"code_article"']) : row['N° Produit']
-      const date = isWebFormat ? (row['date'] || row['"date"']) : row['Date']
+      const carteStr = String(row[carteKey] || '0').trim()
+      const factureStr = String(row[factureKey] || '').trim()
+      const depotStr = String(row[depotKey] || '').trim()
+      const dateStr = row[dateKey] || ''
+      const produitStr = String(row[produitKey] || '').trim()
+      const quantiteStr = String(row[quantiteKey] || '0').replace(',', '.')
+      const prixStr = String(row[prixKey] || '0').replace(',', '.')
       
-      if (index < 3 && isWebFormat) {
-        console.log('🌐 Ligne Web détectée:', {
-          magasin,
-          isWeb: magasin === 'WEB',
-          carte,
-          ticket,
-          date
+      // 🔍 DEBUG: Log premiers mappings
+      if (i < 3) {
+        console.log(`🔍 Transaction #${i + 1}: depotStr="${depotStr}", magasinInfo:`, magasinsMap.get(depotStr))
+      }
+      
+      if (i === 0) {
+        console.log('🔍 Extraction:', { carteStr, factureStr, depotStr, dateStr, produitStr, quantiteStr, prixStr })
+      }
+
+      if (!factureStr || !dateStr) {
+        lignesIgnorees++
+        if (lignesIgnorees <= 5) {
+          console.log('❌ Ligne ignorée:', { factureStr, dateStr, row })
+        }
+        continue
+      }
+
+      const quantite = parseFloat(quantiteStr) || 0
+      const prix = parseFloat(prixStr) || 0
+      const ca = quantite * prix
+
+      // Dates min/max
+      const date = new Date(dateStr)
+      if (!isNaN(date.getTime())) {
+        if (!minDate || date < minDate) minDate = date
+        if (!maxDate || date > maxDate) maxDate = date
+      }
+
+      // Enrichir avec infos client
+      const clientInfo = clientsMap.get(carteStr) || null
+      const estFidele = carteStr !== '0' && carteStr !== '' && clientInfo !== null
+
+      // Enrichir avec infos produit
+      const produitInfo = produitsMap.get(produitStr) || {
+        id: produitStr,
+        famille: 'Inconnu',
+        sousFamille: '',
+        sousSousFamille: '',
+        sousSousSousFamille: '',
+      }
+
+      // Enrichir avec infos magasin
+      const magasinInfo = magasinsMap.get(depotStr) || {
+        code: depotStr,
+        nom: `M${depotStr}`,
+        zone: 'Inconnu',
+        ville: 'Inconnu',
+        cp: '',
+      }
+
+      // Construire la ligne de ticket enrichie
+      const ticketLine = {
+        date: dateStr,
+        famille: produitInfo.famille,
+        ticket: factureStr,
+        produit: produitStr,
+        sousFamille: produitInfo.sousFamille,
+        sousSousFamille: produitInfo.sousSousFamille,
+        sousSousSousFamille: produitInfo.sousSousSousFamille,
+        magasin: magasinInfo.nom,
+        magasinCode: depotStr,
+        magasinZone: magasinInfo.zone,
+        fidelite: estFidele ? 'Oui' : 'Non',
+        carte: carteStr,
+        ville: clientInfo?.ville || magasinInfo.ville || '',
+        cp: clientInfo?.cp || magasinInfo.cp || '',
+        ca: ca,
+        quantite: quantite,
+        prix: prix,
+        dateNaissance: clientInfo?.dateNaissance || '',
+        sexe: clientInfo?.sexe || '',
+      }
+
+      processed.allTickets.push(ticketLine)
+
+      // Grouper par ticket (facture) pour calculer nb refs
+      if (!ticketsMap.has(factureStr)) {
+        ticketsMap.set(factureStr, {
+          carte: carteStr,
+          date: dateStr,
+          magasin: magasinInfo.nom,
+          refs: new Set(),
+          ca: 0,
+          fidelite: estFidele,
+          cp: clientInfo?.cp || '',
+          ville: clientInfo?.ville || '',
         })
       }
+      const ticket = ticketsMap.get(factureStr)
+      ticket.refs.add(produitStr)
+      ticket.ca += ca
 
-      if (!famille || !caStr || String(caStr).trim() === '') return
-
-      let caClean = String(caStr)
-        .replace(/\s+/g, '')
-        .replace(/\u00A0/g, '')
-        .replace(/\u202F/g, '')
-        .replace(',', '.')
-      const ca = parseFloat(caClean)
-
-      // Autoriser les CA négatifs (avoirs, remboursements) mais ignorer les valeurs invalides et 0
-      if (isNaN(ca) || ca === 0) return
-
-      // Web vs Physique - DOIT ÊTRE DÉFINI EN PREMIER
-      const isWeb = magasin === 'WEB'
-
-      // Tickets
-      processed.allTickets.push({
-        ticket: ticket || 'N/A',
-        date: date || 'N/A',
-        carte: carte || 'Sans carte',
-        famille,
-        sousFamille: sousFamille || '-',
-        produit: produit || '-',
-        magasin,
-        ca,
-        ville: ville || '-',
-        cp: cp || '-',
-      })
-
-      // Clients - Grouper par ticket pour éviter de compter chaque ligne comme un achat
-      if (carte && carte !== '-' && ticket) {
-        if (!processed.allClients.has(carte)) {
-          processed.allClients.set(carte, {
-            carte,
-            ville: ville || '-',
-            cp: cp || '-',
+      // Agrégations par client
+      if (estFidele && carteStr !== '0') {
+        if (!processed.allClients.has(carteStr)) {
+          processed.allClients.set(carteStr, {
+            carte: carteStr,
+            cp: clientInfo?.cp || '',
+            ville: clientInfo?.ville || '',
+            dateNaissance: clientInfo?.dateNaissance || '',
+            sexe: clientInfo?.sexe || '',
             achats: [],
-            ticketMap: new Map(), // Pour grouper par ticket
-            ca_total: 0,
-            firstPurchaseDate: date,
+            familles: new Set(),
+            sousFamilles: new Set(),
           })
         }
-        const client = processed.allClients.get(carte)
-        
-        // Grouper par ticket : un même ticket = un seul achat
-        if (!client.ticketMap.has(ticket)) {
-          client.ticketMap.set(ticket, {
-            date,
-            ticket,
-            famille,
-            sousFamille,
-            produits: [],
-            magasin,
-            ca: 0,
-            isWeb
-          })
-          client.achats.push(client.ticketMap.get(ticket))
-        }
-        
-        // Ajouter le produit et le CA au ticket existant
-        const ticketData = client.ticketMap.get(ticket)
-        ticketData.produits.push({ produit, famille, sousFamille, ca })
-        ticketData.ca += ca
-        client.ca_total += ca
-        
-        // Track first purchase date
-        if (!client.firstPurchaseDate || date < client.firstPurchaseDate) {
-          client.firstPurchaseDate = date
-        }
+        const client = processed.allClients.get(carteStr)
+        client.achats.push({
+          date: dateStr,
+          ticket: factureStr,
+          ca: ca,
+          famille: produitInfo.famille,
+          sousFamille: produitInfo.sousFamille,
+          magasin: magasinInfo.nom,
+        })
+        client.familles.add(produitInfo.famille)
+        client.sousFamilles.add(produitInfo.sousFamille)
       }
 
-      // Familles (Global + Mag/Web séparés)
-      if (!processed.familles[famille]) {
-        processed.familles[famille] = { ca: 0, volume: 0 }
+      // Stats familles (TOTAL: Web + Magasin)
+      if (!processed.familles[produitInfo.famille]) {
+        processed.familles[produitInfo.famille] = { ca: 0, volume: 0 }
       }
-      processed.familles[famille].ca += ca
-      processed.familles[famille].volume++
+      processed.familles[produitInfo.famille].ca += ca
+      processed.familles[produitInfo.famille].volume += quantite
 
-      if (isWeb) {
-        if (!processed.famillesWeb[famille]) {
-          processed.famillesWeb[famille] = { ca: 0, volume: 0 }
+      // Stats familles MAGASIN PHYSIQUE uniquement (pas WEB)
+      if (magasinInfo.nom !== 'WEB') {
+        if (!processed.famillesMag[produitInfo.famille]) {
+          processed.famillesMag[produitInfo.famille] = { ca: 0, volume: 0 }
         }
-        processed.famillesWeb[famille].ca += ca
-        processed.famillesWeb[famille].volume++
+        processed.famillesMag[produitInfo.famille].ca += ca
+        processed.famillesMag[produitInfo.famille].volume += quantite
       } else {
-        if (!processed.famillesMag[famille]) {
-          processed.famillesMag[famille] = { ca: 0, volume: 0 }
+        // Stats familles WEB uniquement
+        if (!processed.famillesWeb[produitInfo.famille]) {
+          processed.famillesWeb[produitInfo.famille] = { ca: 0, volume: 0 }
         }
-        processed.famillesMag[famille].ca += ca
-        processed.famillesMag[famille].volume++
+        processed.famillesWeb[produitInfo.famille].ca += ca
+        processed.famillesWeb[produitInfo.famille].volume += quantite
       }
 
-      // Sous-familles (Global + Mag/Web séparés)
-      if (sousFamille) {
-        const key = famille + '|||' + sousFamille
-        if (!processed.sousFamilles[key]) {
-          processed.sousFamilles[key] = { famille, sousFamille, ca: 0, volume: 0 }
+      // Sous-familles (TOTAL)
+      if (produitInfo.sousFamille) {
+        if (!processed.sousFamilles[produitInfo.sousFamille]) {
+          processed.sousFamilles[produitInfo.sousFamille] = { ca: 0, volume: 0, famille: produitInfo.famille }
         }
-        processed.sousFamilles[key].ca += ca
-        processed.sousFamilles[key].volume++
+        processed.sousFamilles[produitInfo.sousFamille].ca += ca
+        processed.sousFamilles[produitInfo.sousFamille].volume += quantite
 
-        if (isWeb) {
-          if (!processed.sousFamillesWeb[key]) {
-            processed.sousFamillesWeb[key] = { famille, sousFamille, ca: 0, volume: 0 }
+        // Sous-familles MAGASIN uniquement
+        if (magasinInfo.nom !== 'WEB') {
+          if (!processed.sousFamillesMag[produitInfo.sousFamille]) {
+            processed.sousFamillesMag[produitInfo.sousFamille] = { ca: 0, volume: 0, famille: produitInfo.famille }
           }
-          processed.sousFamillesWeb[key].ca += ca
-          processed.sousFamillesWeb[key].volume++
+          processed.sousFamillesMag[produitInfo.sousFamille].ca += ca
+          processed.sousFamillesMag[produitInfo.sousFamille].volume += quantite
         } else {
-          if (!processed.sousFamillesMag[key]) {
-            processed.sousFamillesMag[key] = { famille, sousFamille, ca: 0, volume: 0 }
+          // Sous-familles WEB uniquement
+          if (!processed.sousFamillesWeb[produitInfo.sousFamille]) {
+            processed.sousFamillesWeb[produitInfo.sousFamille] = { ca: 0, volume: 0, famille: produitInfo.famille }
           }
-          processed.sousFamillesMag[key].ca += ca
-          processed.sousFamillesMag[key].volume++
+          processed.sousFamillesWeb[produitInfo.sousFamille].ca += ca
+          processed.sousFamillesWeb[produitInfo.sousFamille].volume += quantite
         }
       }
 
-      // Fidélité (Global + Mag/Web séparés)
-      const fideliteObj = isWeb ? processed.fideliteWeb : processed.fideliteMag
-      if (fidelite === 'Oui') {
+      // Stats fidélité (TOTAL)
+      if (estFidele) {
         processed.fidelite.oui++
         processed.fidelite.oui_ca += ca
-        fideliteObj.oui++
-        fideliteObj.oui_ca += ca
+        
+        // Séparation Mag/Web
+        if (magasinInfo.nom !== 'WEB') {
+          processed.fideliteMag.oui++
+          processed.fideliteMag.oui_ca += ca
+        } else {
+          processed.fideliteWeb.oui++
+          processed.fideliteWeb.oui_ca += ca
+        }
       } else {
         processed.fidelite.non++
         processed.fidelite.non_ca += ca
-        fideliteObj.non++
-        fideliteObj.non_ca += ca
-      }
-
-      // Magasins (traquer TOUS les magasins incluant web pour le classement)
-      
-      // Ajouter à geo.magasins pour tous les magasins (incluant web)
-      if (magasin && magasin !== '-') {
-        if (!processed.geo.magasins[magasin]) {
-          processed.geo.magasins[magasin] = { ca: 0, volume: 0 }
-        }
-        processed.geo.magasins[magasin].ca += ca
-        processed.geo.magasins[magasin].volume++
-      }
-
-      // En plus, si c'est web, l'ajouter aussi aux webStats
-      if (isWeb) {
-        processed.webStats.ca += ca
-        processed.webStats.volume++
-        if (ticket) {
-          processed.webStats.tickets.add(ticket)
-        }
-      }
-
-      // Géo CP
-      if (cp && cp !== '-') {
-        if (!processed.geo.cp[cp]) {
-          processed.geo.cp[cp] = { ca: 0, volume: 0, ville: ville || '' }
-        }
-        processed.geo.cp[cp].ca += ca
-        processed.geo.cp[cp].volume++
-      }
-
-      // Villes
-      if (ville && ville !== '-') {
-        if (!processed.villes[ville]) {
-          processed.villes[ville] = { ca: 0, volume: 0 }
-        }
-        processed.villes[ville].ca += ca
-        processed.villes[ville].volume++
-      }
-
-      // Produits (Global + Mag/Web + Par mois)
-      if (produit && produit !== '-') {
-        if (!processed.produits[produit]) {
-          processed.produits[produit] = { ca: 0, volume: 0, famille, sousFamille: sousFamille || '-' }
-        }
-        processed.produits[produit].ca += ca
-        processed.produits[produit].volume++
-
-        if (isWeb) {
-          if (!processed.produitsWeb[produit]) {
-            processed.produitsWeb[produit] = { ca: 0, volume: 0, famille, sousFamille: sousFamille || '-' }
-          }
-          processed.produitsWeb[produit].ca += ca
-          processed.produitsWeb[produit].volume++
-        } else {
-          if (!processed.produitsMag[produit]) {
-            processed.produitsMag[produit] = { ca: 0, volume: 0, famille, sousFamille: sousFamille || '-' }
-          }
-          processed.produitsMag[produit].ca += ca
-          processed.produitsMag[produit].volume++
-        }
-
-        // Par mois pour recommandations réseaux sociaux
-        if (date) {
-          const month = date.substring(3, 5) + '/' + date.substring(6, 10)
-          
-          if (!processed.produitsByMonth[month]) processed.produitsByMonth[month] = {}
-          if (!processed.produitsByMonth[month][produit]) {
-            processed.produitsByMonth[month][produit] = { ca: 0, volume: 0, famille, sousFamille: sousFamille || '-' }
-          }
-          processed.produitsByMonth[month][produit].ca += ca
-          processed.produitsByMonth[month][produit].volume++
-
-          if (isWeb) {
-            if (!processed.produitsByMonthWeb[month]) processed.produitsByMonthWeb[month] = {}
-            if (!processed.produitsByMonthWeb[month][produit]) {
-              processed.produitsByMonthWeb[month][produit] = { ca: 0, volume: 0, famille, sousFamille: sousFamille || '-' }
-            }
-            processed.produitsByMonthWeb[month][produit].ca += ca
-            processed.produitsByMonthWeb[month][produit].volume++
-          } else {
-            if (!processed.produitsByMonthMag[month]) processed.produitsByMonthMag[month] = {}
-            if (!processed.produitsByMonthMag[month][produit]) {
-              processed.produitsByMonthMag[month][produit] = { ca: 0, volume: 0, famille, sousFamille: sousFamille || '-' }
-            }
-            processed.produitsByMonthMag[month][produit].ca += ca
-            processed.produitsByMonthMag[month][produit].volume++
-          }
-        }
-      }
-
-      // Saisonnalité (Global + Mag/Web séparés)
-      if (date) {
-        const month = date.substring(3, 5) + '/' + date.substring(6, 10)
         
-        if (!processed.saison[month]) processed.saison[month] = {}
-        if (!processed.saison[month][famille]) processed.saison[month][famille] = 0
-        processed.saison[month][famille] += ca
-
-        if (isWeb) {
-          if (!processed.saisonWeb[month]) processed.saisonWeb[month] = {}
-          if (!processed.saisonWeb[month][famille]) processed.saisonWeb[month][famille] = 0
-          processed.saisonWeb[month][famille] += ca
+        // Séparation Mag/Web
+        if (magasinInfo.nom !== 'WEB') {
+          processed.fideliteMag.non++
+          processed.fideliteMag.non_ca += ca
         } else {
-          if (!processed.saisonMag[month]) processed.saisonMag[month] = {}
-          if (!processed.saisonMag[month][famille]) processed.saisonMag[month][famille] = 0
-          processed.saisonMag[month][famille] += ca
+          processed.fideliteWeb.non++
+          processed.fideliteWeb.non_ca += ca
         }
       }
 
-      // Cross-selling (Global + Mag/Web séparés)
-      if (ticket) {
-        if (!processed.crossSell[ticket]) processed.crossSell[ticket] = new Set()
-        processed.crossSell[ticket].add(famille)
+      // Géo
+      const cpKey = clientInfo?.cp || magasinInfo.cp || 'Inconnu'
+      if (!processed.geo.cp[cpKey]) {
+        processed.geo.cp[cpKey] = { ca: 0, count: 0 }
+      }
+      processed.geo.cp[cpKey].ca += ca
+      processed.geo.cp[cpKey].count++
 
-        if (isWeb) {
-          if (!processed.crossSellWeb[ticket]) processed.crossSellWeb[ticket] = new Set()
-          processed.crossSellWeb[ticket].add(famille)
-        } else {
-          if (!processed.crossSellMag[ticket]) processed.crossSellMag[ticket] = new Set()
-          processed.crossSellMag[ticket].add(famille)
+      if (!processed.geo.magasins[magasinInfo.nom]) {
+        processed.geo.magasins[magasinInfo.nom] = { ca: 0, count: 0 }
+      }
+      processed.geo.magasins[magasinInfo.nom].ca += ca
+      processed.geo.magasins[magasinInfo.nom].count++
+      
+      // Villes
+      const villeKey = clientInfo?.ville || magasinInfo.ville || 'Inconnu'
+      if (!processed.villes[villeKey]) {
+        processed.villes[villeKey] = { ca: 0, count: 0 }
+      }
+      processed.villes[villeKey].ca += ca
+      processed.villes[villeKey].count++
+      
+      // Produits (TOTAL)
+      if (!processed.produits[produitStr]) {
+        processed.produits[produitStr] = { ca: 0, volume: 0, famille: produitInfo.famille, sousFamille: produitInfo.sousFamille, nom: produitInfo.nom || produitStr }
+      }
+      processed.produits[produitStr].ca += ca
+      processed.produits[produitStr].volume += quantite
+      
+      // Produits MAGASIN uniquement
+      if (magasinInfo.nom !== 'WEB') {
+        if (!processed.produitsMag[produitStr]) {
+          processed.produitsMag[produitStr] = { ca: 0, volume: 0, famille: produitInfo.famille, sousFamille: produitInfo.sousFamille, nom: produitInfo.nom || produitStr }
         }
-      }
-
-      // Cohortes clients (par mois de première visite)
-      if (carte && carte !== '-' && date) {
-        const cohortMonth = date.substring(3, 5) + '/' + date.substring(6, 10)
-        if (!processed.clientsFirstPurchase.has(carte)) {
-          processed.clientsFirstPurchase.set(carte, cohortMonth)
+        processed.produitsMag[produitStr].ca += ca
+        processed.produitsMag[produitStr].volume += quantite
+      } else {
+        // Produits WEB uniquement
+        if (!processed.produitsWeb[produitStr]) {
+          processed.produitsWeb[produitStr] = { ca: 0, volume: 0, famille: produitInfo.famille, sousFamille: produitInfo.sousFamille, nom: produitInfo.nom || produitStr }
         }
+        processed.produitsWeb[produitStr].ca += ca
+        processed.produitsWeb[produitStr].volume += quantite
+        
+        // WebStats
+        processed.webStats.ca += ca
+        processed.webStats.volume += quantite
+        processed.webStats.tickets.add(factureStr)
       }
-    })
-
-    // Calculer les cohortes
-    processed.clientsFirstPurchase.forEach((cohortMonth, carte) => {
-      if (!processed.cohortes[cohortMonth]) {
-        processed.cohortes[cohortMonth] = { clients: new Set(), ca: 0, volume: 0 }
-      }
-      processed.cohortes[cohortMonth].clients.add(carte)
-      const client = processed.allClients.get(carte)
-      if (client) {
-        processed.cohortes[cohortMonth].ca += client.ca_total
-        processed.cohortes[cohortMonth].volume += client.achats.length
-      }
-    })
-
-    // Nettoyer les ticketMap temporaires des clients
-    processed.allClients.forEach(client => {
-      delete client.ticketMap
-    })
-
-    // Calculer la plage de dates
-    const allDates = processed.allTickets
-      .map(t => t.date)
-      .filter(d => d && d !== 'N/A')
-      .map(d => {
-        const [day, month, year] = d.split('/')
-        return { original: d, date: new Date(parseInt(year), parseInt(month) - 1, parseInt(day)) }
-      })
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-    
-    processed.dateRange = {
-      min: allDates[0]?.original || 'N/A',
-      max: allDates[allDates.length - 1]?.original || 'N/A'
     }
 
-    // Date d'import
-    processed.lastImportDate = new Date().toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    setProgress('🔄 Finalisation...')
+    
+    // Finaliser webStats
+    processed.webStats.ticketsUniques = processed.webStats.tickets.size
+    
+    // Calculer locomotives (top produits par famille)
+    Object.keys(processed.produits).forEach(prodId => {
+      const prod = processed.produits[prodId]
+      const famille = prod.famille
+      if (!processed.locomotives[famille]) {
+        processed.locomotives[famille] = []
+      }
+      processed.locomotives[famille].push({ id: prodId, ...prod })
+    })
+    
+    // Trier et garder top 10 par famille
+    Object.keys(processed.locomotives).forEach(famille => {
+      processed.locomotives[famille] = processed.locomotives[famille]
+        .sort((a: any, b: any) => b.ca - a.ca)
+        .slice(0, 10)
     })
 
-    // Convertir le Set de tickets Web en nombre
-    const webTicketsCount = processed.webStats.tickets.size
-    
-    // Debug Web stats
-    console.log('🌐 Stats Web:', {
-      ca: processed.webStats.ca,
-      volume: processed.webStats.volume,
-      ticketsUniques: webTicketsCount,
-      ticketUnique: Array.from(processed.webStats.tickets)[0],
-      info: webTicketsCount === 1 ? '⚠️ Tous les produits Web ont le même N° Ticket !' : '✅ OK'
-    })
-    
-    delete (processed.webStats as any).tickets // Supprimer le Set
-    processed.webStats.ticketsUniques = webTicketsCount // Ajouter le nombre de tickets uniques
+    // Convertir clients en array avec toutes les métriques
+    const clientsArray = Array.from(processed.allClients.values()).map((client: any) => {
+      const ticketsUniques = new Set(client.achats.map((a: any) => a.ticket)).size
+      const caTotal = client.achats.reduce((sum: number, a: any) => sum + a.ca, 0)
+      const dateAchats = client.achats.map((a: any) => new Date(a.date)).filter((d: Date) => !isNaN(d.getTime()))
+      
+      const premierAchat = dateAchats.length > 0 ? new Date(Math.min(...dateAchats.map((d: Date) => d.getTime()))) : null
+      const dernierAchat = dateAchats.length > 0 ? new Date(Math.max(...dateAchats.map((d: Date) => d.getTime()))) : null
+      
+      let joursSinceLast = 9999
+      if (dernierAchat && maxDate) {
+        joursSinceLast = Math.floor((maxDate.getTime() - dernierAchat.getTime()) / (1000 * 60 * 60 * 24))
+      }
 
-    console.log('✅ Traitement terminé:', {
-      tickets: processed.allTickets.length,
-      clients: processed.allClients.size,
-      familles: Object.keys(processed.familles).length,
-      dateRange: processed.dateRange,
-      lastImportDate: processed.lastImportDate,
-      webStats: { ca: processed.webStats.ca, ticketsUniques: webTicketsCount }
-    })
-    
-    console.log('🏪 MAGASINS DANS processed.geo.magasins:', {
-      count: Object.keys(processed.geo.magasins).length,
-      magasins: Object.entries(processed.geo.magasins).map(([mag, stats]: [string, any]) => ({
-        nom: mag,
-        ca: stats.ca,
-        volume: stats.volume
-      })).slice(0, 5)
+      return {
+        ...client,
+        familles: Array.from(client.familles),
+        sousFamilles: Array.from(client.sousFamilles),
+        nbTickets: ticketsUniques,
+        caTotal: caTotal,
+        premierAchat: premierAchat ? premierAchat.toISOString().split('T')[0] : '',
+        dernierAchat: dernierAchat ? dernierAchat.toISOString().split('T')[0] : '',
+        joursSinceLast: joursSinceLast,
+      }
     })
 
-    setProgress('✅ Terminé!')
-    
-    // Si on a un catalogue web, on le parse maintenant
-    if ((window as any).catalogueWebData) {
-      processed.catalogueWeb = (window as any).catalogueWebData
-      console.log('📦 Catalogue web chargé:', Object.keys(processed.catalogueWeb).length, 'produits')
+    processed.allClients = new Map(clientsArray.map((c) => [c.carte, c]))
+
+    // Date range
+    if (minDate && maxDate) {
+      processed.dateRange = {
+        min: minDate.toISOString().split('T')[0],
+        max: maxDate.toISOString().split('T')[0],
+      }
     }
-    
-    setTimeout(() => onDataLoaded(processed), 300)
+
+    processed.lastImportDate = new Date().toISOString()
+
+    console.log('✅ Traitement terminé:')
+    console.log('  Lignes tickets:', processed.allTickets.length)
+    console.log('  Lignes ignorées:', lignesIgnorees)
+    console.log('  Clients fidèles:', processed.allClients.size)
+    console.log('  Familles:', Object.keys(processed.familles).length)
+    console.log('  Sous-familles:', Object.keys(processed.sousFamilles).length)
+    console.log('  Produits uniques:', Object.keys(processed.produits).length)
+    console.log('  Magasins:', Object.keys(processed.geo.magasins).length)
+    console.log('  Villes:', Object.keys(processed.villes).length)
+    console.log('  Date range:', processed.dateRange)
+    console.log('  CA total:', Object.values(processed.familles).reduce((sum: number, f: any) => sum + f.ca, 0).toFixed(2), '€')
+
+    return processed
   }
 
   const loadFiles = async () => {
-    if (files.fileMagasins.length === 0) {
-      alert('Veuillez sélectionner au moins un fichier magasin')
+    if (!files.fileTransactions || !files.fileClients || !files.fileProduits || !files.fileMagasins) {
+      alert('⚠️ Veuillez charger les 4 fichiers requis')
       return
     }
 
     setLoading(true)
-    
-    // Charger d'abord le catalogue web si présent
-    if (files.fileCatalogueWeb) {
-      setProgress('📦 Lecture du catalogue web...')
-      Papa.parse(files.fileCatalogueWeb, {
-        header: true,
-        delimiter: ',',
-        skipEmptyLines: true,
-        complete: (resultsCatalogue) => {
-          const catalogueWeb: any = {}
-          resultsCatalogue.data.forEach((row: any) => {
-            const code = row['code_article'] || row['"code_article"']
-            if (code) {
-              catalogueWeb[code] = {
-                nom: row['nom_article'] || row['"nom_article"'] || code,
-                categorie: row['categorie'] || row['"categorie"'] || '-',
-                prix: parseFloat(row['prix_ht'] || row['"prix_ht"'] || '0'),
-                stock: parseInt(row['stock'] || row['"stock"'] || '0')
-              }
-            }
-          })
-          ;(window as any).catalogueWebData = catalogueWeb
-          console.log('📦 Catalogue web parsé:', Object.keys(catalogueWeb).length, 'produits')
-          setProgress(`✅ Catalogue: ${Object.keys(catalogueWeb).length} produits`)
-          continueLoading()
-        }
-      })
-    } else {
-      continueLoading()
-    }
-  }
-  
-  const continueLoading = async () => {
-    let allData: any[] = []
+    setProgress('📂 Chargement des fichiers...')
 
-    // Charger tous les fichiers magasins
-    for (let i = 0; i < files.fileMagasins.length; i++) {
-      const file = files.fileMagasins[i]
-      setProgress(`📂 Lecture fichier magasin ${i + 1}/${files.fileMagasins.length}...`)
+    try {
+      setProgress('📄 Lecture des transactions...')
+      const transactions = await parseCSVFile(files.fileTransactions, 'utf-8')
+
+      setProgress('📄 Lecture des clients...')
+      const clients = await parseCSVFile(files.fileClients, 'utf-8')
+
+      setProgress('📄 Lecture des produits...')
+      const produits = await parseExcelFile(files.fileProduits)
+
+      setProgress('📄 Lecture des magasins...')
+      const magasins = await parseExcelFile(files.fileMagasins)
+
+      const processedData = await processData(transactions, clients, produits, magasins)
+      onDataLoaded(processedData)
+      setProgress('✅ Données chargées avec succès!')
+    } catch (error) {
+      console.error('❌ Erreur:', error)
       
-      await new Promise<void>((resolve) => {
-        Papa.parse(file, {
-          header: true,
-          delimiter: ';',
-          skipEmptyLines: true,
-          complete: (results) => {
-            allData = allData.concat(results.data)
-            setProgress(`✅ Fichier ${i + 1}: ${results.data.length.toLocaleString()} lignes`)
-            resolve()
-          },
-        })
-      })
+      let errorMessage = 'Erreur lors du chargement'
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotReadableError' || error.message.includes('could not be read')) {
+          errorMessage = '❌ Impossible de lire un ou plusieurs fichiers.\n\n' +
+            '📌 Causes possibles :\n' +
+            '• Un fichier est ouvert dans Excel ou une autre application\n' +
+            '• Les permissions ont changé\n' +
+            '• Le fichier a été déplacé ou supprimé\n\n' +
+            '✅ Solution : Fermez tous les fichiers Excel et réessayez'
+        } else {
+          errorMessage = `❌ Erreur: ${error.message}`
+        }
+      }
+      
+      setProgress(errorMessage)
+      alert(errorMessage)
+    } finally {
+      setTimeout(() => setLoading(false), 500)
     }
-
-    setProgress(`✅ Magasins: ${allData.length.toLocaleString()} lignes au total`)
-
-    // Charger le fichier Web si présent
-    if (files.fileWeb) {
-      setProgress('🌐 Lecture du fichier Web...')
-      await new Promise<void>((resolve) => {
-        Papa.parse(files.fileWeb!, {
-          header: true,
-          delimiter: ',',
-          skipEmptyLines: true,
-          complete: (results) => {
-            console.log('🌐 CSV Web parsé - Première ligne:', results.data[0])
-            console.log('🌐 Colonnes détectées:', Object.keys(results.data[0] || {}))
-            allData = allData.concat(results.data)
-            setProgress(`✅ Total: ${allData.length.toLocaleString()} lignes`)
-            resolve()
-          },
-        })
-      })
-    }
-
-    processData(allData)
-    setLoading(false)
   }
+
+  const allFilesLoaded =
+    files.fileTransactions && files.fileClients && files.fileProduits && files.fileMagasins
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="glass rounded-3xl p-10 border border-zinc-800 shadow-2xl">
-        <div className="text-center mb-10">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+      <div className="max-w-6xl w-full">
+        <div className="text-center mb-12">
           <div className="inline-flex p-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl mb-6 shadow-lg">
-            <Upload className="w-10 h-10 text-white" />
+            <Database className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-4xl font-semibold text-white mb-3">
-            Importez vos données
-          </h2>
+          <h2 className="text-4xl font-semibold text-white mb-3">Importez vos données V2</h2>
           <p className="text-zinc-400 text-base max-w-2xl mx-auto">
-            Chargez un ou deux fichiers CSV pour générer votre tableau de bord analytique.
+            Nouvelle structure de données avec jointures automatiques
             <br />
             <span className="text-sm text-zinc-500 mt-2 inline-block">
-              Format accepté : CSV avec séparateur point-virgule (;)
+              4 fichiers requis: Transactions (CSV), Clients (CSV), Produits (Excel), Magasins (Excel)
             </span>
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {/* Fichiers Magasins (sélection multiple) */}
-          <div className="group">
-            <label className="block text-sm font-semibold text-zinc-300 mb-3">
-              Fichiers Magasins (1 ou 2)
-            </label>
-            <div
-              onClick={() => document.getElementById('fileMagasins')?.click()}
-              onDragOver={(e) => handleDragOver(e, 'fileMagasins')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, 'fileMagasins')}
-              className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer ${
-                dragOver === 'fileMagasins' 
-                  ? 'border-blue-500 bg-blue-500/10 scale-105' 
-                  : 'border-zinc-700 hover:border-blue-500 hover:bg-zinc-800/50'
-              }`}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          {/* Fichier Transactions */}
+          <div
+            className={`glass rounded-3xl p-6 border transition-all duration-300 group ${
+              dragOver === 'fileTransactions'
+                ? 'border-blue-500 bg-blue-500/10 scale-105'
+                : 'border-zinc-800 hover:border-blue-500/50'
+            }`}
+            onDragOver={(e) => handleDragOver(e, 'fileTransactions')}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, 'fileTransactions')}
+          >
+            <label
+              htmlFor="fileTransactions"
+              className="cursor-pointer flex flex-col items-center justify-center space-y-4"
             >
-              {files.fileMagasins.length > 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                  <span className="font-medium text-white break-all px-2">
-                    {files.fileMagasins.length} fichier{files.fileMagasins.length > 1 ? 's' : ''}
-                  </span>
-                  <div className="text-xs text-zinc-500 max-w-full overflow-hidden">
-                    {files.fileMagasins.map((f, i) => (
-                      <div key={i} className="truncate">{f.name}</div>
-                    ))}
-                  </div>
+              <div className="relative">
+                <div className="p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-2xl group-hover:from-blue-500/20 group-hover:to-cyan-500/20 transition-all duration-300">
+                  {files.fileTransactions ? (
+                    <CheckCircle className="w-12 h-12 text-blue-500" />
+                  ) : (
+                    <FileText className="w-12 h-12 text-blue-500" />
+                  )}
                 </div>
-              ) : (
-                <div className="text-zinc-500 group-hover:text-blue-400 transition-colors">
-                  <FileText className="w-12 h-12 mx-auto mb-3" />
-                  <p className="text-sm font-medium">Sélectionnez 1 ou 2 fichiers</p>
-                  <p className="text-xs text-zinc-600 mt-2">En même temps</p>
-                </div>
-              )}
-            </div>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-white">
+                  {files.fileTransactions ? files.fileTransactions.name : 'Transactions'}
+                </p>
+                <p className="text-sm text-zinc-400 mt-1">
+                  {files.fileTransactions ? 'Fichier chargé' : 'détail transactions.csv'}
+                </p>
+              </div>
+            </label>
             <input
-              id="fileMagasins"
+              id="fileTransactions"
               type="file"
               accept=".csv"
-              multiple
               className="hidden"
-              onChange={(e) => handleFileChange('fileMagasins', Array.from(e.target.files || []))}
+              onChange={(e) => handleFileChange('fileTransactions', e.target.files?.[0] || null)}
             />
           </div>
 
-          {/* Fichier WEB (optionnel) */}
-          <div 
+          {/* Fichier Clients */}
+          <div
             className={`glass rounded-3xl p-6 border transition-all duration-300 group ${
-              dragOver === 'fileWeb'
-                ? 'border-cyan-500 bg-cyan-500/10 scale-105'
-                : 'border-zinc-800 hover:border-cyan-500/50'
+              dragOver === 'fileClients'
+                ? 'border-green-500 bg-green-500/10 scale-105'
+                : 'border-zinc-800 hover:border-green-500/50'
             }`}
-            onDragOver={(e) => handleDragOver(e, 'fileWeb')}
+            onDragOver={(e) => handleDragOver(e, 'fileClients')}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, 'fileWeb')}
+            onDrop={(e) => handleDrop(e, 'fileClients')}
           >
             <label
-              htmlFor="fileWeb"
+              htmlFor="fileClients"
               className="cursor-pointer flex flex-col items-center justify-center space-y-4"
             >
               <div className="relative">
-                <div className="p-6 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-2xl group-hover:from-cyan-500/20 group-hover:to-blue-500/20 transition-all duration-300">
-                  {files.fileWeb ? (
-                    <CheckCircle className="w-12 h-12 text-cyan-500" />
+                <div className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl group-hover:from-green-500/20 group-hover:to-emerald-500/20 transition-all duration-300">
+                  {files.fileClients ? (
+                    <CheckCircle className="w-12 h-12 text-green-500" />
                   ) : (
-                    <FileText className="w-12 h-12 text-cyan-500" />
+                    <FileText className="w-12 h-12 text-green-500" />
                   )}
                 </div>
               </div>
               <div className="text-center">
                 <p className="text-lg font-semibold text-white">
-                  {files.fileWeb ? files.fileWeb.name : 'CSV Web (optionnel)'}
+                  {files.fileClients ? files.fileClients.name : 'Clients'}
                 </p>
                 <p className="text-sm text-zinc-400 mt-1">
-                  {files.fileWeb ? 'Fichier chargé' : 'Données e-commerce'}
+                  {files.fileClients ? 'Fichier chargé' : 'client.csv'}
                 </p>
               </div>
             </label>
             <input
-              id="fileWeb"
+              id="fileClients"
               type="file"
               accept=".csv"
               className="hidden"
-              onChange={(e) => handleFileChange('fileWeb', e.target.files?.[0] || null)}
+              onChange={(e) => handleFileChange('fileClients', e.target.files?.[0] || null)}
             />
           </div>
-          
-          {/* Fichier Catalogue Web (optionnel) */}
-          <div 
+
+          {/* Fichier Produits */}
+          <div
             className={`glass rounded-3xl p-6 border transition-all duration-300 group ${
-              dragOver === 'fileCatalogueWeb'
-                ? 'border-yellow-500 bg-yellow-500/10 scale-105'
-                : 'border-zinc-800 hover:border-yellow-500/50'
+              dragOver === 'fileProduits'
+                ? 'border-purple-500 bg-purple-500/10 scale-105'
+                : 'border-zinc-800 hover:border-purple-500/50'
             }`}
-            onDragOver={(e) => handleDragOver(e, 'fileCatalogueWeb')}
+            onDragOver={(e) => handleDragOver(e, 'fileProduits')}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, 'fileCatalogueWeb')}
+            onDrop={(e) => handleDrop(e, 'fileProduits')}
           >
             <label
-              htmlFor="fileCatalogueWeb"
+              htmlFor="fileProduits"
               className="cursor-pointer flex flex-col items-center justify-center space-y-4"
             >
               <div className="relative">
-                <div className="p-6 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-2xl group-hover:from-yellow-500/20 group-hover:to-orange-500/20 transition-all duration-300">
-                  {files.fileCatalogueWeb ? (
-                    <CheckCircle className="w-12 h-12 text-yellow-500" />
+                <div className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl group-hover:from-purple-500/20 group-hover:to-pink-500/20 transition-all duration-300">
+                  {files.fileProduits ? (
+                    <CheckCircle className="w-12 h-12 text-purple-500" />
                   ) : (
-                    <FileText className="w-12 h-12 text-yellow-500" />
+                    <FileText className="w-12 h-12 text-purple-500" />
                   )}
                 </div>
               </div>
               <div className="text-center">
                 <p className="text-lg font-semibold text-white">
-                  {files.fileCatalogueWeb ? files.fileCatalogueWeb.name : 'Catalogue Web (optionnel)'}
+                  {files.fileProduits ? files.fileProduits.name : 'Produits'}
                 </p>
                 <p className="text-sm text-zinc-400 mt-1">
-                  {files.fileCatalogueWeb ? 'Fichier chargé' : 'Pour King Quentin 👑'}
+                  {files.fileProduits ? 'Fichier chargé' : 'Produits.xlsx'}
                 </p>
               </div>
             </label>
             <input
-              id="fileCatalogueWeb"
+              id="fileProduits"
               type="file"
-              accept=".csv"
+              accept=".xlsx,.xls"
               className="hidden"
-              onChange={(e) => handleFileChange('fileCatalogueWeb', e.target.files?.[0] || null)}
+              onChange={(e) => handleFileChange('fileProduits', e.target.files?.[0] || null)}
+            />
+          </div>
+
+          {/* Fichier Magasins */}
+          <div
+            className={`glass rounded-3xl p-6 border transition-all duration-300 group ${
+              dragOver === 'fileMagasins'
+                ? 'border-orange-500 bg-orange-500/10 scale-105'
+                : 'border-zinc-800 hover:border-orange-500/50'
+            }`}
+            onDragOver={(e) => handleDragOver(e, 'fileMagasins')}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, 'fileMagasins')}
+          >
+            <label
+              htmlFor="fileMagasins"
+              className="cursor-pointer flex flex-col items-center justify-center space-y-4"
+            >
+              <div className="relative">
+                <div className="p-6 bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-2xl group-hover:from-orange-500/20 group-hover:to-red-500/20 transition-all duration-300">
+                  {files.fileMagasins ? (
+                    <CheckCircle className="w-12 h-12 text-orange-500" />
+                  ) : (
+                    <FileText className="w-12 h-12 text-orange-500" />
+                  )}
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-white">
+                  {files.fileMagasins ? files.fileMagasins.name : 'Points de vente'}
+                </p>
+                <p className="text-sm text-zinc-400 mt-1">
+                  {files.fileMagasins ? 'Fichier chargé' : 'Points de vente.xlsx'}
+                </p>
+              </div>
+            </label>
+            <input
+              id="fileMagasins"
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => handleFileChange('fileMagasins', e.target.files?.[0] || null)}
             />
           </div>
         </div>
 
-        {files.fileMagasins.length > 0 && (
+        {allFilesLoaded && (
           <div className="space-y-4">
             <button
               onClick={loadFiles}
@@ -727,13 +842,11 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
                     {progress}
                   </>
                 ) : (
-                  <>
-                    Analyser les données
-                  </>
+                  <>Analyser les données V2</>
                 )}
               </span>
             </button>
-            
+
             {loading && (
               <div className="glass rounded-xl p-4 border border-zinc-800">
                 <div className="flex items-center gap-3">
@@ -744,7 +857,9 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-white">Traitement en cours...</p>
-                    <p className="text-xs text-zinc-500 mt-1">Analyse et génération des statistiques</p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Jointure et agrégation des données
+                    </p>
                   </div>
                 </div>
               </div>
