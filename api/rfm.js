@@ -1,8 +1,11 @@
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient({
+  log: ['error', 'warn']
+})
 
 // Sérialisation JSON pour BigInt
-function serializeJSON(obj) {
+const serializeJSON = (obj) => {
   return JSON.parse(
     JSON.stringify(obj, (key, value) =>
       typeof value === 'bigint' ? Number(value) : value
@@ -10,14 +13,7 @@ function serializeJSON(obj) {
   )
 }
 
-// Parse date from ISO format (YYYY-MM-DD) returned by PostgreSQL
-const parseDate = (dateStr) => {
-  if (!dateStr) return null
-  const date = new Date(dateStr)
-  return isNaN(date.getTime()) ? null : date
-}
-
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true')
   res.setHeader('Access-Control-Allow-Origin', '*')
