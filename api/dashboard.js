@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient({
   log: ['error', 'warn']
@@ -127,7 +127,7 @@ export default async function handler(req, res) {
     const startDate = `${year}-01-01`
     const endDate = `${year}-12-31`
     
-    const kpis = await prisma.$queryRaw`
+    const kpis = await prisma.$queryRaw(Prisma.sql`
       SELECT 
         COUNT(DISTINCT carte)::int as "totalClients",
         COUNT(*)::int as "totalTransactions",
@@ -135,9 +135,9 @@ export default async function handler(req, res) {
         AVG(ca)::float as "panierMoyen"
       FROM transactions
       WHERE date >= ${startDate}::timestamp AND date <= ${endDate}::timestamp
-    `
+    `)
     
-    const topProduits = await prisma.$queryRaw`
+    const topProduits = await prisma.$queryRaw(Prisma.sql`
       SELECT 
         p.id as code,
         p.nom,
@@ -151,9 +151,9 @@ export default async function handler(req, res) {
       GROUP BY p.id, p.nom, p.famille, p.sous_famille
       ORDER BY ca DESC
       LIMIT 10
-    `
+    `)
     
-    const topMagasins = await prisma.$queryRaw`
+    const topMagasins = await prisma.$queryRaw(Prisma.sql`
       SELECT 
         m.code,
         m.nom,
@@ -168,9 +168,9 @@ export default async function handler(req, res) {
       GROUP BY m.code, m.nom, m.zone
       ORDER BY ca DESC
       LIMIT 5
-    `
+    `)
     
-    const topClients = await prisma.$queryRaw`
+    const topClients = await prisma.$queryRaw(Prisma.sql`
       SELECT 
         c.carte,
         c.ville,
@@ -182,9 +182,9 @@ export default async function handler(req, res) {
       GROUP BY c.carte, c.ville
       ORDER BY ca DESC
       LIMIT 10
-    `
+    `)
     
-    const evolutionMensuelle = await prisma.$queryRaw`
+    const evolutionMensuelle = await prisma.$queryRaw(Prisma.sql`
       SELECT 
         TO_CHAR(date, 'YYYY-MM') as mois,
         SUM(ca)::float as ca,
@@ -193,7 +193,7 @@ export default async function handler(req, res) {
       WHERE date >= ${startDate}::timestamp AND date <= ${endDate}::timestamp
       GROUP BY TO_CHAR(date, 'YYYY-MM')
       ORDER BY mois
-    `
+    `)
     
     res.status(200).json({
       year: parseInt(year),
