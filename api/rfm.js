@@ -75,7 +75,7 @@ export default async function handler(req, res) {
             NTILE(5) OVER (ORDER BY monetary DESC)::int as m
           FROM client_metrics
         )
-        SELECT * FROM rfm_scores ORDER BY carte LIMIT 50000
+        SELECT * FROM rfm_scores ORDER BY carte
       `)
     } else if (showMagasinOnly) {
       clientsData = await prisma.$queryRawUnsafe(`
@@ -110,7 +110,7 @@ export default async function handler(req, res) {
             NTILE(5) OVER (ORDER BY monetary DESC)::int as m
           FROM client_metrics
         )
-        SELECT * FROM rfm_scores ORDER BY carte LIMIT 50000
+        SELECT * FROM rfm_scores ORDER BY carte
       `)
     } else {
       clientsData = await prisma.$queryRawUnsafe(`
@@ -144,7 +144,7 @@ export default async function handler(req, res) {
             NTILE(5) OVER (ORDER BY monetary DESC)::int as m
           FROM client_metrics
         )
-        SELECT * FROM rfm_scores ORDER BY carte LIMIT 50000
+        SELECT * FROM rfm_scores ORDER BY carte
       `)
     }
 
