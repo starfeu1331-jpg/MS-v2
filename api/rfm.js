@@ -53,22 +53,56 @@ module.exports = async (req, res) => {
     console.log('📊 Chargement des clients et transactions...')
     
     // Requête optimisée : on charge tout d'un coup avec les transactions groupées
-    const clientsData = await prisma.$queryRaw`
-      SELECT 
-        c.carte,
-        c.ville,
-        COUNT(t.id)::int as nb_transactions,
-        SUM(t.ca)::float as ca_total,
-        MAX(t.date) as last_purchase_date,
-        MIN(t.date) as first_purchase_date
-      FROM clients c
-      INNER JOIN transactions t ON c.carte = t.carte
-      ${showWebOnly ? prisma.$queryRaw`WHERE t.depot = 'WEB'` : prisma.$queryRaw``}
-      ${showMagasinOnly ? prisma.$queryRaw`WHERE t.depot != 'WEB'` : prisma.$queryRaw``}
-      GROUP BY c.carte, c.ville
-      HAVING SUM(t.ca) > 0
-      ORDER BY c.carte
-    `
+    let clientsData
+    
+    if (showWebOnly) {
+      clientsData = await prisma.$queryRaw`
+        SELECT 
+          c.carte,
+          c.ville,
+          COUNT(t.id)::int as nb_transactions,
+          SUM(t.ca)::float as ca_total,
+          MAX(t.date) as last_purchase_date,
+          MIN(t.date) as first_purchase_date
+        FROM clients c
+        INNER JOIN transactions t ON c.carte = t.carte
+        WHERE t.depot = 'WEB'
+        GROUP BY c.carte, c.ville
+        HAVING SUM(t.ca) > 0
+        ORDER BY c.carte
+      `
+    } else if (showMagasinOnly) {
+      clientsData = await prisma.$queryRaw`
+        SELECT 
+          c.carte,
+          c.ville,
+          COUNT(t.id)::int as nb_transactions,
+          SUM(t.ca)::float as ca_total,
+          MAX(t.date) as last_purchase_date,
+          MIN(t.date) as first_purchase_date
+        FROM clients c
+        INNER JOIN transactions t ON c.carte = t.carte
+        WHERE t.depot != 'WEB'
+        GROUP BY c.carte, c.ville
+        HAVING SUM(t.ca) > 0
+        ORDER BY c.carte
+      `
+    } else {
+      clientsData = await prisma.$queryRaw`
+        SELECT 
+          c.carte,
+          c.ville,
+          COUNT(t.id)::int as nb_transactions,
+          SUM(t.ca)::float as ca_total,
+          MAX(t.date) as last_purchase_date,
+          MIN(t.date) as first_purchase_date
+        FROM clients c
+        INNER JOIN transactions t ON c.carte = t.carte
+        GROUP BY c.carte, c.ville
+        HAVING SUM(t.ca) > 0
+        ORDER BY c.carte
+      `
+    }
 
     const clientsArray = serializeJSON(clientsData)
     console.log(`✅ ${clientsArray.length} clients chargés`)
