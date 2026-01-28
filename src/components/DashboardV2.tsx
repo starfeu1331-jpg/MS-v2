@@ -33,6 +33,10 @@ interface DashboardData {
   segmentsWeb: any[]
 }
 
+// Cache global pour le Dashboard
+const dashboardCache: Record<string, { data: DashboardData; timestamp: number }> = {}
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
 function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: DashboardV2Props) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -40,77 +44,75 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
   const [showWeb, setShowWeb] = useState(false)
 
   useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        // Clé de cache basée sur la période
+        const cacheKey = `dashboard_${period.type}_${period.value}`
+        
+        console.log('🔍 Dashboard: Vérification cache', cacheKey, 'Contenu:', Object.keys(dashboardCache))
+        
+        // Vérifier le cache
+        const cached = dashboardCache[cacheKey]
+        if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+          console.log('✅ Dashboard: Utilisation du cache', cacheKey)
+          setData(cached.data)
+          setLoading(false)
+          return
+        }
+        
+        setLoading(true)
+        setError(null)
+
+        console.log(`🔄 Dashboard: Chargement depuis API`, period)
+
+        // Construction de l'URL selon le type de période
+        let url = '/api/dashboard?year='
+        if (period.type === 'year') {
+          url = `/api/dashboard?year=${period.value}`
+        } else if (period.type === 'all') {
+          url = '/api/dashboard?year=all'
+        } else {
+          // Pour l'instant on utilise 2025 par défaut pour les autres périodes
+          url = '/api/dashboard?year=2025'
+        }
+
+        // Appel API avec données pré-agrégées
+        const response = await fetch(url)
+        if (!response.ok) throw new Error('Erreur API')
+
+        const apiData = await response.json()
+        console.log(`✅ API: Dashboard période reçu`, apiData)
+
+        // Les données sont déjà agrégées côté serveur
+        const processed: DashboardData = {
+          ...apiData.kpis,
+          topProduits: apiData.topProduits,
+          topMagasins: apiData.topMagasins,
+          topClients: apiData.topClients,
+          evolutionMensuelle: apiData.evolutionMensuelle,
+          segmentsMagasin: [],
+          segmentsWeb: []
+        }
+        
+        // Mettre en cache
+        dashboardCache[cacheKey] = {
+          data: processed,
+          timestamp: Date.now()
+        }
+
+        setData(processed)
+        setLoading(false)
+
+        console.log('✅ Dashboard chargé:', processed)
+      } catch (err: any) {
+        console.error('❌ Erreur Dashboard:', err)
+        setError(err.message)
+        setLoading(false)
+      }
+    }
+    
     loadDashboardData()
-  }, [period])
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      console.log(`📊 Chargement Dashboard période:`, period)
-
-      // Construction de l'URL selon le type de période
-      let url = '/api/dashboard?year='
-      if (period.type === 'year') {
-        url = `/api/dashboard?year=${period.value}`
-      } else if (period.type === 'all') {
-        url = '/api/dashboard?year=all'
-      } else {
-        // Pour l'instant on utilise 2025 par défaut pour les autres périodes
-        url = '/api/dashboard?year=2025'
-      }
-
-      // Appel API avec données pré-agrégées
-      const response = await fetch(url)
-      if (!response.ok) throw new Error('Erreur API')
-
-      const apiData = await response.json()
-      console.log(`✅ API: Dashboard période reçu`, apiData)
-
-      // Les données sont déjà agrégées côté serveur
-      const processed: DashboardData = {
-        ...apiData.kpis,
-        topProduits: apiData.topProduits,
-        topMagasins: apiData.topMagasins,
-        topClients: apiData.topClients,
-        evolutionMensuelle: apiData.evolutionMensuelle,
-        segmentsMagasin: [],
-        segmentsWeb: []
-      }
-
-      setData(processed)
-      setLoading(false)
-
-      console.log('✅ Dashboard chargé:', processed)
-    } catch (err: any) {
-      console.error('❌ Erreur Dashboard:', err)
-      setError(err.message)
-      setLoading(false)
-    }
-  }
-
-  const processTransactions = (transactions: any[]): DashboardData => {
-    // Cette fonction n'est plus utilisée - données pré-agrégées par l'API
-    return {
-      totalCA: 0,
-      totalCAMagasin: 0,
-      totalCAWeb: 0,
-      totalTransactions: 0,
-      totalTransactionsMag: 0,
-      totalTransactionsWeb: 0,
-      totalClients: 0,
-      panierMoyen: 0,
-      panierMoyenMag: 0,
-      panierMoyenWeb: 0,
-      topProduits: [],
-      topMagasins: [],
-      topClients: [],
-      evolutionMensuelle: [],
-      segmentsMagasin: [],
-      segmentsWeb: []
-    }
-  }
+  }, [period.type, period.value])
 
   const formatEuro = (val: number) => {
     if (!val || isNaN(val)) return '0€'
@@ -145,7 +147,11 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
           <h2 className="text-2xl font-bold text-white mb-2">Erreur</h2>
           <p className="text-zinc-400">{error || 'Données non disponibles'}</p>
           <button
-            onClick={loadDashboardData}
+            onClick={() => {
+              const cacheKey = `dashboard_${period.type}_${period.value}`
+              delete dashboardCache[cacheKey]
+              window.location.reload()
+            }}
             className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-white"
           >
             Réessayer
@@ -173,8 +179,19 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
               <p className="text-zinc-400">Vue d'ensemble des performances</p>
             </div>
           </div>
+          <button
+            onClick={() => {
+              const cacheKey = `dashboard_${period.type}_${period.value}`
+              delete dashboardCache[cacheKey]
+              window.location.reload()
+            }}
+            className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 rounded-xl text-blue-400 text-sm font-medium transition-all"
+          >
+            🔄 Rafraîchir
+          </button>
+        </div>
 
-          {/* Toggle Magasin/Web */}
+        {/* Toggle Magasin/Web */}
           <div className="flex gap-2 bg-zinc-900 rounded-xl p-1">
             <button
               onClick={() => setShowWeb(false)}

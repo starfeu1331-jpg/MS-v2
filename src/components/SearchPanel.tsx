@@ -40,6 +40,10 @@ interface ClientResult {
   nbAchats: number
 }
 
+// Cache pour les recherches
+const searchCache: Record<string, { data: any; timestamp: number }> = {}
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
 export default function SearchPanel({ initialSearch }: SearchPanelProps) {
   const [mode, setMode] = useState<'ticket' | 'client' | 'produit'>('client')
   const [searchTerm, setSearchTerm] = useState(initialSearch || '')
@@ -64,6 +68,26 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
   const handleSearch = async () => {
     if (!searchTerm.trim()) return
 
+    const cacheKey = `${mode}_${searchTerm.trim()}`
+    
+    // Vérifier le cache
+    const cached = searchCache[cacheKey]
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      console.log('✅ Recherche: Utilisation du cache', cacheKey)
+      
+      if (mode === 'ticket') {
+        setTicketResults(cached.data.transactions)
+        setTicketInfo(cached.data.info)
+      } else if (mode === 'client') {
+        setClientResult(cached.data)
+      } else if (mode === 'produit') {
+        setProduitResult(cached.data)
+      }
+      
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(null)
     setTicketResults([])
@@ -79,6 +103,15 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         const data = await response.json()
         setTicketResults(data.transactions || [])
         setTicketInfo({ facture: data.facture, client: data.client, magasin: data.magasin })
+        
+        // Mettre en cache
+        searchCache[cacheKey] = {
+          data: {
+            transactions: data.transactions,
+            ticketInfo: { facture: data.facture, client: data.client, magasin: data.magasin }
+          },
+          timestamp: Date.now()
+        }
         
         if (!data.transactions || data.transactions.length === 0) {
           setError('Aucun ticket trouvé avec ce numéro')
@@ -97,14 +130,22 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         const totalCA = data.transactions.reduce((sum: number, t: any) => sum + Number(t.ca || 0), 0)
         const nbAchats = data.transactions.length
 
-        setClientResult({
+        const clientData = {
           carte: data.client.carte,
           ville: data.client.ville,
           cp: data.client.cp,
           transactions: data.transactions,
           totalCA,
           nbAchats
-        })
+        }
+        
+        setClientResult(clientData)
+        
+        // Mettre en cache
+        searchCache[cacheKey] = {
+          data: clientData,
+          timestamp: Date.now()
+        }
       } else {
         // Mode produit
         const response = await fetch(`/api/produits?produit=${searchTerm.trim()}`)
@@ -112,6 +153,12 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         
         const data = await response.json()
         setProduitResult(data)
+        
+        // Mettre en cache
+        searchCache[cacheKey] = {
+          data: data,
+          timestamp: Date.now()
+        }
         
         if (!data || !data.produit) {
           setError('Produit non trouvé')
