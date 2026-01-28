@@ -110,9 +110,9 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
     const caTotal = (loadedData.webStats?.ca || 0) + monthData.ca
     const caWeb = loadedData.webStats?.ca || 0
     
-    const topProduitsWeb = getTopProducts(loadedData.produitsWeb || {}, 3)
-    const topProduitsStore = getTopProducts(loadedData.produitsMagasin?.[selectedMonth] || {}, 3)
-    const topZones = getTopZones(loadedData.zones || {}, 3)
+    const topProduitsWeb = getTopProducts(loadedData?.produitsWeb || {}, 3)
+    const topProduitsStore = getTopProducts(loadedData?.produitsMagasin?.[selectedMonth] || {}, 3)
+    const topZones = getTopZones(loadedData?.zones || {}, 3)
 
     const recommendations = []
 
@@ -134,6 +134,28 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
             type: 'Story',
             content: 'Montrer 3 produits phares du moment en carousel',
             reason: `${topProduitsWeb.length} produits génèrent ${formatEuro(topProduitsWeb.reduce((s, p) => s + p.ca, 0))}`,
+            priority: 'medium'
+          }
+        ]
+      })
+    } else if (topProduitsStore.length > 0) {
+      // Fallback sur produits magasin si pas de web
+      recommendations.push({
+        platform: 'Instagram',
+        icon: Instagram,
+        color: 'pink',
+        gradient: 'from-pink-500 to-purple-500',
+        actions: [
+          {
+            type: 'Post Produit',
+            content: `Mettre en avant ${topProduitsStore[0].famille} - ${topProduitsStore[0].sousFamille}`,
+            reason: `Top vente magasin: ${formatEuro(topProduitsStore[0].ca)}`,
+            priority: 'high'
+          },
+          {
+            type: 'Story',
+            content: 'Montrer les nouveautés en magasin',
+            reason: `${monthData.clients} clients ce mois-ci`,
             priority: 'medium'
           }
         ]
@@ -166,26 +188,51 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
 
     // Google Ads - produits web
     const budgetSuggere = Math.max(500, Math.round(caWeb * 0.08)) // 8% du CA web
-    recommendations.push({
-      platform: 'Google Ads',
-      icon: Target,
-      color: 'emerald',
-      gradient: 'from-emerald-500 to-teal-500',
-      actions: [
-        {
-          type: 'Shopping Ads',
-          content: `Campagne sur ${topProduitsWeb[0]?.famille || 'Top produits'}`,
-          reason: `Budget suggéré: ${formatEuro(budgetSuggere)}`,
-          priority: 'high'
-        },
-        {
-          type: 'Search Ads',
-          content: `Mots-clés: ${topProduitsWeb.slice(0, 2).map(p => p.sousFamille).join(', ')}`,
-          reason: `${formatEuro(topProduitsWeb.slice(0, 2).reduce((s, p) => s + p.ca, 0))} de potentiel`,
-          priority: 'medium'
-        }
-      ]
-    })
+    
+    if (topProduitsWeb.length > 0) {
+      recommendations.push({
+        platform: 'Google Ads',
+        icon: Target,
+        color: 'emerald',
+        gradient: 'from-emerald-500 to-teal-500',
+        actions: [
+          {
+            type: 'Shopping Ads',
+            content: `Campagne sur ${topProduitsWeb[0]?.famille || 'Top produits'}`,
+            reason: `Budget suggéré: ${formatEuro(budgetSuggere)}`,
+            priority: 'high'
+          },
+          {
+            type: 'Search Ads',
+            content: `Mots-clés: ${topProduitsWeb.slice(0, 2).map(p => p.sousFamille).join(', ')}`,
+            reason: `${formatEuro(topProduitsWeb.slice(0, 2).reduce((s, p) => s + p.ca, 0))} de potentiel`,
+            priority: 'medium'
+          }
+        ]
+      })
+    } else if (topProduitsStore.length > 0) {
+      // Fallback sur produits magasin
+      recommendations.push({
+        platform: 'Google Ads',
+        icon: Target,
+        color: 'emerald',
+        gradient: 'from-emerald-500 to-teal-500',
+        actions: [
+          {
+            type: 'Shopping Ads',
+            content: `Campagne sur ${topProduitsStore[0]?.famille || 'Top produits'}`,
+            reason: `Budget suggéré: ${formatEuro(budgetSuggere)}`,
+            priority: 'high'
+          },
+          {
+            type: 'Search Ads',
+            content: `Mots-clés magasin: ${topProduitsStore.slice(0, 2).map(p => p.sousFamille).join(', ')}`,
+            reason: `${formatEuro(topProduitsStore.slice(0, 2).reduce((s, p) => s + p.ca, 0))} de CA`,
+            priority: 'medium'
+          }
+        ]
+      })
+    }
 
     return recommendations
   }
@@ -194,7 +241,7 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
   const caTotal = caWeb + currentMonthData.ca
 
   const recommendations = getSocialMediaRecommendations(currentMonthData)
-  const topProduitsStore = getTopProducts(loadedData.produitsMagasin?.[selectedMonth] || {}, 10)
+  const topProduitsStore = getTopProducts(loadedData?.produitsMagasin?.[selectedMonth] || {}, 10)
 
   return (
     <div className="space-y-6">
