@@ -30,17 +30,15 @@ const handleDailyUpdate = async (files) => {
     const clientsData = parseCSV(files.clients[0].path)
     console.log(`📥 ${clientsData.length} clients à insérer...`)
     
-    for (const row of clientsData) {
-      try {
-        await prisma.clients.upsert({
-          where: { carte: row.carte },
-          update: { ville: row.ville, cp: row.cp },
-          create: { carte: row.carte, ville: row.ville, cp: row.cp }
-        })
-      } catch (e) {
-        // Ignorer les doublons
-      }
-    }
+    // Utiliser createMany avec skipDuplicates
+    await prisma.clients.createMany({
+      data: clientsData.map(row => ({
+        carte: row.carte,
+        ville: row.ville,
+        cp: row.cp
+      })),
+      skipDuplicates: true
+    })
   }
 
   // 2. Produits (optionnel)
@@ -48,37 +46,30 @@ const handleDailyUpdate = async (files) => {
     const produitsData = parseCSV(files.produits[0].path)
     console.log(`📥 ${produitsData.length} produits à insérer...`)
     
-    for (const row of produitsData) {
-      try {
-        await prisma.produits.upsert({
-          where: { id: row.id },
-          update: {
-            famille: row.famille,
-            sous_famille: row.sous_famille,
-            sous_sous_famille: row.sous_sous_famille,
-            sous_sous_sous_famille: row.sous_sous_sous_famille
-          },
-          create: {
-            id: row.id,
-            famille: row.famille,
-            sous_famille: row.sous_famille,
-            sous_sous_famille: row.sous_sous_famille,
-            sous_sous_sous_famille: row.sous_sous_sous_famille
-          }
-        })
-      } catch (e) {
-        // Ignorer les doublons
-      }
-    }
+    // Utiliser createMany avec skipDuplicates
+    await prisma.produits.createMany({
+      data: produitsData.map(row => ({
+        id: row.id,
+        famille: row.famille,
+        sous_famille: row.sous_famille,
+        sous_sous_famille: row.sous_sous_famille,
+        sous_sous_sous_famille: row.sous_sous_sous_famille
+      })),
+      skipDuplicates: true
+    })
   }
 
   // 3. Transactions (obligatoire)
   const transactionsData = parseCSV(files.transactions[0].path)
   console.log(`📥 ${transactionsData.length} transactions à insérer...`)
   
-  for (const row of transactionsData) {
-    await prisma.transactions.create({
-      data: {
+  // Utiliser createMany pour insérer par batch (beaucoup plus rapide)
+  const batchSize = 500
+  for (let i = 0; i < transactionsData.length; i += batchSize) {
+    const batch = transactionsData.slice(i, i + batchSize)
+    
+    await prisma.transactions.createMany({
+      data: batch.map(row => ({
         facture: row.facture,
         date: new Date(row.date),
         carte: row.carte,
@@ -86,9 +77,12 @@ const handleDailyUpdate = async (files) => {
         produit: row.produit,
         ca: parseFloat(row.ca),
         quantite: parseInt(row.quantite)
-      }
+      })),
+      skipDuplicates: true // Ignorer les doublons
     })
-    totalInserted++
+    
+    totalInserted += batch.length
+    console.log(`  ✅ ${totalInserted}/${transactionsData.length}`)
   }
 
   return { inserted: totalInserted }
