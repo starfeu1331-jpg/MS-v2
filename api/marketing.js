@@ -38,8 +38,14 @@ export default async function handler(req, res) {
       WHERE depot = 'WEB'
     `;
 
-    // 3. Top Produits Magasin par mois (3 derniers mois)
+    // 3. Top Produits Magasin par mois (derniers mois disponibles)
     const topProduitsMagasin = await sql`
+      WITH recent_months AS (
+        SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') as month
+        FROM transactions
+        ORDER BY month DESC
+        LIMIT 3
+      )
       SELECT 
         TO_CHAR(t.date, 'YYYY-MM') as month,
         p.id as code,
@@ -49,7 +55,8 @@ export default async function handler(req, res) {
         COUNT(*)::int as volume
       FROM transactions t
       LEFT JOIN produits p ON t.produit = p.id
-      WHERE t.depot != 'WEB' AND t.date >= NOW() - INTERVAL '3 months'
+      WHERE t.depot != 'WEB' 
+        AND TO_CHAR(t.date, 'YYYY-MM') IN (SELECT month FROM recent_months)
       GROUP BY TO_CHAR(t.date, 'YYYY-MM'), p.id, p.famille, p.sous_famille
       ORDER BY month DESC, SUM(t.ca) DESC
     `;
