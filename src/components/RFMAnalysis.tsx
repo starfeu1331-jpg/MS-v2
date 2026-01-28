@@ -54,13 +54,18 @@ const rfmUIState: Record<string, { selectedSegment: string | null; showSegmentDe
 export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysisProps) {
   const magasinFilter = showWebData ? 'WEB' : 'MAGASIN'
   const uiStateKey = `rfm_ui_${magasinFilter}`
+  const cacheKey = `rfm_${magasinFilter}`
   
   // Restaurer l'état UI depuis le cache
   const savedUIState = rfmUIState[uiStateKey]
   const [selectedSegment, setSelectedSegment] = useState<string | null>(savedUIState?.selectedSegment || null)
   const [showSegmentDetail, setShowSegmentDetail] = useState(savedUIState?.showSegmentDetail || false)
   const [rfmData, setRfmData] = useState<RFMData | null>(null)
-  const [loading, setLoading] = useState(true)
+  
+  // Initialiser loading à false si on a déjà des données en cache
+  const cached = rfmCache[cacheKey]
+  const hasValidCache = cached && (Date.now() - cached.timestamp) < CACHE_DURATION
+  const [loading, setLoading] = useState(!hasValidCache)
   const [error, setError] = useState<string | null>(null)
   
   // Sauvegarder l'état UI à chaque changement
