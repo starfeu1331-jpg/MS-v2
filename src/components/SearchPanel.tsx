@@ -120,45 +120,48 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
     setProduitResult(null)
 
     try {
+      const response = await fetch(`/api/search?type=${mode}&query=${encodeURIComponent(searchTerm.trim())}`)
+      if (!response.ok) throw new Error(`${mode} non trouvé`)
+      
+      const data = await response.json()
+      
       if (mode === 'ticket') {
-        const response = await fetch(`/api/tickets?facture=${searchTerm.trim()}`)
-        if (!response.ok) throw new Error('Ticket non trouvé')
-        
-        const data = await response.json()
-        setTicketResults(data.transactions || [])
-        setTicketInfo({ facture: data.facture, client: data.client, magasin: data.magasin })
+        setTicketResults(data.results || [])
+        if (data.results && data.results.length > 0) {
+          const first = data.results[0]
+          setTicketInfo({ 
+            facture: first.facture, 
+            client: first.carte, 
+            magasin: first.depot 
+          })
+        }
         
         // Mettre en cache
         searchCache[cacheKey] = {
           data: {
-            transactions: data.transactions,
-            ticketInfo: { facture: data.facture, client: data.client, magasin: data.magasin }
+            transactions: data.results,
+            info: ticketInfo
           },
           timestamp: Date.now()
         }
         
-        if (!data.transactions || data.transactions.length === 0) {
+        if (!data.results || data.results.length === 0) {
           setError('Aucun ticket trouvé avec ce numéro')
         }
       } else if (mode === 'client') {
-        const response = await fetch(`/api/clients?carte=${searchTerm.trim()}`)
-        if (!response.ok) throw new Error('Client non trouvé')
-        
-        const data = await response.json()
-        
-        if (!data || !data.client) {
+        if (!data.results || data.results.length === 0) {
           setError('Client non trouvé')
           return
         }
 
-        const totalCA = data.transactions.reduce((sum: number, t: any) => sum + Number(t.ca || 0), 0)
-        const nbAchats = data.transactions.length
+        const totalCA = data.results.reduce((sum: number, t: any) => sum + Number(t.ca || 0), 0)
+        const nbAchats = data.results.length
 
         const clientData = {
-          carte: data.client.carte,
-          ville: data.client.ville,
-          cp: data.client.cp,
-          transactions: data.transactions,
+          carte: searchTerm.trim(),
+          ville: data.results[0]?.ville || '-',
+          cp: '-',
+          transactions: data.results,
           totalCA,
           nbAchats
         }
@@ -172,19 +175,21 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         }
       } else {
         // Mode produit
-        const response = await fetch(`/api/produits?produit=${searchTerm.trim()}`)
-        if (!response.ok) throw new Error('Produit non trouvé')
-        
-        const data = await response.json()
-        setProduitResult(data)
+        setProduitResult({
+          produit: searchTerm.trim(),
+          transactions: data.results
+        })
         
         // Mettre en cache
         searchCache[cacheKey] = {
-          data: data,
+          data: {
+            produit: searchTerm.trim(),
+            transactions: data.results
+          },
           timestamp: Date.now()
         }
         
-        if (!data || !data.produit) {
+        if (!data.results || data.results.length === 0) {
           setError('Produit non trouvé')
         }
       }
