@@ -454,9 +454,9 @@ function App() {
             {activeTab === 'crossSelling' && <CrossSellingAnalysis data={null} />}
             {activeTab === 'cohortes' && <CohortAnalysis />}
             {activeTab === 'abc' && <ABCAnalysis />}
-            {activeTab === 'kingquentin' && <KingQuentin data={null} />}
+            {activeTab === 'kingquentin' && <KingQuentin />}
             {activeTab === 'stores' && <StorePerformance />}
-            {activeTab === 'forecast' && <ForecastAnomalies data={null} />}
+            {activeTab === 'forecast' && <ForecastAnomalies />}
             {activeTab === 'social' && <SocialMediaInsights data={null} />}
             {activeTab === 'exports' && <ExportData data={null} />}
           </Suspense>

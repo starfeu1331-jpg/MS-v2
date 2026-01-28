@@ -1,16 +1,65 @@
 import { TrendingUp, AlertTriangle, Activity, Zap } from 'lucide-react'
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { LazyLineChart as LineChart, LazyLine as Line, LazyXAxis as XAxis, LazyYAxis as YAxis, LazyCartesianGrid as CartesianGrid, LazyTooltip as Tooltip, LazyResponsiveContainer as ResponsiveContainer, ChartFallback } from '../utils/lazyRecharts'
 
-interface ForecastAnomaliesProps {
-  data: any
-}
+const API_URL = import.meta.env.VITE_API_URL || 'https://ms-v2.vercel.app'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-export default function ForecastAnomalies({ data }: ForecastAnomaliesProps) {
+// Cache global
+let forecastCache: { data: any; timestamp: number } | null = null
+
+export default function ForecastAnomalies() {
   const [channel, setChannel] = useState<'all' | 'mag' | 'web'>('all')
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Vérifier le cache
+        const now = Date.now()
+        if (forecastCache && (now - forecastCache.timestamp < CACHE_DURATION)) {
+          console.log('🔍 Forecast: Utilisation cache')
+          setData(forecastCache.data)
+          setLoading(false)
+          return
+        }
+
+        console.log('🔄 Forecast: Chargement depuis API')
+        setLoading(true)
+        
+        const response = await fetch(`${API_URL}/api/forecast`)
+        if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
+        
+        const result = await response.json()
+        
+        // Mettre en cache
+        forecastCache = { data: result, timestamp: Date.now() }
+        
+        setData(result)
+        console.log('✅ Forecast: Données chargées')
+      } catch (err: any) {
+        console.error('❌ Erreur chargement Forecast:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+  
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Chargement...</div></div>
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-red-400">Erreur: {error}</div></div>
+  }
   
   if (!data || !data.saison) {
-    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Chargement...</div></div>
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Aucune donnée</div></div>
   }
   
   const formatEuro = (value: number) => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}€`
