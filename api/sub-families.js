@@ -25,14 +25,14 @@ export default async function handler(req, res) {
       SELECT 
         COALESCE(p.famille, 'Non classé') as famille,
         COALESCE(p.sous_famille, 'Non classé') as sous_famille,
-        CAST(SUM(t.ca) AS DECIMAL) as ca,
-        CAST(COUNT(*) AS INTEGER) as volume,
-        CAST(COUNT(DISTINCT t.facture) AS INTEGER) as nb_tickets
+        SUM(t.ca) as ca,
+        COUNT(*) as volume,
+        COUNT(DISTINCT t.facture) as nb_tickets
       FROM transactions t
       LEFT JOIN produits p ON t.produit = p.code
       ${whereClause}
       GROUP BY p.famille, p.sous_famille
-      ORDER BY SUM(t.ca) DESC
+      ORDER BY 3 DESC
     `
 
     const results = await prisma.$queryRawUnsafe(query)
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
     // Calculer les tickets totaux
     const totalTicketsQuery = `
-      SELECT CAST(COUNT(DISTINCT facture) AS INTEGER) as total
+      SELECT COUNT(DISTINCT facture) as total
       FROM transactions
       ${whereClause}
     `

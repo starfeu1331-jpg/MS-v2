@@ -25,13 +25,14 @@ export default async function handler(req, res) {
       SELECT 
         t.facture,
         t.date,
-        CAST(EXTRACT(YEAR FROM t.date::date) AS INTEGER) as annee,
-        CAST(EXTRACT(MONTH FROM t.date::date) AS INTEGER) as mois,
-        ARRAY_AGG(DISTINCT COALESCE(p.famille, 'Non classé')) FILTER (WHERE p.famille IS NOT NULL OR TRUE) as familles,
-        CAST(SUM(t.ca) AS DECIMAL) as ca_ticket
+        EXTRACT(YEAR FROM t.date::date) as annee,
+        EXTRACT(MONTH FROM t.date::date) as mois,
+        ARRAY_AGG(DISTINCT p.famille) as familles,
+        SUM(t.ca) as ca_ticket
       FROM transactions t
       LEFT JOIN produits p ON t.produit = p.code
       ${whereClause}
+      AND p.famille IS NOT NULL
       GROUP BY t.facture, t.date
       HAVING COUNT(DISTINCT p.famille) >= 2
       ORDER BY t.date DESC
@@ -64,34 +65,6 @@ export default async function handler(req, res) {
       }
     })
 
-    // Top produits par mois
-    const produitsParMois = {}
-    const produitsGlobal = {}
-
-    results.forEach(row => {
-      const mois = `${row.annee}-${String(row.mois).padStart(2, '0')}`
-      const produits = row.produits || []
-      
-      produits.forEach(produit => {
-        // Par mois
-        if (!produitsParMois[mois]) {
-          produitsParMois[mois] = {}
-        }
-        if (!produitsParMois[mois][produit]) {
-          produitsParMois[mois][produit] = { ca: 0, volume: 0 }
-        }
-        produitsParMois[mois][produit].ca += Number(row.ca_ticket) / produits.length
-        produitsParMois[mois][produit].volume += 1
-
-        // Global
-        if (!produitsGlobal[produit]) {
-          produitsGlobal[produit] = { ca: 0, volume: 0 }
-        }
-        produitsGlobal[produit].ca += Number(row.ca_ticket) / produits.length
-        produitsGlobal[produit].volume += 1
-      })
-    })
-
     // Trier les associations par fréquence
     const topAssociations = Object.entries(associations)
       .map(([key, data]) => ({
@@ -104,8 +77,6 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       associations: topAssociations,
-      produitsParMois,
-      produitsGlobal,
       totalTickets: results.length
     })
 
