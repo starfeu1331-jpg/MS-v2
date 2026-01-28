@@ -67,18 +67,20 @@ export default function StorePerformance() {
   const formatEuro = (value: number) => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}€`
   
   // Préparer les données des magasins
-  const magasins: any[] = Object.entries(data.geo.magasins).map(([mag, stats]: [string, any]) => ({
-    mag,
-    ca: stats.ca,
-    volume: stats.volume,
-    panierMoyen: stats.ca / stats.volume,
-    perfCA: 0,
-    perfVolume: 0,
-    indexPanier: 0,
-    scoreGlobal: 0,
-    category: '',
-    color: '',
-  }))
+  const magasins: any[] = Object.entries(data.geo.magasins)
+    .filter(([mag, stats]: [string, any]) => stats && stats.ca && stats.volume)
+    .map(([mag, stats]: [string, any]) => ({
+      mag,
+      ca: stats.ca || 0,
+      volume: stats.volume || 0,
+      panierMoyen: (stats.ca || 0) / (stats.volume || 1),
+      perfCA: 0,
+      perfVolume: 0,
+      indexPanier: 0,
+      scoreGlobal: 0,
+      category: '',
+      color: '',
+    }))
   
   const totalCAMag = magasins.reduce((sum, m) => sum + m.ca, 0)
   const totalVolumeMag = magasins.reduce((sum, m) => sum + m.volume, 0)
