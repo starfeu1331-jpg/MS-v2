@@ -48,12 +48,25 @@ interface RFMData {
 const rfmCache: Record<string, { data: RFMData; timestamp: number }> = {}
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
+// Cache de l'état UI pour conserver la sélection
+const rfmUIState: Record<string, { selectedSegment: string | null; showSegmentDetail: boolean }> = {}
+
 export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysisProps) {
-  const [selectedSegment, setSelectedSegment] = useState<string | null>(null)
-  const [showSegmentDetail, setShowSegmentDetail] = useState(false)
+  const magasinFilter = showWebData ? 'WEB' : 'MAGASIN'
+  const uiStateKey = `rfm_ui_${magasinFilter}`
+  
+  // Restaurer l'état UI depuis le cache
+  const savedUIState = rfmUIState[uiStateKey]
+  const [selectedSegment, setSelectedSegment] = useState<string | null>(savedUIState?.selectedSegment || null)
+  const [showSegmentDetail, setShowSegmentDetail] = useState(savedUIState?.showSegmentDetail || false)
   const [rfmData, setRfmData] = useState<RFMData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Sauvegarder l'état UI à chaque changement
+  useEffect(() => {
+    rfmUIState[uiStateKey] = { selectedSegment, showSegmentDetail }
+  }, [selectedSegment, showSegmentDetail, uiStateKey])
 
   useEffect(() => {
     const fetchRFMData = async () => {

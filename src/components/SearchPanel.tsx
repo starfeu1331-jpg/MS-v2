@@ -44,15 +44,39 @@ interface ClientResult {
 const searchCache: Record<string, { data: any; timestamp: number }> = {}
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
+// Cache de l'état UI pour conserver la recherche
+interface SearchUIState {
+  mode: 'ticket' | 'client' | 'produit'
+  searchTerm: string
+  ticketResults?: Transaction[]
+  ticketInfo?: any
+  clientResult?: ClientResult | null
+  produitResult?: any
+}
+let searchUIState: SearchUIState | null = null
+
 export default function SearchPanel({ initialSearch }: SearchPanelProps) {
-  const [mode, setMode] = useState<'ticket' | 'client' | 'produit'>('client')
-  const [searchTerm, setSearchTerm] = useState(initialSearch || '')
+  // Restaurer l'état UI depuis le cache
+  const [mode, setMode] = useState<'ticket' | 'client' | 'produit'>(searchUIState?.mode || 'client')
+  const [searchTerm, setSearchTerm] = useState(searchUIState?.searchTerm || initialSearch || '')
   const [loading, setLoading] = useState(false)
-  const [ticketResults, setTicketResults] = useState<Transaction[]>([])
-  const [ticketInfo, setTicketInfo] = useState<any>(null)
-  const [clientResult, setClientResult] = useState<ClientResult | null>(null)
-  const [produitResult, setProduitResult] = useState<any>(null)
+  const [ticketResults, setTicketResults] = useState<Transaction[]>(searchUIState?.ticketResults || [])
+  const [ticketInfo, setTicketInfo] = useState<any>(searchUIState?.ticketInfo || null)
+  const [clientResult, setClientResult] = useState<ClientResult | null>(searchUIState?.clientResult || null)
+  const [produitResult, setProduitResult] = useState<any>(searchUIState?.produitResult || null)
   const [error, setError] = useState<string | null>(null)
+  
+  // Sauvegarder l'état UI à chaque changement
+  useEffect(() => {
+    searchUIState = {
+      mode,
+      searchTerm,
+      ticketResults,
+      ticketInfo,
+      clientResult,
+      produitResult
+    }
+  }, [mode, searchTerm, ticketResults, ticketInfo, clientResult, produitResult])
 
   const formatEuro = (value: number) =>
     `${value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`
