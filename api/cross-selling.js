@@ -1,45 +1,88 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+  log: ['error', 'warn']
+})
 
 export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true')
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
     const { magasin } = req.query
+    const showWebOnly = magasin === 'WEB'
+    const showMagasinOnly = magasin === 'MAGASIN'
 
     console.log('🔄 API Cross-Selling: Requête reçue', { magasin })
 
-    // Construire la condition WHERE selon le filtre magasin
-    let whereClause = "WHERE t.ca > 0 AND t.facture IS NOT NULL"
-    if (magasin === 'WEB') {
-      whereClause += " AND t.depot = 'WEB'"
-    } else if (magasin === 'MAGASIN') {
-      whereClause += " AND t.depot != 'WEB'"
+    // Query avec structure RFM
+    let results
+    
+    if (showWebOnly) {
+      results = await prisma.$queryRawUnsafe(`
+        SELECT 
+          t.facture::text,
+          t.date::text,
+          EXTRACT(YEAR FROM t.date)::int as annee,
+          EXTRACT(MONTH FROM t.date)::int as mois,
+          ARRAY_AGG(DISTINCT p.famille) as familles,
+          SUM(t.ca)::numeric as ca_ticket
+        FROM transactions t
+        LEFT JOIN produits p ON t.produit = p.code
+        WHERE t.ca > 0 AND t.facture IS NOT NULL AND t.depot = 'WEB' AND p.famille IS NOT NULL
+        GROUP BY t.facture, t.date
+        HAVING COUNT(DISTINCT p.famille) >= 2
+        ORDER BY t.date DESC
+        LIMIT 50000
+      `)
+    } else if (showMagasinOnly) {
+      results = await prisma.$queryRawUnsafe(`
+        SELECT 
+          t.facture::text,
+          t.date::text,
+          EXTRACT(YEAR FROM t.date)::int as annee,
+          EXTRACT(MONTH FROM t.date)::int as mois,
+          ARRAY_AGG(DISTINCT p.famille) as familles,
+          SUM(t.ca)::numeric as ca_ticket
+        FROM transactions t
+        LEFT JOIN produits p ON t.produit = p.code
+        WHERE t.ca > 0 AND t.facture IS NOT NULL AND t.depot != 'WEB' AND p.famille IS NOT NULL
+        GROUP BY t.facture, t.date
+        HAVING COUNT(DISTINCT p.famille) >= 2
+        ORDER BY t.date DESC
+        LIMIT 50000
+      `)
+    } else {
+      results = await prisma.$queryRawUnsafe(`
+        SELECT 
+          t.facture::text,
+          t.date::text,
+          EXTRACT(YEAR FROM t.date)::int as annee,
+          EXTRACT(MONTH FROM t.date)::int as mois,
+          ARRAY_AGG(DISTINCT p.famille) as familles,
+          SUM(t.ca)::numeric as ca_ticket
+        FROM transactions t
+        LEFT JOIN produits p ON t.produit = p.code
+        WHERE t.ca > 0 AND t.facture IS NOT NULL AND p.famille IS NOT NULL
+        GROUP BY t.facture, t.date
+        HAVING COUNT(DISTINCT p.famille) >= 2
+        ORDER BY t.date DESC
+        LIMIT 50000
+      `)
     }
 
-    // Query pour obtenir les associations de produits par ticket
-    const query = `
-      SELECT 
-        t.facture,
-        t.date,
-        EXTRACT(YEAR FROM t.date::date) as annee,
-        EXTRACT(MONTH FROM t.date::date) as mois,
-        ARRAY_AGG(DISTINCT p.famille) as familles,
-        SUM(t.ca) as ca_ticket
-      FROM transactions t
-      LEFT JOIN produits p ON t.produit = p.code
-      ${whereClause}
-      AND p.famille IS NOT NULL
-      GROUP BY t.facture, t.date
-      HAVING COUNT(DISTINCT p.famille) >= 2
-      ORDER BY t.date DESC
-      LIMIT 50000
-    `
-
-    const results = await prisma.$queryRawUnsafe(query)
+    console.log(`✅ API Cross-Selling: ${results.length} tickets avec cross-sell trouvés`)
 
     console.log(`✅ API Cross-Selling: ${results.length} tickets avec cross-sell trouvés`)
 

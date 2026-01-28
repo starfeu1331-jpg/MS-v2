@@ -1,52 +1,103 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+  log: ['error', 'warn']
+})
 
 export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true')
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
     const { magasin } = req.query
+    const showWebOnly = magasin === 'WEB'
+    const showMagasinOnly = magasin === 'MAGASIN'
 
     console.log('🔄 API Sub-Families: Requête reçue', { magasin })
 
-    // Construire la condition WHERE selon le filtre magasin
-    let whereClause = "WHERE t.ca > 0"
-    if (magasin === 'WEB') {
-      whereClause += " AND t.depot = 'WEB'"
-    } else if (magasin === 'MAGASIN') {
-      whereClause += " AND t.depot != 'WEB'"
+    // Query avec CTE comme RFM
+    let results
+    
+    if (showWebOnly) {
+      results = await prisma.$queryRawUnsafe(`
+        SELECT 
+          COALESCE(p.famille, 'Non classé')::text as famille,
+          COALESCE(p.sous_famille, 'Non classé')::text as sous_famille,
+          SUM(t.ca)::numeric as ca,
+          COUNT(*)::int as volume,
+          COUNT(DISTINCT t.facture)::int as nb_tickets
+        FROM transactions t
+        LEFT JOIN produits p ON t.produit = p.code
+        WHERE t.ca > 0 AND t.depot = 'WEB'
+        GROUP BY p.famille, p.sous_famille
+        ORDER BY SUM(t.ca) DESC
+      `)
+    } else if (showMagasinOnly) {
+      results = await prisma.$queryRawUnsafe(`
+        SELECT 
+          COALESCE(p.famille, 'Non classé')::text as famille,
+          COALESCE(p.sous_famille, 'Non classé')::text as sous_famille,
+          SUM(t.ca)::numeric as ca,
+          COUNT(*)::int as volume,
+          COUNT(DISTINCT t.facture)::int as nb_tickets
+        FROM transactions t
+        LEFT JOIN produits p ON t.produit = p.code
+        WHERE t.ca > 0 AND t.depot != 'WEB'
+        GROUP BY p.famille, p.sous_famille
+        ORDER BY SUM(t.ca) DESC
+      `)
+    } else {
+      results = await prisma.$queryRawUnsafe(`
+        SELECT 
+          COALESCE(p.famille, 'Non classé')::text as famille,
+          COALESCE(p.sous_famille, 'Non classé')::text as sous_famille,
+          SUM(t.ca)::numeric as ca,
+          COUNT(*)::int as volume,
+          COUNT(DISTINCT t.facture)::int as nb_tickets
+        FROM transactions t
+        LEFT JOIN produits p ON t.produit = p.code
+        WHERE t.ca > 0
+        GROUP BY p.famille, p.sous_famille
+        ORDER BY SUM(t.ca) DESC
+      `)
     }
-
-    // Query pour obtenir les statistiques par sous-famille
-    const query = `
-      SELECT 
-        COALESCE(p.famille, 'Non classé') as famille,
-        COALESCE(p.sous_famille, 'Non classé') as sous_famille,
-        SUM(t.ca) as ca,
-        COUNT(*) as volume,
-        COUNT(DISTINCT t.facture) as nb_tickets
-      FROM transactions t
-      LEFT JOIN produits p ON t.produit = p.code
-      ${whereClause}
-      GROUP BY p.famille, p.sous_famille
-      ORDER BY 3 DESC
-    `
-
-    const results = await prisma.$queryRawUnsafe(query)
 
     console.log(`✅ API Sub-Families: ${results.length} sous-familles trouvées`)
 
-    // Calculer les tickets totaux
-    const totalTicketsQuery = `
-      SELECT COUNT(DISTINCT facture) as total
-      FROM transactions
-      ${whereClause}
-    `
+    // Calculer les tickets totaux avec la même structure
+    let totalTicketsResult
     
-    const totalTicketsResult = await prisma.$queryRawUnsafe(totalTicketsQuery)
+    if (showWebOnly) {
+      totalTicketsResult = await prisma.$queryRawUnsafe(`
+        SELECT COUNT(DISTINCT facture)::int as total
+        FROM transactions
+        WHERE ca > 0 AND depot = 'WEB'
+      `)
+    } else if (showMagasinOnly) {
+      totalTicketsResult = await prisma.$queryRawUnsafe(`
+        SELECT COUNT(DISTINCT facture)::int as total
+        FROM transactions
+        WHERE ca > 0 AND depot != 'WEB'
+      `)
+    } else {
+      totalTicketsResult = await prisma.$queryRawUnsafe(`
+        SELECT COUNT(DISTINCT facture)::int as total
+        FROM transactions
+        WHERE ca > 0
+      `)
+    }
+    
     const totalTickets = Number(totalTicketsResult[0]?.total || 0)
 
     // Formater les résultats
