@@ -1,19 +1,82 @@
 import { Package, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface SubFamilyAnalysisProps {
-  data: any
+  data?: any
   showWebData?: boolean
 }
+
+// Cache global
+const subFamilyCache: Record<string, { data: any; timestamp: number }> = {}
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export default function SubFamilyAnalysis({ data, showWebData = false }: SubFamilyAnalysisProps) {
   const [cacTotal, setCacTotal] = useState(25)
   const [isEditingCAC, setIsEditingCAC] = useState(false)
+  const [subFamiliesData, setSubFamiliesData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  if (!data || !data.allClients) {
+  const magasinFilter = showWebData ? 'WEB' : 'MAGASIN'
+  const cacheKey = `subfamilies_${magasinFilter}`
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Vérifier le cache
+      const cached = subFamilyCache[cacheKey]
+      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        console.log('✅ Sub-Families: Utilisation du cache', cacheKey)
+        setSubFamiliesData(cached.data)
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        console.log('🔄 Sub-Families: Chargement depuis API', magasinFilter)
+        const response = await fetch(`/api/sub-families?magasin=${magasinFilter}`)
+        
+        if (!response.ok) {
+          throw new Error(`Erreur API: ${response.status}`)
+        }
+        
+        const apiData = await response.json()
+        
+        // Mettre en cache
+        subFamilyCache[cacheKey] = {
+          data: apiData,
+          timestamp: Date.now()
+        }
+        
+        setSubFamiliesData(apiData)
+      } catch (err: any) {
+        console.error('❌ Erreur chargement Sub-Families:', err)
+        setError(err.message || 'Erreur lors du chargement des données')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [showWebData])
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    )
+  }
+
+  if (error || !subFamiliesData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <p className="text-zinc-400">{error || 'Données non disponibles'}</p>
+        </div>
       </div>
     )
   }
@@ -26,87 +89,32 @@ export default function SubFamilyAnalysis({ data, showWebData = false }: SubFami
   // Coûts marketing 2025
   const MARKETING_COST_TOTAL = 971290
 
-  const analyzeSubFamilies = (webOnly: boolean = false) => {
-    const subFamilyStats: Record<string, {
-      famille: string
-      sousFamille: string
-      ca: number
-      volume: number
-      tickets: Set<string>
-    }> = {}
-
-    // Filtrer les tickets selon le toggle
-    const filteredTickets = data.allTickets.filter((t: any) => 
-      webOnly ? t.magasin === 'WEB' : t.magasin !== 'WEB'
-    )
-
-    if (filteredTickets && filteredTickets.length > 0) {
-      filteredTickets.forEach((ticket: any) => {
-        const famille = ticket.famille || 'Non classé'
-        const sousFamille = ticket.sousFamille || 'Non classé'
-        const key = `${famille}|||${sousFamille}`
-
-        if (!subFamilyStats[key]) {
-          subFamilyStats[key] = {
-            famille,
-            sousFamille,
-            ca: 0,
-            volume: 0,
-            tickets: new Set()
-          }
-        }
-
-        const ca = ticket.ca || 0
-        subFamilyStats[key].ca += ca
-        subFamilyStats[key].volume += 1
-
-        // Compter les tickets uniques (passages en magasin ou commandes web)
-        if (ticket.ticket && ticket.ticket !== 'N/A') {
-          subFamilyStats[key].tickets.add(ticket.ticket)
-        }
-      })
-    }
-
-    // Calculer le nombre total de tickets (passages)
-    const allTicketsUniques = new Set(filteredTickets.map((t: any) => t.ticket).filter((t: string) => t && t !== 'N/A'))
-    const totalTickets = allTicketsUniques.size
-
-    // Convertir en tableau et calculer les métriques
-    const results = Object.entries(subFamilyStats).map(([, stats]) => {
-      const nbTickets = stats.tickets.size
-      const panierMoyen = nbTickets > 0 ? stats.ca / nbTickets : 0
-      const caParVolume = stats.volume > 0 ? stats.ca / stats.volume : 0
-      
-      // Comparer au CAC total
-      const isRentable = panierMoyen >= cacTotal
-      const ratioCAC = cacTotal > 0 ? (panierMoyen / cacTotal) * 100 : 0
-
-      return {
-        famille: stats.famille,
-        sousFamille: stats.sousFamille,
-        ca: stats.ca,
-        volume: stats.volume,
-        nbTickets,
-        panierMoyen,
-        caParVolume,
-        isRentable,
-        ratioCAC
-      }
-    })
+  // Les données viennent directement de l'API
+  const results = subFamiliesData.subFamilies.map((sf: any) => {
+    const panierMoyen = sf.nbTickets > 0 ? sf.ca / sf.nbTickets : 0
+    const caParVolume = sf.volume > 0 ? sf.ca / sf.volume : 0
+    
+    // Comparer au CAC total
+    const isRentable = panierMoyen >= cacTotal
+    const ratioCAC = cacTotal > 0 ? (panierMoyen / cacTotal) * 100 : 0
 
     return {
-      subFamilies: results.sort((a, b) => b.ca - a.ca),
-      cacTotal,
-      totalTickets
+      famille: sf.famille,
+      sousFamille: sf.sousFamille,
+      ca: sf.ca,
+      volume: sf.volume,
+      nbTickets: sf.nbTickets,
+      panierMoyen,
+      caParVolume,
+      isRentable,
+      ratioCAC
     }
-  }
+  })
 
-  const analysis = analyzeSubFamilies(showWebData)
-  const { subFamilies, totalTickets } = analysis
-
-  const totalCA = subFamilies.reduce((sum, sf) => sum + sf.ca, 0)
-  const subFamiliesRentables = subFamilies.filter(sf => sf.isRentable).length
-  const subFamiliesNonRentables = subFamilies.filter(sf => !sf.isRentable).length
+  const totalTickets = subFamiliesData.totalTickets
+  const totalCA = results.reduce((sum: number, sf: any) => sum + sf.ca, 0)
+  const subFamiliesRentables = results.filter((sf: any) => sf.isRentable).length
+  const subFamiliesNonRentables = results.filter((sf: any) => !sf.isRentable).length
 
   return (
     <div className="space-y-6">
@@ -163,7 +171,7 @@ export default function SubFamilyAnalysis({ data, showWebData = false }: SubFami
           <div className="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
             <p className="text-xs text-zinc-500 font-semibold uppercase mb-1">CA Total</p>
             <p className="text-2xl font-bold text-white">{formatEuro(totalCA)}</p>
-            <p className="text-xs text-zinc-500 mt-1">{subFamilies.length} sous-familles</p>
+            <p className="text-xs text-zinc-500 mt-1">{results.length} sous-familles</p>
           </div>
         </div>
       </div>
@@ -199,7 +207,7 @@ export default function SubFamilyAnalysis({ data, showWebData = false }: SubFami
               </tr>
             </thead>
             <tbody>
-              {subFamilies.map((sf, idx) => (
+              {results.map((sf: any, idx: number) => (
                 <tr 
                   key={`${sf.famille}-${sf.sousFamille}`} 
                   className={`border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors ${
