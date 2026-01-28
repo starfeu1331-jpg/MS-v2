@@ -309,7 +309,7 @@ export default function ABCAnalysis() {
       {/* Graphique Pie */}
       <div className="glass rounded-3xl p-8 border border-zinc-800">
         <h3 className="text-xl font-bold text-white mb-6">Répartition du CA par Catégorie</h3>
-        {pieData && pieData.length > 0 ? (
+        {pieData && pieData.length > 0 && totalCA > 0 ? (
           <Suspense fallback={<ChartFallback />}>
             <ResponsiveContainer width="100%" height={350}>
               <PieChart>
@@ -317,8 +317,8 @@ export default function ABCAnalysis() {
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  labelLine={true}
-                  label={(entry) => `${entry.name}: ${((entry.value / totalCA) * 100).toFixed(1)}%`}
+                  labelLine={false}
+                  label={false}
                   outerRadius={130}
                   dataKey="value"
                   stroke="#18181b"
@@ -329,7 +329,7 @@ export default function ABCAnalysis() {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: any) => formatEuro(value)}
+                  formatter={(value: any) => [formatEuro(value), 'CA']}
                   contentStyle={{
                     backgroundColor: '#18181b',
                     border: '1px solid #27272a',
