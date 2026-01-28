@@ -4,6 +4,13 @@ const prisma = new PrismaClient({
   log: ['error', 'warn']
 })
 
+// Helper pour convertir BigInt en Number pour JSON
+const serializeJSON = (obj) => {
+  return JSON.parse(JSON.stringify(obj, (key, value) =>
+    typeof value === 'bigint' ? Number(value) : value
+  ))
+}
+
 export default async function handler(req, res) {
   const { year } = req.query
   
@@ -78,7 +85,7 @@ export default async function handler(req, res) {
         ORDER BY mois
       `
       
-      return res.status(200).json({
+      return res.status(200).json(serializeJSON({
         year: 'all',
         kpis: {
           totalCA: kpis[0].totalCA || 0,
@@ -120,7 +127,7 @@ export default async function handler(req, res) {
           ca: e.ca,
           tickets: e.tickets
         }))
-      })
+      }))
     }
     
     // Année spécifique
@@ -195,7 +202,7 @@ export default async function handler(req, res) {
       ORDER BY mois
     `)
     
-    res.status(200).json({
+    res.status(200).json(serializeJSON({
       year: parseInt(year),
       kpis: {
         totalCA: kpis[0].totalCA || 0,
@@ -237,7 +244,7 @@ export default async function handler(req, res) {
         ca: e.ca,
         tickets: e.tickets
       }))
-    })
+    }))
   } catch (error) {
     console.error('Dashboard error:', error)
     console.error('Error stack:', error.stack)

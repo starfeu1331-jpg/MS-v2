@@ -4,6 +4,13 @@ const prisma = new PrismaClient({
   log: ['query', 'error', 'warn']
 })
 
+// Helper pour convertir BigInt en Number pour JSON
+const serializeJSON = (obj) => {
+  return JSON.parse(JSON.stringify(obj, (key, value) =>
+    typeof value === 'bigint' ? Number(value) : value
+  ))
+}
+
 export default async function handler(req, res) {
   try {
     // Test 1: Variables d'environnement
@@ -21,13 +28,15 @@ export default async function handler(req, res) {
     // Test 3: Requête simple
     const transactions = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM transactions`
     
-    res.status(200).json({ 
+    const responseData = { 
       success: true,
       dbUrl: dbUrl.substring(0, 30) + '...',
       timestamp: result[0]?.now?.toString(),
-      queryResult: Number(result[0]?.count || 0),
-      transactionsCount: Number(transactions[0]?.count || 0)
-    })
+      queryResult: result[0]?.count,
+      transactionsCount: transactions[0]?.count
+    }
+    
+    res.status(200).json(serializeJSON(responseData))
   } catch (error) {
     res.status(500).json({ 
       error: error.message,
