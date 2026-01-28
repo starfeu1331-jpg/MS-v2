@@ -245,6 +245,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Méthode non autorisée' })
   }
 
+  // TEST: Prisma fonctionne-t-il ?
+  try {
+    const testCount = await prisma.transactions.count()
+    console.log('✅ Prisma fonctionne, count:', testCount)
+  } catch (error) {
+    console.error('❌ Prisma test failed:', error)
+    return res.status(500).json({
+      error: 'Prisma non fonctionnel',
+      message: error.message,
+      prismaType: typeof prisma
+    })
+  }
+
   try {
     // Parser les fichiers multipart
     const form = new multiparty.Form()
