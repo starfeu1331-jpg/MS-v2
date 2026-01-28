@@ -3,11 +3,26 @@ const multiparty = require('multiparty')
 const fs = require('fs')
 const { parse } = require('csv-parse/sync')
 
-const prisma = new PrismaClient({ log: ['error', 'warn'] })
+console.log('🔍 PrismaClient:', PrismaClient)
+
+let prisma
+try {
+  prisma = new PrismaClient({ 
+    log: ['error', 'warn'],
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
+      }
+    }
+  })
+  console.log('✅ Prisma initialisé')
+} catch (error) {
+  console.error('❌ Erreur init Prisma:', error)
+}
 
 module.exports.config = {
   api: {
-    bodyParser: false, // Désactiver pour gérer multipart/form-data
+    bodyParser: false,
   },
 }
 
@@ -219,6 +234,9 @@ const handleWeeklyUpdate = async (files) => {
 }
 
 module.exports = async function handler(req, res) {
+  console.log('📥 Request reçue, method:', req.method)
+  console.log('🔍 Prisma disponible?', !!prisma)
+  
   res.setHeader('Access-Control-Allow-Credentials', 'true')
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -230,6 +248,14 @@ module.exports = async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' })
+  }
+
+  if (!prisma) {
+    console.error('❌ Prisma non disponible')
+    return res.status(500).json({ 
+      error: 'Prisma non initialisé', 
+      message: 'Le client Prisma n\'a pas pu être créé' 
+    })
   }
 
   try {
