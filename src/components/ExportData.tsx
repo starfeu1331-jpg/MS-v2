@@ -16,7 +16,7 @@ export default function ExportData({ data }: ExportDataProps) {
   const formatEuro = (value: number) => `${value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`
   
   // Export CSV
-  const exportToCSV = (dataArray: any[], filename: string, headers: string[]) => {
+  const exportToCSV = (dataArray: any[], filename: string, headers?: string[]) => {
     const csvContent = [
       headers.join(';'),
       ...dataArray.map(row => headers.map(h => row[h] || '').join(';'))
@@ -34,8 +34,8 @@ export default function ExportData({ data }: ExportDataProps) {
     const totalCA = Object.values(data.familles).reduce((sum: number, f: any) => sum + (Number(f.ca) || 0), 0)
     const totalTransactions = Object.values(data.familles).reduce((sum: number, f: any) => sum + (Number(f.volume) || 0), 0)
     const panierMoyen = totalCA / (totalTransactions || 1)
-    const nbClients = data.allClients.size
-    const tauxFidelite = ((Number(data.fidelite.oui) || 0) / ((Number(data.fidelite.oui) || 0) + (Number(data.fidelite.non) || 0))) * 100
+    const nbClients = Number(data.allClients?.size) || 0
+    const tauxFidelite = ((Number(data.fidelite?.oui) || 0) / ((Number(data.fidelite?.oui) || 0) + (Number(data.fidelite?.non) || 0) || 1)) * 100
     
     const kpis = [{
       Indicateur: 'CA Total',
@@ -59,11 +59,11 @@ export default function ExportData({ data }: ExportDataProps) {
       Type: 'Client'
     }, {
       Indicateur: 'CA Web',
-      Valeur: formatEuro(Number(data.webStats.ca) || 0),
+      Valeur: formatEuro(Number(data.webStats?.ca) || 0),
       Type: 'Financier'
     }, {
       Indicateur: 'Part Web',
-      Valeur: `${(((Number(data.webStats.ca) || 0) / (totalCA || 1)) * 100).toFixed(2)}%`,
+      Valeur: `${(((Number(data.webStats?.ca) || 0) / (totalCA || 1)) * 100).toFixed(2)}%`,
       Type: 'Distribution'
     }]
     
