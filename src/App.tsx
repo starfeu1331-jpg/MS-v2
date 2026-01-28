@@ -452,10 +452,10 @@ function App() {
             {activeTab === 'rfm' && <RFMAnalysis data={null} showWebData={showWebData} />}
             {activeTab === 'subFamilies' && <SubFamilyAnalysis data={null} showWebData={showWebData} />}
             {activeTab === 'crossSelling' && <CrossSellingAnalysis data={null} />}
-            {activeTab === 'cohortes' && <CohortAnalysis data={null} />}
-            {activeTab === 'abc' && <ABCAnalysis data={null} />}
+            {activeTab === 'cohortes' && <CohortAnalysis />}
+            {activeTab === 'abc' && <ABCAnalysis />}
             {activeTab === 'kingquentin' && <KingQuentin data={null} />}
-            {activeTab === 'stores' && <StorePerformance data={null} />}
+            {activeTab === 'stores' && <StorePerformance />}
             {activeTab === 'forecast' && <ForecastAnomalies data={null} />}
             {activeTab === 'social' && <SocialMediaInsights data={null} />}
             {activeTab === 'exports' && <ExportData data={null} />}
