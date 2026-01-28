@@ -136,6 +136,60 @@ export default function Settings() {
             </div>
           </div>
         </div>
+
+        <div className="mt-6 pt-6 border-t border-zinc-800">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm font-semibold text-white mb-1">Mise à jour des données</p>
+              <p className="text-xs text-zinc-500">Scripts de chargement des nouveaux CSV</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                <p className="text-sm font-semibold text-white">Quotidien</p>
+              </div>
+              <p className="text-xs text-zinc-500 mb-3">Ajoute les nouvelles transactions du jour (incrémental)</p>
+              <button
+                onClick={() => window.open('/scripts/UPDATE_DATABASE.md#-mise-à-jour-quotidienne-incrémentale', '_blank')}
+                className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all"
+              >
+                📖 Voir documentation
+              </button>
+            </div>
+
+            <div className="bg-zinc-900/50 rounded-xl p-4 border border-orange-600/30 bg-orange-500/5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-orange-400"></div>
+                <p className="text-sm font-semibold text-white">Hebdomadaire</p>
+              </div>
+              <p className="text-xs text-zinc-500 mb-3">Recrée toute la base (dimanche, opération complète)</p>
+              <button
+                onClick={() => window.open('/scripts/UPDATE_DATABASE.md#️-mise-à-jour-hebdomadaire-complète', '_blank')}
+                className="w-full px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition-all"
+              >
+                📖 Voir documentation
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-yellow-300 mb-1">Scripts manuels</p>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Pour le moment, ces scripts s'exécutent en ligne de commande. 
+                  Placez vos fichiers CSV dans <code className="px-1 py-0.5 bg-zinc-800 rounded">data/nouveaux/</code> puis lancez 
+                  <code className="px-1 py-0.5 bg-zinc-800 rounded ml-1">python scripts/update-daily.py</code> ou 
+                  <code className="px-1 py-0.5 bg-zinc-800 rounded ml-1">python scripts/update-weekly.py</code>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Configuration API */}
