@@ -43,57 +43,113 @@ module.exports = async (req, res) => {
 
     console.log('📊 Chargement des clients et transactions...')
     
-    // Stratégie optimisée: calculer les quintiles directement en SQL avec NTILE
-    // Au lieu de charger tout en mémoire puis calculer côté Node
+    // Calcul RFM optimisé avec NTILE directement en SQL
     let clientsData
     
-    const baseQuery = `
-      WITH client_metrics AS (
-        SELECT 
-          c.carte::text,
-          c.ville::text,
-          COUNT(t.id)::int as frequency,
-          SUM(t.ca)::numeric as monetary,
-          EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
-          EXTRACT(DAY FROM (CURRENT_DATE - MIN(t.date)))::int as days_since_first,
-          MAX(t.date)::text as last_date,
-          MIN(t.date)::text as first_date
-        FROM clients c
-        INNER JOIN transactions t ON c.carte = t.carte
-        {{WHERE_CLAUSE}}
-        GROUP BY c.carte, c.ville
-        HAVING SUM(t.ca) > 0
-      ),
-      rfm_scores AS (
-        SELECT 
-          carte,
-          ville,
-          frequency,
-          monetary,
-          recency,
-          days_since_first,
-          last_date,
-          first_date,
-          -- Calcul des scores R, F, M avec NTILE (quintiles)
-          -- NTILE(5) divise en 5 groupes égaux
-          (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r,
-          NTILE(5) OVER (ORDER BY frequency DESC)::int as f,
-          NTILE(5) OVER (ORDER BY monetary DESC)::int as m
-        FROM client_metrics
-      )
-      SELECT * FROM rfm_scores
-      ORDER BY carte
-    `
-    
     if (showWebOnly) {
-      const query = baseQuery.replace('{{WHERE_CLAUSE}}', "WHERE t.depot = 'WEB'")
-      clientsData = await prisma.$queryRawUnsafe(query)
+      clientsData = await prisma.$queryRawUnsafe(`
+        WITH client_metrics AS (
+          SELECT 
+            c.carte::text,
+            c.ville::text,
+            COUNT(t.id)::int as frequency,
+            SUM(t.ca)::numeric as monetary,
+            EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
+            EXTRACT(DAY FROM (CURRENT_DATE - MIN(t.date)))::int as days_since_first,
+            MAX(t.date)::text as last_date,
+            MIN(t.date)::text as first_date
+          FROM clients c
+          INNER JOIN transactions t ON c.carte = t.carte
+          WHERE t.depot = 'WEB'
+          GROUP BY c.carte, c.ville
+          HAVING SUM(t.ca) > 0
+        ),
+        rfm_scores AS (
+          SELECT 
+            carte,
+            ville,
+            frequency,
+            monetary,
+            recency,
+            days_since_first,
+            last_date,
+            first_date,
+            (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r,
+            NTILE(5) OVER (ORDER BY frequency DESC)::int as f,
+            NTILE(5) OVER (ORDER BY monetary DESC)::int as m
+          FROM client_metrics
+        )
+        SELECT * FROM rfm_scores ORDER BY carte LIMIT 50000
+      `)
     } else if (showMagasinOnly) {
-      const query = baseQuery.replace('{{WHERE_CLAUSE}}', "WHERE t.depot != 'WEB'")
-      clientsData = await prisma.$queryRawUnsafe(query)
+      clientsData = await prisma.$queryRawUnsafe(`
+        WITH client_metrics AS (
+          SELECT 
+            c.carte::text,
+            c.ville::text,
+            COUNT(t.id)::int as frequency,
+            SUM(t.ca)::numeric as monetary,
+            EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
+            EXTRACT(DAY FROM (CURRENT_DATE - MIN(t.date)))::int as days_since_first,
+            MAX(t.date)::text as last_date,
+            MIN(t.date)::text as first_date
+          FROM clients c
+          INNER JOIN transactions t ON c.carte = t.carte
+          WHERE t.depot != 'WEB'
+          GROUP BY c.carte, c.ville
+          HAVING SUM(t.ca) > 0
+        ),
+        rfm_scores AS (
+          SELECT 
+            carte,
+            ville,
+            frequency,
+            monetary,
+            recency,
+            days_since_first,
+            last_date,
+            first_date,
+            (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r,
+            NTILE(5) OVER (ORDER BY frequency DESC)::int as f,
+            NTILE(5) OVER (ORDER BY monetary DESC)::int as m
+          FROM client_metrics
+        )
+        SELECT * FROM rfm_scores ORDER BY carte LIMIT 50000
+      `)
     } else {
-      const query = baseQuery.replace('{{WHERE_CLAUSE}}', '')
-      clientsData = await prisma.$queryRawUnsafe(query)
+      clientsData = await prisma.$queryRawUnsafe(`
+        WITH client_metrics AS (
+          SELECT 
+            c.carte::text,
+            c.ville::text,
+            COUNT(t.id)::int as frequency,
+            SUM(t.ca)::numeric as monetary,
+            EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
+            EXTRACT(DAY FROM (CURRENT_DATE - MIN(t.date)))::int as days_since_first,
+            MAX(t.date)::text as last_date,
+            MIN(t.date)::text as first_date
+          FROM clients c
+          INNER JOIN transactions t ON c.carte = t.carte
+          GROUP BY c.carte, c.ville
+          HAVING SUM(t.ca) > 0
+        ),
+        rfm_scores AS (
+          SELECT 
+            carte,
+            ville,
+            frequency,
+            monetary,
+            recency,
+            days_since_first,
+            last_date,
+            first_date,
+            (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r,
+            NTILE(5) OVER (ORDER BY frequency DESC)::int as f,
+            NTILE(5) OVER (ORDER BY monetary DESC)::int as m
+          FROM client_metrics
+        )
+        SELECT * FROM rfm_scores ORDER BY carte LIMIT 50000
+      `)
     }
 
     const clientsArray = serializeJSON(clientsData)
