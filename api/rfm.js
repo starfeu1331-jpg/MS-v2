@@ -56,7 +56,7 @@ export default async function handler(req, res) {
             MIN(t.date)::text as first_date
           FROM clients c
           INNER JOIN transactions t ON c.carte = t.carte
-          WHERE t.depot = 'WEB'
+          WHERE t.depot = 'WEB' AND c.carte != '0'
           GROUP BY c.carte, c.ville
           HAVING SUM(t.ca) > 0
         ),
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
             MIN(t.date)::text as first_date
           FROM clients c
           INNER JOIN transactions t ON c.carte = t.carte
-          WHERE t.depot != 'WEB'
+          WHERE t.depot != 'WEB' AND c.carte != '0'
           GROUP BY c.carte, c.ville
           HAVING SUM(t.ca) > 0
         ),
@@ -126,6 +126,7 @@ export default async function handler(req, res) {
             MIN(t.date)::text as first_date
           FROM clients c
           INNER JOIN transactions t ON c.carte = t.carte
+          WHERE c.carte != '0'
           GROUP BY c.carte, c.ville
           HAVING SUM(t.ca) > 0
         ),
