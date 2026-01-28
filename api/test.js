@@ -18,14 +18,15 @@ export default async function handler(req, res) {
     // Test 2: Connexion simple
     const result = await prisma.$queryRaw`SELECT NOW() as now, COUNT(*) as count FROM transactions LIMIT 1`
     
-    // Test 3: Compter les transactions
-    const count = await prisma.transaction.count()
+    // Test 3: Requête simple
+    const transactions = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM transactions`
     
     res.status(200).json({ 
       success: true,
       dbUrl: dbUrl.substring(0, 30) + '...',
-      timestamp: result[0].now,
-      transactionsCount: count
+      timestamp: result[0]?.now,
+      queryResult: result[0]?.count,
+      transactionsCount: transactions[0]?.count
     })
   } catch (error) {
     res.status(500).json({ 
