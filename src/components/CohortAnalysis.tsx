@@ -1,12 +1,63 @@
 import { TrendingUp, Calendar, Target } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
-interface CohortAnalysisProps {
-  data: any
-}
+const API_URL = import.meta.env.VITE_API_URL || 'https://ms-v2.vercel.app'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-export default function CohortAnalysis({ data }: CohortAnalysisProps) {
-  if (!data || !data.cohortes) {
+// Cache global
+let cohortCache: { data: any; timestamp: number } | null = null
+
+export default function CohortAnalysis() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Vérifier le cache
+        const now = Date.now()
+        if (cohortCache && (now - cohortCache.timestamp < CACHE_DURATION)) {
+          console.log('🔍 Cohortes: Utilisation cache')
+          setData(cohortCache.data)
+          setLoading(false)
+          return
+        }
+
+        console.log('🔄 Cohortes: Chargement depuis API')
+        setLoading(true)
+        
+        const response = await fetch(`${API_URL}/api/cohortes`)
+        if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
+        
+        const result = await response.json()
+        
+        // Mettre en cache
+        cohortCache = { data: result, timestamp: Date.now() }
+        
+        setData(result)
+        console.log('✅ Cohortes: Données chargées')
+      } catch (err: any) {
+        console.error('❌ Erreur chargement Cohortes:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+  
+  if (loading) {
     return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Chargement...</div></div>
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-red-400">Erreur: {error}</div></div>
+  }
+  
+  if (!data || !data.cohortes) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Aucune donnée</div></div>
   }
   
   const formatEuro = (value: number) => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}€`

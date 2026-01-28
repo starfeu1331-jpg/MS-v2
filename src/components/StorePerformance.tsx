@@ -1,14 +1,64 @@
 import { Store, Target } from 'lucide-react'
-import { Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { LazyBarChart as BarChart, LazyBar as Bar, LazyXAxis as XAxis, LazyYAxis as YAxis, LazyCartesianGrid as CartesianGrid, LazyTooltip as Tooltip, LazyResponsiveContainer as ResponsiveContainer, ChartFallback } from '../utils/lazyRecharts'
 
-interface StorePerformanceProps {
-  data: any
-}
+const API_URL = import.meta.env.VITE_API_URL || 'https://ms-v2.vercel.app'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-export default function StorePerformance({ data }: StorePerformanceProps) {
-  if (!data || !data.geo || !data.geo.magasins) {
+// Cache global
+let storeCache: { data: any; timestamp: number } | null = null
+
+export default function StorePerformance() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Vérifier le cache
+        const now = Date.now()
+        if (storeCache && (now - storeCache.timestamp < CACHE_DURATION)) {
+          console.log('🔍 Stores: Utilisation cache')
+          setData(storeCache.data)
+          setLoading(false)
+          return
+        }
+
+        console.log('🔄 Stores: Chargement depuis API')
+        setLoading(true)
+        
+        const response = await fetch(`${API_URL}/api/stores`)
+        if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
+        
+        const result = await response.json()
+        
+        // Mettre en cache
+        storeCache = { data: result, timestamp: Date.now() }
+        
+        setData(result)
+        console.log('✅ Stores: Données chargées')
+      } catch (err: any) {
+        console.error('❌ Erreur chargement Stores:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+  
+  if (loading) {
     return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Chargement...</div></div>
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-red-400">Erreur: {error}</div></div>
+  }
+  
+  if (!data || !data.geo || !data.geo.magasins) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Aucune donnée</div></div>
   }
   
   console.log('🏪 DEBUG StorePerformance - data.geo.magasins:', data.geo.magasins)

@@ -1,17 +1,66 @@
 import { Package, TrendingDown, Star, AlertTriangle } from 'lucide-react'
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { LazyPieChart as PieChart, LazyPie as Pie, LazyCell as Cell, LazyResponsiveContainer as ResponsiveContainer, LazyTooltip as Tooltip, ChartFallback } from '../utils/lazyRecharts'
 
-interface ABCAnalysisProps {
-  data: any
-}
+const API_URL = import.meta.env.VITE_API_URL || 'https://ms-v2.vercel.app'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-export default function ABCAnalysis({ data }: ABCAnalysisProps) {
+// Cache global
+let abcCache: { data: any; timestamp: number } | null = null
+
+export default function ABCAnalysis() {
   const [channel, setChannel] = useState<'all' | 'mag' | 'web'>('all')
   const [level, setLevel] = useState<'familles' | 'sousFamilles' | 'produits'>('familles')
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Vérifier le cache
+        const now = Date.now()
+        if (abcCache && (now - abcCache.timestamp < CACHE_DURATION)) {
+          console.log('🔍 ABC: Utilisation cache')
+          setData(abcCache.data)
+          setLoading(false)
+          return
+        }
+
+        console.log('🔄 ABC: Chargement depuis API')
+        setLoading(true)
+        
+        const response = await fetch(`${API_URL}/api/abc-analysis`)
+        if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
+        
+        const result = await response.json()
+        
+        // Mettre en cache
+        abcCache = { data: result, timestamp: Date.now() }
+        
+        setData(result)
+        console.log('✅ ABC: Données chargées')
+      } catch (err: any) {
+        console.error('❌ Erreur chargement ABC:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+  
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Chargement...</div></div>
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-red-400">Erreur: {error}</div></div>
+  }
   
   if (!data || !data.familles) {
-    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Chargement...</div></div>
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Aucune donnée</div></div>
   }
   
   const formatEuro = (value: number) => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}€`
