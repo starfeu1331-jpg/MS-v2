@@ -1,16 +1,11 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import multiparty from 'multiparty'
 import fs from 'fs'
 import { parse } from 'csv-parse/sync'
 
 const prisma = new PrismaClient({ 
-  log: ['query', 'error', 'warn'],
-  errorFormat: 'pretty'
+  log: ['error', 'warn']
 })
-
-// Test au chargement
-console.log('🔍 Prisma client:', Object.keys(prisma))
-console.log('🔍 Prisma.transactions:', typeof prisma.transactions)
 
 export const config = {
   api: {
@@ -235,8 +230,6 @@ const handleWeeklyUpdate = async (files) => {
 }
 
 export default async function handler(req, res) {
-  console.log('📥 Request reçue, method:', req.method)
-  
   res.setHeader('Access-Control-Allow-Credentials', 'true')
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -248,19 +241,6 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' })
-  }
-
-  // TEST: Prisma fonctionne-t-il ?
-  try {
-    const testCount = await prisma.transactions.count()
-    console.log('✅ Prisma fonctionne, count:', testCount)
-  } catch (error) {
-    console.error('❌ Prisma test failed:', error)
-    return res.status(500).json({
-      error: 'Prisma non fonctionnel',
-      message: error.message,
-      prismaType: typeof prisma
-    })
   }
 
   try {
