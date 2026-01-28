@@ -1,26 +1,21 @@
-const { PrismaClient } = require('@prisma/client')
-const multiparty = require('multiparty')
-const fs = require('fs')
-const { parse } = require('csv-parse/sync')
+import { PrismaClient } from '@prisma/client'
+import multiparty from 'multiparty'
+import fs from 'fs'
+import { parse } from 'csv-parse/sync'
 
-console.log('🔍 PrismaClient:', PrismaClient)
+console.log('🔍 Initialisation Prisma...')
 
 let prisma
 try {
   prisma = new PrismaClient({ 
-    log: ['error', 'warn'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL
-      }
-    }
+    log: ['error', 'warn']
   })
   console.log('✅ Prisma initialisé')
 } catch (error) {
   console.error('❌ Erreur init Prisma:', error)
 }
 
-module.exports.config = {
+export const config = {
   api: {
     bodyParser: false,
   },
@@ -233,7 +228,7 @@ const handleWeeklyUpdate = async (files) => {
   return totals
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   console.log('📥 Request reçue, method:', req.method)
   console.log('🔍 Prisma disponible?', !!prisma)
   
