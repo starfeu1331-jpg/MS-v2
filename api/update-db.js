@@ -3,17 +3,6 @@ import multiparty from 'multiparty'
 import fs from 'fs'
 import { parse } from 'csv-parse/sync'
 
-let prismaInstance
-
-function getPrisma() {
-  if (!prismaInstance) {
-    prismaInstance = new PrismaClient({ 
-      log: ['error', 'warn']
-    })
-  }
-  return prismaInstance
-}
-
 export const config = {
   api: {
     bodyParser: false,
@@ -25,8 +14,7 @@ const parseCSV = (filePath) => {
   return parse(content, { columns: true, skip_empty_lines: true })
 }
 
-const handleDailyUpdate = async (files) => {
-  const prisma = getPrisma()
+const handleDailyUpdate = async (files, prisma) => {
   console.log('📅 Mise à jour quotidienne...')
   
   if (!files.transactions) {
@@ -132,8 +120,7 @@ const handleDailyUpdate = async (files) => {
   }
 }
 
-const handleWeeklyUpdate = async (files) => {
-  const prisma = getPrisma()
+const handleWeeklyUpdate = async (files, prisma) => {
   console.log('🗓️ Mise à jour hebdomadaire (complète)...')
   
   if (!files.transactions || !files.clients || !files.produits) {
@@ -242,6 +229,9 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Créer Prisma APRÈS le parsing du form
+    const prisma = new PrismaClient({ log: ['error', 'warn'] })
+    
     const form = new multiparty.Form()
     
     const { fields, files } = await new Promise((resolve, reject) => {
@@ -254,7 +244,7 @@ export default async function handler(req, res) {
     const mode = fields.mode?.[0]
 
     if (mode === 'daily') {
-      const result = await handleDailyUpdate(files)
+      const result = await handleDailyUpdate(files, prisma)
       res.status(200).json({
         success: true,
         message: 'Mise à jour quotidienne réussie',
@@ -263,7 +253,7 @@ export default async function handler(req, res) {
         maxDate: result.maxDate
       })
     } else if (mode === 'weekly') {
-      const totals = await handleWeeklyUpdate(files)
+      const totals = await handleWeeklyUpdate(files, prisma)
       res.status(200).json({
         success: true,
         message: 'Recréation complète réussie',
