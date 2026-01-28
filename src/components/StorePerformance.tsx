@@ -114,8 +114,8 @@ export default function StorePerformance() {
   magasins.sort((a, b) => b.scoreGlobal - a.scoreGlobal)
   
   // Stats Web
-  const webCA = data.webStats.ca
-  const webVolume = data.webStats.volume
+  const webCA = data.webStats?.ca || 0
+  const webVolume = data.webStats?.volume || 0
   const webPanierMoyen = webVolume > 0 ? webCA / webVolume : 0
   
   const totalCA = totalCAMag + webCA
