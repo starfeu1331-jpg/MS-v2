@@ -192,7 +192,7 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
         </div>
 
         {/* Toggle Magasin/Web */}
-          <div className="flex gap-2 bg-zinc-900 rounded-xl p-1">
+        <div className="flex gap-2 bg-zinc-900 rounded-xl p-1">
             <button
               onClick={() => setShowWeb(false)}
               className={`px-6 py-2 rounded-lg transition-all ${
