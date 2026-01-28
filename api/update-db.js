@@ -4,8 +4,13 @@ import fs from 'fs'
 import { parse } from 'csv-parse/sync'
 
 const prisma = new PrismaClient({ 
-  log: ['error', 'warn']
+  log: ['query', 'error', 'warn'],
+  errorFormat: 'pretty'
 })
+
+// Test au chargement
+console.log('🔍 Prisma client:', Object.keys(prisma))
+console.log('🔍 Prisma.transactions:', typeof prisma.transactions)
 
 export const config = {
   api: {
