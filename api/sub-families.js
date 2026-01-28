@@ -38,7 +38,7 @@ export default async function handler(req, res) {
           COUNT(*)::int as volume,
           COUNT(DISTINCT t.facture)::int as nb_tickets
         FROM transactions t
-        LEFT JOIN produits p ON t.produit = p.code
+        LEFT JOIN produits p ON t.produit = p.id
         WHERE t.ca > 0 AND t.depot = 'WEB'
         GROUP BY p.famille, p.sous_famille
         ORDER BY SUM(t.ca) DESC
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
           COUNT(*)::int as volume,
           COUNT(DISTINCT t.facture)::int as nb_tickets
         FROM transactions t
-        LEFT JOIN produits p ON t.produit = p.code
+        LEFT JOIN produits p ON t.produit = p.id
         WHERE t.ca > 0 AND t.depot != 'WEB'
         GROUP BY p.famille, p.sous_famille
         ORDER BY SUM(t.ca) DESC
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
           COUNT(*)::int as volume,
           COUNT(DISTINCT t.facture)::int as nb_tickets
         FROM transactions t
-        LEFT JOIN produits p ON t.produit = p.code
+        LEFT JOIN produits p ON t.produit = p.id
         WHERE t.ca > 0
         GROUP BY p.famille, p.sous_famille
         ORDER BY SUM(t.ca) DESC

@@ -39,7 +39,7 @@ export default async function handler(req, res) {
           ARRAY_AGG(DISTINCT p.famille) as familles,
           SUM(t.ca)::numeric as ca_ticket
         FROM transactions t
-        LEFT JOIN produits p ON t.produit = p.code
+        LEFT JOIN produits p ON t.produit = p.id
         WHERE t.ca > 0 AND t.facture IS NOT NULL AND t.depot = 'WEB' AND p.famille IS NOT NULL
         GROUP BY t.facture, t.date
         HAVING COUNT(DISTINCT p.famille) >= 2
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
           ARRAY_AGG(DISTINCT p.famille) as familles,
           SUM(t.ca)::numeric as ca_ticket
         FROM transactions t
-        LEFT JOIN produits p ON t.produit = p.code
+        LEFT JOIN produits p ON t.produit = p.id
         WHERE t.ca > 0 AND t.facture IS NOT NULL AND t.depot != 'WEB' AND p.famille IS NOT NULL
         GROUP BY t.facture, t.date
         HAVING COUNT(DISTINCT p.famille) >= 2
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
           ARRAY_AGG(DISTINCT p.famille) as familles,
           SUM(t.ca)::numeric as ca_ticket
         FROM transactions t
-        LEFT JOIN produits p ON t.produit = p.code
+        LEFT JOIN produits p ON t.produit = p.id
         WHERE t.ca > 0 AND t.facture IS NOT NULL AND p.famille IS NOT NULL
         GROUP BY t.facture, t.date
         HAVING COUNT(DISTINCT p.famille) >= 2
@@ -81,8 +81,6 @@ export default async function handler(req, res) {
         LIMIT 50000
       `)
     }
-
-    console.log(`✅ API Cross-Selling: ${results.length} tickets avec cross-sell trouvés`)
 
     console.log(`✅ API Cross-Selling: ${results.length} tickets avec cross-sell trouvés`)
 
