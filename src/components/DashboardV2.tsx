@@ -193,29 +193,28 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
 
         {/* Toggle Magasin/Web */}
         <div className="flex gap-2 bg-zinc-900 rounded-xl p-1">
-            <button
-              onClick={() => setShowWeb(false)}
-              className={`px-6 py-2 rounded-lg transition-all ${
-                !showWeb
-                  ? 'bg-blue-600 text-white'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Store className="w-4 h-4 inline mr-2" />
-              Magasins
-            </button>
-            <button
-              onClick={() => setShowWeb(true)}
-              className={`px-6 py-2 rounded-lg transition-all ${
-                showWeb
-                  ? 'bg-cyan-600 text-white'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Globe className="w-4 h-4 inline mr-2" />
-              Web
-            </button>
-          </div>
+          <button
+            onClick={() => setShowWeb(false)}
+            className={`px-6 py-2 rounded-lg transition-all ${
+              !showWeb
+                ? 'bg-blue-600 text-white'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Store className="w-4 h-4 inline mr-2" />
+            Magasins
+          </button>
+          <button
+            onClick={() => setShowWeb(true)}
+            className={`px-6 py-2 rounded-lg transition-all ${
+              showWeb
+                ? 'bg-cyan-600 text-white'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Globe className="w-4 h-4 inline mr-2" />
+            Web
+          </button>
         </div>
 
         {/* KPIs Grid */}
