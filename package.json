@@ -8,6 +8,7 @@
     "dev:debug": "vite --debug=*",
     "dev:host": "vite --host 0.0.0.0",
     "build": "npx prisma generate && tsc -b && vite build",
+    "postinstall": "npx prisma generate",
     "lint": "eslint .",
     "preview": "vite preview",
     "diagnose": "node scripts/diagnose-vite.js"
