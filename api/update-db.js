@@ -1,11 +1,8 @@
 import { PrismaClient, Prisma } from '@prisma/client'
+import { prisma } from './prisma-client.js'
 import multiparty from 'multiparty'
 import fs from 'fs'
 import { parse } from 'csv-parse/sync'
-
-const prisma = new PrismaClient({
-  log: ['error', 'warn']
-})
 
 export const config = {
   api: {
