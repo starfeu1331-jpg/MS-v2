@@ -116,6 +116,69 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
     if (e.key === 'Enter') handleSearch()
   }
 
+  const switchToClientSearch = (carte: string) => {
+    setMode('client')
+    setSearchTerm(carte)
+    setTimeout(() => {
+      setLoading(true)
+      setError(null)
+      setTicketResults([])
+      setTicketInfo(null)
+      setClientResult(null)
+      
+      fetch(`/api/clients?carte=${carte}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || !data.client) {
+            setError('Client non trouvé')
+            return
+          }
+          const totalCA = data.transactions.reduce((sum: number, t: any) => sum + Number(t.ca || 0), 0)
+          const nbAchats = data.transactions.length
+          setClientResult({
+            carte: data.client.carte,
+            ville: data.client.ville,
+            cp: data.client.cp,
+            transactions: data.transactions,
+            totalCA,
+            nbAchats
+          })
+        })
+        .catch(err => {
+          console.error('Erreur recherche:', err)
+          setError('Client non trouvé')
+        })
+        .finally(() => setLoading(false))
+    }, 100)
+  }
+
+  const switchToTicketSearch = (facture: string) => {
+    setMode('ticket')
+    setSearchTerm(facture)
+    setTimeout(() => {
+      setLoading(true)
+      setError(null)
+      setTicketResults([])
+      setTicketInfo(null)
+      setClientResult(null)
+      
+      fetch(`/api/tickets?facture=${facture}`)
+        .then(res => res.json())
+        .then(data => {
+          setTicketResults(data.transactions || [])
+          setTicketInfo({ facture: data.facture, client: data.client, magasin: data.magasin })
+          if (!data.transactions || data.transactions.length === 0) {
+            setError('Aucun ticket trouvé avec ce numéro')
+          }
+        })
+        .catch(err => {
+          console.error('Erreur recherche:', err)
+          setError('Ticket non trouvé')
+        })
+        .finally(() => setLoading(false))
+    }, 100)
+  }
+
   return (
     <div className="space-y-8 relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
@@ -227,12 +290,15 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
           {/* Infos client et magasin */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {ticketInfo.client && (
-              <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
+              <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20 cursor-pointer hover:bg-blue-500/20 transition-all group"
+                onClick={() => switchToClientSearch(ticketInfo.client.carte)}>
                 <div className="flex items-center gap-3 mb-2">
                   <User className="w-5 h-5 text-blue-400" />
-                  <span className="text-xs text-zinc-400 font-bold uppercase">Client</span>
+                  <span className="text-xs text-zinc-400 font-bold uppercase">Client (cliquer pour voir)</span>
                 </div>
-                <p className="text-white font-bold text-lg">Carte: {ticketInfo.client.carte}</p>
+                <p className="text-white font-bold text-lg group-hover:text-blue-300 transition-colors">
+                  Carte: {ticketInfo.client.carte}
+                </p>
                 <p className="text-zinc-400 text-sm">{ticketInfo.client.ville}</p>
               </div>
             )}
@@ -341,7 +407,14 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
                   {clientResult.transactions.map((transaction, idx) => (
                     <tr key={idx} className="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium text-zinc-300">{formatDate(transaction.date)}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-zinc-300">{transaction.facture}</td>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        <button
+                          onClick={() => switchToTicketSearch(transaction.facture)}
+                          className="text-blue-400 hover:text-blue-300 font-bold underline decoration-dotted hover:decoration-solid transition-all"
+                        >
+                          {transaction.facture}
+                        </button>
+                      </td>
                       <td className="px-4 py-3 text-sm font-medium text-zinc-300">
                         {transaction.produitRef ? (
                           <div className="text-xs">
