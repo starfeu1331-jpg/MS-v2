@@ -45,6 +45,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
   const [searchTerm, setSearchTerm] = useState(initialSearch || '')
   const [loading, setLoading] = useState(false)
   const [ticketResults, setTicketResults] = useState<Transaction[]>([])
+  const [ticketInfo, setTicketInfo] = useState<any>(null)
   const [clientResult, setClientResult] = useState<ClientResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -65,6 +66,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
     setLoading(true)
     setError(null)
     setTicketResults([])
+    setTicketInfo(null)
     setClientResult(null)
 
     try {
@@ -74,6 +76,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         
         const data = await response.json()
         setTicketResults(data.transactions || [])
+        setTicketInfo({ facture: data.facture, client: data.client, magasin: data.magasin })
         
         if (!data.transactions || data.transactions.length === 0) {
           setError('Aucun ticket trouvé avec ce numéro')
@@ -197,84 +200,93 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         </div>
       )}
 
-      {mode === 'ticket' && ticketResults.length > 0 && !loading && (
-        <div>
-          <div className="glass rounded-2xl p-4 mb-6 inline-flex items-center gap-3 shadow-lg border border-zinc-800">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-black">
-              {ticketResults.length}
+      {mode === 'ticket' && ticketResults.length > 0 && ticketInfo && !loading && (
+        <div className="glass rounded-3xl shadow-2xl p-8 border border-zinc-800">
+          {/* En-tête du ticket */}
+          <div className="flex items-center justify-between mb-6 pb-6 border-b border-zinc-800">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg">
+                <Ticket className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <p className="text-3xl font-black text-gradient">Ticket #{ticketInfo.facture}</p>
+                <p className="text-sm text-zinc-400 font-medium flex items-center gap-2 mt-1">
+                  <Calendar className="w-4 h-4" />
+                  {ticketResults[0] && formatDate(ticketResults[0].date)}
+                </p>
+              </div>
             </div>
-            <p className="text-sm font-bold text-zinc-300">
-              transaction{ticketResults.length > 1 ? 's' : ''} trouvée{ticketResults.length > 1 ? 's' : ''}
-            </p>
+            <div className="text-right">
+              <p className="text-xs text-zinc-500 font-bold uppercase">Total Ticket</p>
+              <p className="text-4xl font-black text-gradient">
+                {formatEuro(ticketResults.reduce((sum, t) => sum + Number(t.ca), 0))}
+              </p>
+            </div>
           </div>
-          
-          <div className="space-y-4">
-            {ticketResults.map((transaction, idx) => (
-              <div
-                key={idx}
-                className="glass rounded-2xl shadow-xl p-6 card-hover border-l-4 border-blue-500 group border border-zinc-800"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/20 rounded-xl">
-                      <Ticket className="w-6 h-6 text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black text-gradient">Ticket #{transaction.facture}</p>
-                      <p className="text-sm text-zinc-400 font-medium flex items-center gap-2 mt-1">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(transaction.date)}
+
+          {/* Infos client et magasin */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {ticketInfo.client && (
+              <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <User className="w-5 h-5 text-blue-400" />
+                  <span className="text-xs text-zinc-400 font-bold uppercase">Client</span>
+                </div>
+                <p className="text-white font-bold text-lg">Carte: {ticketInfo.client.carte}</p>
+                <p className="text-zinc-400 text-sm">{ticketInfo.client.ville}</p>
+              </div>
+            )}
+            {ticketInfo.magasin && (
+              <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <Store className="w-5 h-5 text-purple-400" />
+                  <span className="text-xs text-zinc-400 font-bold uppercase">Magasin</span>
+                </div>
+                <p className="text-white font-bold text-lg">{ticketInfo.magasin.nom}</p>
+                <p className="text-zinc-400 text-sm">{ticketInfo.magasin.ville}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Lignes du ticket */}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <Package className="w-5 h-5 text-emerald-400" />
+              <h4 className="text-lg font-bold text-white">Articles ({ticketResults.length})</h4>
+            </div>
+            <div className="space-y-2">
+              {ticketResults.map((transaction, idx) => (
+                <div
+                  key={idx}
+                  className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800 hover:border-emerald-500/30 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-bold text-white">
+                        {(transaction as any).famille} - {(transaction as any).sous_famille}
+                      </p>
+                      <p className="text-sm text-zinc-400 mt-1">
+                        Produit: <span className="text-blue-400 font-medium">{(transaction as any).produitNom}</span>
                       </p>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-zinc-500 font-bold uppercase">Montant</p>
-                    <p className="text-3xl font-black text-gradient">{formatEuro(transaction.ca)}</p>
-                  </div>
-                </div>
-
-                {(transaction as any).famille && (
-                  <div className="mb-4 bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-purple-500/20 rounded-lg">
-                        <Package className="w-5 h-5 text-purple-400" />
+                    <div className="flex items-center gap-6 text-right">
+                      <div>
+                        <p className="text-xs text-zinc-500">Qté</p>
+                        <p className="font-bold text-white">{transaction.quantite}</p>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-white text-lg">
-                          {(transaction as any).famille} - {(transaction as any).sous_famille}
-                        </p>
-                        <div className="flex flex-wrap gap-3 mt-2 text-sm">
-                          <span className="text-zinc-400">
-                            Produit: <span className="text-blue-400 font-bold">{(transaction as any).produitNom}</span>
-                          </span>
-                          <span className="text-zinc-400">
-                            Quantité: <span className="text-emerald-400 font-bold">{transaction.quantite}</span>
-                          </span>
-                          <span className="text-zinc-400">
-                            Prix: <span className="text-emerald-400 font-bold">{formatEuro((transaction as any).prix)}</span>
-                          </span>
-                        </div>
+                      <div>
+                        <p className="text-xs text-zinc-500">P.U.</p>
+                        <p className="font-bold text-white">{formatEuro((transaction as any).prix)}</p>
+                      </div>
+                      <div className="min-w-[100px]">
+                        <p className="text-xs text-zinc-500">Total</p>
+                        <p className="font-bold text-emerald-400 text-lg">{formatEuro(transaction.ca)}</p>
                       </div>
                     </div>
                   </div>
-                )}
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                  <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
-                    <span className="text-xs text-zinc-500 font-bold uppercase">Total</span>
-                    <p className="font-bold text-emerald-400 text-xl mt-1">{formatEuro(transaction.ca)}</p>
-                  </div>
-                  <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
-                    <span className="text-xs text-zinc-500 font-bold uppercase">Quantité</span>
-                    <p className="font-bold text-white mt-1">{transaction.quantite}</p>
-                  </div>
-                  <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
-                    <span className="text-xs text-zinc-500 font-bold uppercase">Prix unitaire</span>
-                    <p className="font-bold text-white mt-1">{formatEuro((transaction as any).prix)}</p>
-                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
