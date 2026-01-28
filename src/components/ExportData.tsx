@@ -31,8 +31,9 @@ export default function ExportData({ data }: ExportDataProps) {
   
   // Export KPIs
   const exportKPIs = () => {
-    const totalCA = Object.values(data.familles).reduce((sum: number, f: any) => sum + (Number(f.ca) || 0), 0)
-    const totalTransactions = Object.values(data.familles).reduce((sum: number, f: any) => sum + (Number(f.volume) || 0), 0)
+    const famillesArray = (data.familles && typeof data.familles === 'object') ? Object.values(data.familles) : []
+    const totalCA = famillesArray.reduce((sum: number, f: any) => sum + (Number(f?.ca) || 0), 0)
+    const totalTransactions = famillesArray.reduce((sum: number, f: any) => sum + (Number(f?.volume) || 0), 0)
     const panierMoyen = totalCA / (totalTransactions || 1)
     const nbClients = Number(data.allClients?.size) || 0
     const tauxFidelite = ((Number(data.fidelite?.oui) || 0) / ((Number(data.fidelite?.oui) || 0) + (Number(data.fidelite?.non) || 0) || 1)) * 100
@@ -47,11 +48,11 @@ export default function ExportData({ data }: ExportDataProps) {
       Type: 'Volume'
     }, {
       Indicateur: 'Panier Moyen',
-      Valeur: formatEuro(panierMoyen),
+      Valeur: formatEuro(Number(panierMoyen) || 0),
       Type: 'Financier'
     }, {
       Indicateur: 'Nombre de Clients',
-      Valeur: (Number(nbClients) || 0).toLocaleString('fr-FR'),
+      Valeur: Number(nbClients || 0).toLocaleString('fr-FR'),
       Type: 'Client'
     }, {
       Indicateur: 'Taux de Fidélité',
@@ -63,7 +64,7 @@ export default function ExportData({ data }: ExportDataProps) {
       Type: 'Financier'
     }, {
       Indicateur: 'Part Web',
-      Valeur: `${(((Number(data.webStats?.ca) || 0) / (totalCA || 1)) * 100).toFixed(2)}%`,
+      Valeur: `${((Number(data.webStats?.ca || 0) / Number(totalCA || 1)) * 100).toFixed(2)}%`,
       Type: 'Distribution'
     }]
     
