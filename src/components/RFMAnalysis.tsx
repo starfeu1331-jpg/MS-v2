@@ -44,6 +44,10 @@ interface RFMData {
   }
 }
 
+// Cache global pour éviter de recalculer
+const rfmCache: Record<string, { data: RFMData; timestamp: number }> = {}
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
 export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysisProps) {
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null)
   const [showSegmentDetail, setShowSegmentDetail] = useState(false)
@@ -53,11 +57,23 @@ export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysis
 
   useEffect(() => {
     const fetchRFMData = async () => {
+      const magasinFilter = showWebData ? 'WEB' : 'MAGASIN'
+      const cacheKey = `rfm_${magasinFilter}`
+      
+      // Vérifier si on a des données en cache valides
+      const cached = rfmCache[cacheKey]
+      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        console.log('✅ RFM: Utilisation du cache', magasinFilter)
+        setRfmData(cached.data)
+        setLoading(false)
+        return
+      }
+      
       setLoading(true)
       setError(null)
       
       try {
-        const magasinFilter = showWebData ? 'WEB' : 'MAGASIN'
+        console.log('🔄 RFM: Chargement depuis API', magasinFilter)
         const response = await fetch(`/api/rfm?magasin=${magasinFilter}`)
         
         if (!response.ok) {
@@ -65,6 +81,13 @@ export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysis
         }
         
         const data = await response.json()
+        
+        // Mettre en cache
+        rfmCache[cacheKey] = {
+          data,
+          timestamp: Date.now()
+        }
+        
         setRfmData(data)
       } catch (err: any) {
         console.error('❌ Erreur chargement RFM:', err)
@@ -210,14 +233,27 @@ export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysis
   return (
     <div className="space-y-6">
       <div className="glass rounded-3xl p-8 border border-zinc-800">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl">
-            <Users className="w-8 h-8 text-white" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl">
+              <Users className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-white">Analyse RFM</h2>
+              <p className="text-zinc-400">Segmentation clients par Récence, Fréquence & Montant</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-bold text-white">Analyse RFM</h2>
-            <p className="text-zinc-400">Segmentation clients par Récence, Fréquence & Montant</p>
-          </div>
+          <button
+            onClick={() => {
+              const magasinFilter = showWebData ? 'WEB' : 'MAGASIN'
+              const cacheKey = `rfm_${magasinFilter}`
+              delete rfmCache[cacheKey]
+              window.location.reload()
+            }}
+            className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 rounded-xl text-purple-400 text-sm font-medium transition-all"
+          >
+            🔄 Rafraîchir
+          </button>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
