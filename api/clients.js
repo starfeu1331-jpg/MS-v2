@@ -2,6 +2,13 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+// Helper pour convertir BigInt en Number pour JSON
+const serializeJSON = (obj) => {
+  return JSON.parse(JSON.stringify(obj, (key, value) =>
+    typeof value === 'bigint' ? Number(value) : value
+  ))
+}
+
 export default async function handler(req, res) {
   const { carte } = req.query
   
@@ -24,7 +31,7 @@ export default async function handler(req, res) {
         t.date,
         t.ca,
         t.quantite,
-        p.nom as "produitNom",
+        p.id as "produitNom",
         p.famille,
         p.sous_famille,
         m.nom as "magasinNom",
@@ -37,7 +44,7 @@ export default async function handler(req, res) {
       LIMIT 100
     `
     
-    res.status(200).json({
+    res.status(200).json(serializeJSON({
       client,
       transactions: transactions.map(t => ({
         facture: t.facture,
@@ -50,7 +57,7 @@ export default async function handler(req, res) {
         magasinNom: t.magasinNom,
         magasinVille: t.magasinVille
       }))
-    })
+    }))
   } catch (error) {
     console.error('Client error:', error)
     res.status(500).json({ error: error.message })
