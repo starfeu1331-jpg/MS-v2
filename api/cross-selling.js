@@ -25,16 +25,15 @@ export default async function handler(req, res) {
       SELECT 
         t.facture,
         t.date,
-        EXTRACT(YEAR FROM t.date::date) as annee,
-        EXTRACT(MONTH FROM t.date::date) as mois,
-        ARRAY_AGG(DISTINCT COALESCE(p.famille, 'Non classé')) as familles,
-        ARRAY_AGG(DISTINCT t.produit) as produits,
-        SUM(t.ca) as ca_ticket
+        CAST(EXTRACT(YEAR FROM t.date::date) AS INTEGER) as annee,
+        CAST(EXTRACT(MONTH FROM t.date::date) AS INTEGER) as mois,
+        ARRAY_AGG(DISTINCT COALESCE(p.famille, 'Non classé')) FILTER (WHERE p.famille IS NOT NULL OR TRUE) as familles,
+        CAST(SUM(t.ca) AS DECIMAL) as ca_ticket
       FROM transactions t
       LEFT JOIN produits p ON t.produit = p.code
       ${whereClause}
       GROUP BY t.facture, t.date
-      HAVING COUNT(DISTINCT t.produit) > 1
+      HAVING COUNT(DISTINCT p.famille) >= 2
       ORDER BY t.date DESC
       LIMIT 50000
     `
