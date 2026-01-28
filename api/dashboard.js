@@ -1,11 +1,18 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+  log: ['error', 'warn']
+})
 
 export default async function handler(req, res) {
   const { year } = req.query
   
   try {
+    // Test de connexion
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL not configured')
+    }
+    
     if (year === 'all') {
       // Toutes les périodes
       const kpis = await prisma.$queryRaw`
@@ -233,6 +240,12 @@ export default async function handler(req, res) {
     })
   } catch (error) {
     console.error('Dashboard error:', error)
-    res.status(500).json({ error: error.message })
+    console.error('Error stack:', error.stack)
+    res.status(500).json({ 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    })
+  } finally {
+    await prisma.$disconnect()
   }
 }
