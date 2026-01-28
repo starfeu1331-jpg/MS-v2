@@ -13,9 +13,11 @@
     "diagnose": "node scripts/diagnose-vite.js"
   },
   "dependencies": {
+    "@prisma/client": "5.22.0",
     "@tanstack/react-virtual": "^3.13.18",
     "lucide-react": "^0.562.0",
     "papaparse": "^5.5.3",
+    "prisma": "5.22.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.6.0",

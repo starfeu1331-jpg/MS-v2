@@ -69,8 +69,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
 
     try {
       if (mode === 'ticket') {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-        const response = await fetch(`${API_URL}/api/tickets/${searchTerm.trim()}`)
+        const response = await fetch(`/api/tickets?facture=${searchTerm.trim()}`)
         if (!response.ok) throw new Error('Ticket non trouvé')
         
         const data = await response.json()
@@ -80,7 +79,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
           setError('Aucun ticket trouvé avec ce numéro')
         }
       } else {
-        const response = await fetch(`${API_URL}/api/clients/${searchTerm.trim()}`)
+        const response = await fetch(`/api/clients?carte=${searchTerm.trim()}`)
         if (!response.ok) throw new Error('Client non trouvé')
         
         const data = await response.json()

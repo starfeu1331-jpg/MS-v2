@@ -51,20 +51,14 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
       console.log(`📊 Chargement Dashboard période:`, period)
 
       // Construction de l'URL selon le type de période
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-      let url = `${API_URL}/api/dashboard/`
+      let url = '/api/dashboard?year='
       if (period.type === 'year') {
-        url += period.value
-      } else if (period.type === 'months') {
-        const endDate = new Date()
-        const startDate = new Date()
-        startDate.setMonth(startDate.getMonth() - period.value)
-        url += `custom?start=${startDate.toISOString().split('T')[0]}&end=${endDate.toISOString().split('T')[0]}`
-      } else if (period.type === 'custom') {
-        const [start, end] = period.value.split('_')
-        url += `custom?start=${start}&end=${end}`
+        url = `/api/dashboard?year=${period.value}`
       } else if (period.type === 'all') {
-        url += 'all'
+        url = '/api/dashboard?year=all'
+      } else {
+        // Pour l'instant on utilise 2025 par défaut pour les autres périodes
+        url = '/api/dashboard?year=2025'
       }
 
       // Appel API avec données pré-agrégées

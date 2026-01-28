@@ -1,16 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build && npx prisma generate",
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "vite",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api"
-    }
-  ],
-  "env": {
-    "DATABASE_URL": "@database_url"
-  }
+  "framework": "vite"
 }

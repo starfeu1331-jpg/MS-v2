@@ -30,11 +30,8 @@ dist-ssr
 .env.production.local
 .env.development.local
 .env.test.local
-backend/.env
 
 # Build outputs
-backend/dist
-backend/build
 frontend.log
 backend.log
 
@@ -48,6 +45,18 @@ backend.log
 /tmp
 *.tmp
 .cache
+
+# Vercel
+.vercel
+
+# Data files
+*.csv
+*.sql
+neon-*
+package-api.json
+
+# Backend (not used anymore)
+backend/
 
 # Vercel
 .vercel
