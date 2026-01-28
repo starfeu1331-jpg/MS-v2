@@ -233,7 +233,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
                   </div>
                 </div>
 
-                {transaction.produitRef && (
+                {(transaction as any).famille && (
                   <div className="mb-4 bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-purple-500/20 rounded-lg">
@@ -241,14 +241,17 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-white text-lg">
-                          {transaction.produitRef.famille} - {transaction.produitRef.sous_famille}
+                          {(transaction as any).famille} - {(transaction as any).sous_famille}
                         </p>
                         <div className="flex flex-wrap gap-3 mt-2 text-sm">
                           <span className="text-zinc-400">
-                            Code: <span className="text-blue-400 font-bold">{transaction.produit}</span>
+                            Produit: <span className="text-blue-400 font-bold">{(transaction as any).produitNom}</span>
                           </span>
                           <span className="text-zinc-400">
                             Quantité: <span className="text-emerald-400 font-bold">{transaction.quantite}</span>
+                          </span>
+                          <span className="text-zinc-400">
+                            Prix: <span className="text-emerald-400 font-bold">{formatEuro((transaction as any).prix)}</span>
                           </span>
                         </div>
                       </div>
@@ -256,32 +259,19 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
                   </div>
                 )}
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
-                    <span className="text-xs text-zinc-500 font-bold uppercase">Client</span>
-                    <p className="font-bold text-white mt-1">{transaction.carte}</p>
+                    <span className="text-xs text-zinc-500 font-bold uppercase">Total</span>
+                    <p className="font-bold text-emerald-400 text-xl mt-1">{formatEuro(transaction.ca)}</p>
                   </div>
-                  {transaction.client && (
-                    <>
-                      <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
-                        <span className="text-xs text-zinc-500 font-bold uppercase">Ville</span>
-                        <p className="font-bold text-white mt-1">{transaction.client.ville}</p>
-                      </div>
-                      <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
-                        <span className="text-xs text-zinc-500 font-bold uppercase">CP</span>
-                        <p className="font-bold text-white mt-1">{transaction.client.cp}</p>
-                      </div>
-                    </>
-                  )}
-                  {transaction.magasin && (
-                    <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
-                      <span className="text-xs text-zinc-500 font-bold uppercase flex items-center gap-1">
-                        <Store className="w-3 h-3" />
-                        Magasin
-                      </span>
-                      <p className="font-bold text-white mt-1">{transaction.magasin.nom}</p>
-                    </div>
-                  )}
+                  <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
+                    <span className="text-xs text-zinc-500 font-bold uppercase">Quantité</span>
+                    <p className="font-bold text-white mt-1">{transaction.quantite}</p>
+                  </div>
+                  <div className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800">
+                    <span className="text-xs text-zinc-500 font-bold uppercase">Prix unitaire</span>
+                    <p className="font-bold text-white mt-1">{formatEuro((transaction as any).prix)}</p>
+                  </div>
                 </div>
               </div>
             ))}
