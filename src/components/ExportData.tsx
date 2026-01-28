@@ -51,15 +51,15 @@ export default function ExportData({ data }: ExportDataProps) {
       Type: 'Financier'
     }, {
       Indicateur: 'Nombre de Clients',
-      Valeur: nbClients.toLocaleString('fr-FR'),
+      Valeur: (Number(nbClients) || 0).toLocaleString('fr-FR'),
       Type: 'Client'
     }, {
       Indicateur: 'Taux de Fidélité',
-      Valeur: `${tauxFidelite.toFixed(2)}%`,
+      Valeur: `${(Number(tauxFidelite) || 0).toFixed(2)}%`,
       Type: 'Client'
     }, {
       Indicateur: 'CA Web',
-      Valeur: formatEuro(data.webStats.ca),
+      Valeur: formatEuro(Number(data.webStats.ca) || 0),
       Type: 'Financier'
     }, {
       Indicateur: 'Part Web',

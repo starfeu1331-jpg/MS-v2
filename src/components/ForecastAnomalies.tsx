@@ -151,12 +151,12 @@ export default function ForecastAnomalies({ data }: ForecastAnomaliesProps) {
           </div>
           <div className="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
             <p className="text-xs text-zinc-500 font-semibold uppercase">Dernier Mois</p>
-            <p className="text-2xl font-bold text-white mt-1">{formatEuro(lastMonth.ca)}</p>
+            <p className="text-2xl font-bold text-white mt-1">{formatEuro(Number(lastMonth.ca) || 0)}</p>
           </div>
           <div className={`bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800`}>
             <p className="text-xs text-zinc-500 font-semibold uppercase">Croissance M-1</p>
             <p className={`text-2xl font-bold mt-1 ${growth > 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {growth > 0 ? '+' : ''}{growth.toFixed(1)}%
+              {growth > 0 ? '+' : ''}{(Number(growth) || 0).toFixed(1)}%
             </p>
           </div>
           <div className="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
