@@ -40,43 +40,11 @@ export default function SegmentDetail({
   const frequenceMoyenne = segmentData.clients.reduce((sum, c) => sum + c.frequency, 0) / segmentData.count
   const recenceMoyenne = segmentData.clients.reduce((sum, c) => sum + c.recency, 0) / segmentData.count
 
-  // Top produits (codes produits) - mémorisé pour éviter recalcul à chaque rendu
+  // Top produits - désactivé temporairement (nécessite API dédiée)
   const topProduits = useMemo(() => {
-    const produitStats: Record<string, { ca: number, volume: number, tickets: Set<string> }> = {}
-    
-    segmentData.clients.forEach(client => {
-      const clientData = allData.allClients.get(client.carte)
-      if (clientData?.achats) {
-        clientData.achats.forEach((achat: any) => {
-          // Chaque achat est un ticket avec plusieurs produits
-          if (achat.produits && Array.isArray(achat.produits)) {
-            achat.produits.forEach((p: any) => {
-              const produit = p.produit || 'Non défini'
-              if (!produitStats[produit]) {
-                produitStats[produit] = { ca: 0, volume: 0, tickets: new Set() }
-              }
-              produitStats[produit].ca += p.ca || 0
-              produitStats[produit].volume++
-              produitStats[produit].tickets.add(achat.ticket)
-            })
-          }
-        })
-      }
-    })
-
-    const result = Object.entries(produitStats)
-      .map(([produit, stats]) => ({
-        code: produit,
-        ca: stats.ca,
-        volume: stats.volume,
-        tickets: stats.tickets.size
-      }))
-      .sort((a, b) => b.ca - a.ca)
-      .slice(0, 15)
-    
-    console.log('🛍️ Top Produits calculated:', result.length, result.slice(0, 3))
-    return result
-  }, [segmentData.clients, allData.allClients])
+    // TODO: créer une API pour les top produits par segment
+    return []
+  }, [segmentData.clients])
 
   // Récupérer les noms de produits via l'API
   useEffect(() => {
@@ -112,8 +80,7 @@ export default function SegmentDetail({
   // Distribution géographique (codes postaux)
   const geoStats: Record<string, { clients: number, ca: number }> = {}
   segmentData.clients.forEach(client => {
-    const clientData = allData.allClients.get(client.carte)
-    const cp = clientData?.cp || client.cp || 'Non défini'
+    const cp = client.ville || 'Non défini' // Utiliser la ville directement du client RFM
     if (!geoStats[cp]) {
       geoStats[cp] = { clients: 0, ca: 0 }
     }
@@ -127,31 +94,10 @@ export default function SegmentDetail({
     .sort((a, b) => b.ca - a.ca)
     .slice(0, 10)
 
-  console.log('📍 Top CP:', topCP.length, topCP.slice(0, 3))
+  console.log('📍 Top Villes:', topCP.length, topCP.slice(0, 3))
 
-  // Évolution temporelle des achats (dernier mois connu)
-  const dateStats: Record<string, { ca: number, tickets: Set<string> }> = {}
-  segmentData.clients.forEach(client => {
-    const clientData = allData.allClients.get(client.carte)
-    if (clientData?.achats) {
-      clientData.achats.forEach((achat: any) => {
-        if (achat.date && achat.date !== 'N/A') {
-          const [, month, year] = achat.date.split('/')
-          const monthKey = `${year}-${month}`
-          if (!dateStats[monthKey]) {
-            dateStats[monthKey] = { ca: 0, tickets: new Set() }
-          }
-          dateStats[monthKey].ca += achat.ca || 0
-          dateStats[monthKey].tickets.add(achat.ticket)
-        }
-      })
-    }
-  })
-
-  const evolutionTemporelle = Object.entries(dateStats)
-    .map(([mois, stats]) => ({ mois, ca: stats.ca, tickets: stats.tickets.size }))
-    .sort((a, b) => a.mois.localeCompare(b.mois))
-    .slice(-12) // 12 derniers mois
+  // Évolution temporelle - désactivée (nécessite accès aux achats détaillés)
+  const evolutionTemporelle: any[] = []
   
   // Stats avancées
   const clientsAvecPlusieursAchats = segmentData.clients.filter(c => c.frequency > 1).length
@@ -163,31 +109,16 @@ export default function SegmentDetail({
   const caMax = Math.max(...segmentData.clients.map(c => c.monetary))
   const caMin = Math.min(...segmentData.clients.map(c => c.monetary))
 
-  // Calculer les familles de produits pour ce segment
-  const familleStats: Record<string, { ca: number, volume: number, tickets: Set<string> }> = {}
-  
-  segmentData.clients.forEach(client => {
-    const clientData = allData.allClients.get(client.carte)
-    if (clientData?.achats) {
-      clientData.achats.forEach((achat: any) => {
-        const famille = achat.famille || 'Non définie'
-        if (!familleStats[famille]) {
-          familleStats[famille] = { ca: 0, volume: 0, tickets: new Set() }
-        }
-        familleStats[famille].ca += achat.ca || 0
-        familleStats[famille].volume++
-        familleStats[famille].tickets.add(achat.ticket)
-      })
-    }
-  })
+  // Familles de produits - désactivé (nécessite API dédiée)
+  const familleStats: Record<string, { ca: number, volume: number, tickets: number }> = {}
 
   const topFamilles = Object.entries(familleStats)
     .map(([famille, stats]) => ({
       famille,
       ca: stats.ca,
       volume: stats.volume,
-      tickets: stats.tickets.size,
-      panierMoyen: stats.ca / stats.tickets.size
+      tickets: stats.tickets,
+      panierMoyen: stats.tickets > 0 ? stats.ca / stats.tickets : 0
     }))
     .sort((a, b) => b.ca - a.ca)
     .slice(0, 10)

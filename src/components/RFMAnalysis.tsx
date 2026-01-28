@@ -1,229 +1,125 @@
 import { Users } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import SegmentDetail from './SegmentDetail'
 
 interface RFMAnalysisProps {
-  data: any
+  data?: any
   onSearchClient?: (carte: string) => void
   showWebData?: boolean
 }
 
-const parseDate = (dateStr: string): Date | null => {
-  if (!dateStr || dateStr === 'N/A') return null
-  
-  // Support format ISO (YYYY-MM-DD) ET format français (DD/MM/YYYY)
-  if (dateStr.includes('-')) {
-    // Format ISO: 2022-01-03
-    const date = new Date(dateStr)
-    return isNaN(date.getTime()) ? null : date
-  } else if (dateStr.includes('/')) {
-    // Format français: 03/01/2022
-    const [day, month, year] = dateStr.split('/')
-    if (!day || !month || !year) return null
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-  }
-  
-  return null
+interface RFMClient {
+  carte: string
+  ville: string
+  recency: number
+  frequency: number
+  monetary: number
+  daysSinceFirst: number
+  firstDate: string
+  lastDate: string
+  R: number
+  F: number
+  M: number
+  RFM: number
+  segment: string
 }
 
-export default function RFMAnalysis({ data, onSearchClient, showWebData }: RFMAnalysisProps) {
+interface RFMData {
+  clients: RFMClient[]
+  stats: {
+    totalClients: number
+    totalCA: number
+    segments: {
+      [key: string]: {
+        count: number
+        ca: number
+        clients: RFMClient[]
+      }
+    }
+  }
+  thresholds: {
+    recency: number[]
+    frequency: number[]
+    monetary: number[]
+  }
+}
+
+export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysisProps) {
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null)
   const [showSegmentDetail, setShowSegmentDetail] = useState(false)
-  
-  if (!data || !data.allClients) {
+  const [rfmData, setRfmData] = useState<RFMData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchRFMData = async () => {
+      setLoading(true)
+      setError(null)
+      
+      try {
+        const magasinFilter = showWebData ? 'WEB' : 'MAGASIN'
+        const response = await fetch(`/api/rfm?magasin=${magasinFilter}`)
+        
+        if (!response.ok) {
+          throw new Error(`Erreur API: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        setRfmData(data)
+      } catch (err: any) {
+        console.error('❌ Erreur chargement RFM:', err)
+        setError(err.message || 'Erreur lors du chargement des données RFM')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRFMData()
+  }, [showWebData])
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-zinc-400">Calcul de la segmentation RFM en cours...</p>
+        </div>
       </div>
     )
   }
 
-  const calculateRFM = () => {
-    const clients: any[] = []
-    const today = new Date()
-    const BATCH_SIZE = 5000
-    
-    try {
-      // Étape 1: Collecter tous les clients avec données brutes (rapide)
-      data.allClients.forEach((client: any, carte: string) => {
-        if (!client.achats || client.achats.length === 0) return
-        
-        // Filtrer les achats selon le toggle Web/Magasin
-        const achatsFiltered = client.achats.filter((achat: any) => {
-          if (showWebData === true) {
-            return achat.magasin === 'WEB'
-          } else {
-            return achat.magasin !== 'WEB'
-          }
-        })
-        
-        if (achatsFiltered.length === 0) return
-        
-        let lastDate: Date | null = null
-        let firstDate: Date | null = null
-        let caTotal = 0
-        
-        for (const achat of achatsFiltered) {
-          const d = parseDate(achat.date)
-          if (d) {
-            if (!lastDate || d > lastDate) lastDate = d
-            if (!firstDate || d < firstDate) firstDate = d
-          }
-          caTotal += achat.ca || 0
-        }
-        
-        const recency = lastDate ? Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)) : 9999
-        const daysSinceFirst = firstDate ? Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) : 9999
-        const frequency = achatsFiltered.length
-        const monetary = caTotal
-        
-        // Ignorer les clients avec CA négatif ou nul pour l'analyse RFM
-        if (monetary <= 0) return
-        
-        clients.push({ 
-          carte, 
-          ville: client.ville || '-', 
-          recency, 
-          frequency, 
-          monetary,
-          daysSinceFirst,
-          firstDate: firstDate ? firstDate.toLocaleDateString('fr-FR') : '-'
-        })
-      })
-      
-      console.log(`🔍 RFM ${showWebData ? 'WEB' : 'MAGASIN'}: ${clients.length} clients trouvés`)
-      
-      if (clients.length === 0) return []
-      
-      // Étape 2: Calculer les seuils de quintiles sur l'ensemble
-      const recencyValues = clients.map(c => c.recency).sort((a, b) => a - b)
-      const frequencyValues = clients.map(c => c.frequency).sort((a, b) => b - a)
-      const monetaryValues = clients.map(c => c.monetary).sort((a, b) => b - a)
-      
-      // Calculer les seuils de quintiles (plus rapide que findIndex)
-      const getQuintileThresholds = (sortedValues: number[]) => {
-        const len = sortedValues.length
-        return [
-          sortedValues[Math.floor(len * 0.2)],
-          sortedValues[Math.floor(len * 0.4)],
-          sortedValues[Math.floor(len * 0.6)],
-          sortedValues[Math.floor(len * 0.8)]
-        ]
-      }
-      
-      const recencyThresholds = getQuintileThresholds(recencyValues)
-      const frequencyThresholds = getQuintileThresholds(frequencyValues)
-      const monetaryThresholds = getQuintileThresholds(monetaryValues)
-      
-      // Debug: afficher les seuils
-      console.log('🔍 Seuils Récence (jours):', recencyThresholds)
-      console.log('🔍 Seuils Fréquence (achats):', frequencyThresholds)
-      console.log('🔍 Seuils Monétaire (€):', monetaryThresholds)
-      console.log('🔍 Stats Fréquence:', {
-        min: frequencyValues[frequencyValues.length - 1],
-        max: frequencyValues[0],
-        median: frequencyValues[Math.floor(frequencyValues.length / 2)],
-        count: frequencyValues.length
-      })
-      
-      const getQuintile = (value: number, thresholds: number[], reverse = false) => {
-        // Pour valeurs DESC (F, M): plus la valeur est haute, plus le score est haut
-        // thresholds[0] = top 20%, thresholds[3] = bottom 20%
-        if (!reverse) {
-          if (value >= thresholds[0]) return 5  // Top 20%
-          if (value >= thresholds[1]) return 4  // 20-40%
-          if (value >= thresholds[2]) return 3  // 40-60%
-          if (value >= thresholds[3]) return 2  // 60-80%
-          return 1  // Bottom 20%
-        }
-        // Pour valeurs ASC (R): plus la valeur est basse, plus le score est haut
-        // thresholds[0] = top 20% (valeurs les plus basses), thresholds[3] = bottom 20%
-        else {
-          if (value <= thresholds[0]) return 5  // Top 20% (plus récents)
-          if (value <= thresholds[1]) return 4  // 20-40%
-          if (value <= thresholds[2]) return 3  // 40-60%
-          if (value <= thresholds[3]) return 2  // 60-80%
-          return 1  // Bottom 20% (plus anciens)
-        }
-      }
-      
-      // Étape 3: Assigner scores par batch de 5000
-      for (let i = 0; i < clients.length; i += BATCH_SIZE) {
-        const batch = clients.slice(i, Math.min(i + BATCH_SIZE, clients.length))
-        
-        batch.forEach(client => {
-          client.R = getQuintile(client.recency, recencyThresholds, true)
-          client.F = getQuintile(client.frequency, frequencyThresholds)
-          client.M = getQuintile(client.monetary, monetaryThresholds)
-          client.RFM = client.R * 100 + client.F * 10 + client.M
-          
-          // Segmentation RFM (ordre important: spécifique → général)
-          
-          // 0. ULTRA CHAMPIONS = R=5, F=5, M=5 (perfection absolue!)
-          if (client.R === 5 && client.F === 5 && client.M === 5) {
-            client.segment = 'Ultra Champions'
-          }
-          // 1. CHAMPIONS = R: 4-5, F: 4-5, M: 4-5 (meilleurs partout!)
-          else if (client.R >= 4 && client.F >= 4 && client.M >= 4) {
-            client.segment = 'Champions'
-          }
-          // 2. NOUVEAUX = R≥4, F=3 (récents avec peu de tickets) - AVANT Loyaux!
-          else if (client.R >= 4 && client.F === 3) {
-            client.segment = 'Nouveaux'
-          }
-          // 3. OCCASIONNELS = R=3, F=3 (modérément actifs, peu de tickets) - AVANT Loyaux!
-          else if (client.R === 3 && client.F === 3) {
-            client.segment = 'Occasionnels'
-          }
-          // 4. LOYAUX = R: 3-5, F: 3-5, M: 3-5 (bons clients réguliers)
-          else if (client.R >= 3 && client.F >= 3 && client.M >= 3) {
-            client.segment = 'Loyaux'
-          }
-          // 5. À RISQUE = F≥3 mais R≤2 (achetaient bien mais inactifs)
-          else if (client.F >= 3 && client.R <= 2) {
-            client.segment = 'À Risque'
-          }
-          // 6. PERDUS = Le reste (faible récence, faible fréquence)
-          else {
-            client.segment = 'Perdus'
-          }
-        })
-      }
-      
-      // Debug: distribution des scores
-      const rDist = clients.reduce((acc, c) => { acc[c.R] = (acc[c.R] || 0) + 1; return acc }, {} as any)
-      const fDist = clients.reduce((acc, c) => { acc[c.F] = (acc[c.F] || 0) + 1; return acc }, {} as any)
-      const segDist = clients.reduce((acc, c) => { acc[c.segment] = (acc[c.segment] || 0) + 1; return acc }, {} as any)
-      
-      console.log('📊 Distribution R:', rDist)
-      console.log('📊 Distribution F:', fDist)
-      console.log('📊 Distribution Segments:', segDist)
-      
-      return clients
-    } catch (error) {
-      console.error('Erreur RFM:', error)
-      return []
-    }
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Users className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Erreur</h2>
+          <p className="text-red-400">{error}</p>
+        </div>
+      </div>
+    )
   }
-  
-  const clients = calculateRFM()
-  const totalClients = clients.length
-  const totalCA = clients.reduce((sum, c) => sum + c.monetary, 0)
+
+  if (!rfmData || rfmData.clients.length === 0) {
+    return (
+      <div className="glass rounded-3xl p-8 border border-zinc-800 text-center">
+        <Users className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-white mb-2">Aucun client trouvé</h2>
+        <p className="text-zinc-400">Pas de données RFM disponibles pour cette période</p>
+      </div>
+    )
+  }
+
+
+  const clients = rfmData.clients
+  const totalClients = rfmData.stats.totalClients
+  const totalCA = rfmData.stats.totalCA
+  const segmentStats = rfmData.stats.segments
   
   const formatEuro = (value: number) => {
     if (!value || isNaN(value)) return '0€'
     return `${Math.round(value).toLocaleString('fr-FR')}€`
   }
-  
-  const segmentStats = clients.reduce((acc: any, client: any) => {
-    if (!acc[client.segment]) {
-      acc[client.segment] = { clients: [], ca: 0, count: 0 }
-    }
-    acc[client.segment].clients.push(client)
-    acc[client.segment].ca += client.monetary
-    acc[client.segment].count++
-    return acc
-  }, {})
 
   const segments = [
     {
@@ -299,7 +195,7 @@ export default function RFMAnalysis({ data, onSearchClient, showWebData }: RFMAn
       <SegmentDetail
         segmentName={selectedSegment}
         segmentData={segmentStats[selectedSegment]}
-        allData={data}
+        allData={null} // On n'utilise plus allData pour l'instant
         totalClients={totalClients}
         totalCA={totalCA}
         onBack={() => {
@@ -350,7 +246,7 @@ export default function RFMAnalysis({ data, onSearchClient, showWebData }: RFMAn
         <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
           <p className="text-sm text-amber-400">
             ℹ️ <strong>Note importante :</strong> L'analyse RFM porte uniquement sur les clients avec carte de fidélité et CA positif. 
-            Les achats sans carte ({formatEuro(data?.stats?.ca - totalCA || 0)} en moins que la vue d'ensemble) ne sont pas segmentés.
+            Les achats sans carte ne sont pas segmentés.
           </p>
         </div>
       </div>
