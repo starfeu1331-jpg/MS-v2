@@ -14,16 +14,17 @@ export default function Settings() {
 
   const loadDbStats = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/dashboard?type=year&value=2025`)
+      const response = await fetch(`${API_URL}/api/export`)
       const data = await response.json()
+      console.log('📊 Stats chargées:', data.stats)
       setDbStats({
-        totalCA: data.kpis?.totalCA || 0,
-        totalTransactions: data.kpis?.totalTransactions || 0,
-        totalClients: data.kpis?.totalClients || 0,
+        totalCA: data.stats?.ca_total || 0,
+        totalTransactions: data.stats?.nb_transactions || 0,
+        totalClients: data.stats?.nb_clients || 0,
         lastUpdate: new Date().toISOString()
       })
     } catch (error) {
-      console.error('Erreur chargement stats DB:', error)
+      console.error('❌ Erreur chargement stats DB:', error)
     }
   }
 
@@ -125,8 +126,8 @@ export default function Settings() {
             <div className="flex items-center gap-3">
               <Server className="w-5 h-5 text-zinc-400" />
               <div>
-                <p className="text-sm font-semibold text-white">Neon PostgreSQL</p>
-                <p className="text-xs text-zinc-500">Serverless Database</p>
+                <p className="text-sm font-semibold text-white">Prisma ORM</p>
+                <p className="text-xs text-zinc-500">+ Neon PostgreSQL</p>
               </div>
             </div>
             <div className="flex items-center gap-2 text-xs text-emerald-400">
@@ -284,7 +285,7 @@ export default function Settings() {
       <div className="glass rounded-3xl p-8 border border-zinc-800">
         <div className="text-center space-y-2">
           <p className="text-zinc-500 text-sm">Decor Analytics v2.0</p>
-          <p className="text-zinc-600 text-xs">Propulsé par Neon PostgreSQL + Vercel</p>
+          <p className="text-zinc-600 text-xs">Propulsé par Prisma + Neon PostgreSQL + Vercel</p>
           <p className="text-zinc-700 text-xs">© 2025 - Tous droits réservés</p>
         </div>
       </div>
