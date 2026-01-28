@@ -51,3 +51,6 @@ backend.log
 
 # Vercel
 .vercel
+*.csv
+*.sql
+neon-*
