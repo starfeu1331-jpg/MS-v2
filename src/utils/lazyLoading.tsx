@@ -1,4 +1,5 @@
-import { LazyExoticComponent, ReactNode, Suspense, lazy } from 'react'
+import { Suspense, lazy } from 'react'
+import type { LazyExoticComponent, ReactNode } from 'react'
 
 /**
  * Wrapper pour lazy loading avec fallback loading state

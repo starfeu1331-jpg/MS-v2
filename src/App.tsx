@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense, useEffect, useRef } from 'react'
 import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone, Calendar, ChevronDown } from 'lucide-react'
-import { LoadingFallback, SkeletonLoader } from './components/LoadingFallback'
+import { LoadingFallback } from './components/LoadingFallback'
 
 // Lazy loading des composants - 100% PostgreSQL
 // Composants principaux

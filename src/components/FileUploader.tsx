@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Upload, FileText, CheckCircle, Database } from 'lucide-react'
+import { FileText, CheckCircle, Database } from 'lucide-react'
 import Papa from 'papaparse'
 
 interface FileUploaderProps {

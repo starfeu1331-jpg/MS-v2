@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { TrendingUp, Users, ShoppingCart, Euro, ArrowRight, AlertCircle, TrendingDown, Package, Target, Sparkles, Award, Store, Globe } from 'lucide-react'
 import { LazyLineChart as LineChart, LazyLine as Line, LazyXAxis as XAxis, LazyYAxis as YAxis, LazyCartesianGrid as CartesianGrid, LazyTooltip as Tooltip, LazyResponsiveContainer as ResponsiveContainer, ChartFallback } from '../utils/lazyRecharts'
 

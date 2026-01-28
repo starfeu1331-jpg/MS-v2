@@ -1,6 +1,6 @@
 import { memo, useEffect, useState, Suspense } from 'react'
-import { TrendingUp, Users, ShoppingCart, Euro, ArrowRight, AlertCircle, Package, Store, Globe, Calendar, TrendingDown } from 'lucide-react'
-import { LazyResponsiveContainer as ResponsiveContainer, LazyLineChart as LineChart, LazyLine as Line, LazyXAxis as XAxis, LazyYAxis as YAxis, LazyCartesianGrid as CartesianGrid, LazyTooltip as Tooltip, LazyBarChart as BarChart, LazyBar as Bar, ChartFallback } from '../utils/lazyRecharts'
+import { TrendingUp, Users, ShoppingCart, Euro, AlertCircle, Package, Store, Globe, Calendar } from 'lucide-react'
+import { LazyResponsiveContainer as ResponsiveContainer, LazyLineChart as LineChart, LazyLine as Line, LazyXAxis as XAxis, LazyYAxis as YAxis, LazyCartesianGrid as CartesianGrid, LazyTooltip as Tooltip, ChartFallback } from '../utils/lazyRecharts'
 
 interface DashboardV2Props {
   period?: { type: string; value: any }
