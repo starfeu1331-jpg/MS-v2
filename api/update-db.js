@@ -3,9 +3,16 @@ import multiparty from 'multiparty'
 import fs from 'fs'
 import { parse } from 'csv-parse/sync'
 
-const prisma = new PrismaClient({ 
-  log: ['error', 'warn']
-})
+let prismaInstance
+
+function getPrisma() {
+  if (!prismaInstance) {
+    prismaInstance = new PrismaClient({ 
+      log: ['error', 'warn']
+    })
+  }
+  return prismaInstance
+}
 
 export const config = {
   api: {
@@ -19,29 +26,21 @@ const parseCSV = (filePath) => {
 }
 
 const handleDailyUpdate = async (files) => {
+  const prisma = getPrisma()
   console.log('📅 Mise à jour quotidienne...')
-  console.log('🔍 files:', Object.keys(files))
-  console.log('🔍 prisma:', typeof prisma, prisma ? 'OK' : 'NULL')
   
   if (!files.transactions) {
     throw new Error('Fichier transactions.csv manquant')
   }
 
-  try {
-    // 🔍 Récupérer la date maximale actuelle dans la BDD
-    console.log('🔍 Tentative prisma.transactions.findFirst...')
-    const maxDateResult = await prisma.transactions.findFirst({
-      select: { date: true },
-      orderBy: { date: 'desc' }
-    })
-    console.log('✅ findFirst OK, result:', maxDateResult)
-    
-    const maxDate = maxDateResult?.date
-    console.log(`📅 Date max actuelle dans la BDD: ${maxDate ? maxDate.toISOString().split('T')[0] : 'aucune'}`)
-  } catch (error) {
-    console.error('❌ Erreur findFirst:', error.message)
-    throw error
-  }
+  // 🔍 Récupérer la date maximale actuelle dans la BDD
+  const maxDateResult = await prisma.transactions.findFirst({
+    select: { date: true },
+    orderBy: { date: 'desc' }
+  })
+  
+  const maxDate = maxDateResult?.date
+  console.log(`📅 Date max actuelle dans la BDD: ${maxDate ? maxDate.toISOString().split('T')[0] : 'aucune'}`)
 
   let totalInserted = 0
   let totalFiltered = 0
@@ -51,7 +50,6 @@ const handleDailyUpdate = async (files) => {
     const clientsData = parseCSV(files.clients[0].path)
     console.log(`📥 ${clientsData.length} clients à insérer...`)
     
-    // Utiliser createMany avec skipDuplicates
     await prisma.clients.createMany({
       data: clientsData.map(row => ({
         carte: row.carte,
@@ -67,7 +65,6 @@ const handleDailyUpdate = async (files) => {
     const produitsData = parseCSV(files.produits[0].path)
     console.log(`📥 ${produitsData.length} produits à insérer...`)
     
-    // Utiliser createMany avec skipDuplicates
     await prisma.produits.createMany({
       data: produitsData.map(row => ({
         id: row.id,
@@ -90,17 +87,17 @@ const handleDailyUpdate = async (files) => {
         const rowDate = new Date(row.date)
         return rowDate > maxDate
       })
-    : transactionsData // Si pas de date max, tout charger
+    : transactionsData
 
   totalFiltered = transactionsData.length - newTransactions.length
-  console.log(`🔍 ${newTransactions.length} nouvelles transactions (${totalFiltered} ignorées car déjà présentes)`)
+  console.log(`🔍 ${newTransactions.length} nouvelles transactions (${totalFiltered} ignorées)`)
   
   if (newTransactions.length === 0) {
     console.log('✅ Aucune nouvelle transaction à ajouter')
     return { inserted: 0, filtered: totalFiltered, maxDate }
   }
 
-  // Utiliser createMany pour insérer par batch (beaucoup plus rapide)
+  // Insérer par batch
   const batchSize = 500
   for (let i = 0; i < newTransactions.length; i += batchSize) {
     const batch = newTransactions.slice(i, i + batchSize)
@@ -115,14 +112,14 @@ const handleDailyUpdate = async (files) => {
         ca: parseFloat(row.ca),
         quantite: parseInt(row.quantite)
       })),
-      skipDuplicates: true // Sécurité supplémentaire
+      skipDuplicates: true
     })
     
     totalInserted += batch.length
     console.log(`  ✅ ${totalInserted}/${newTransactions.length}`)
   }
 
-  // Récupérer la nouvelle date max
+  // Nouvelle date max
   const newMaxDateResult = await prisma.transactions.findFirst({
     select: { date: true },
     orderBy: { date: 'desc' }
@@ -136,6 +133,7 @@ const handleDailyUpdate = async (files) => {
 }
 
 const handleWeeklyUpdate = async (files) => {
+  const prisma = getPrisma()
   console.log('🗓️ Mise à jour hebdomadaire (complète)...')
   
   if (!files.transactions || !files.clients || !files.produits) {
@@ -205,7 +203,7 @@ const handleWeeklyUpdate = async (files) => {
   const transactionsData = parseCSV(files.transactions[0].path)
   console.log(`📥 ${transactionsData.length} transactions...`)
   
-  // Charger par batch de 1000 pour éviter les timeouts
+  // Charger par batch
   const batchSize = 1000
   for (let i = 0; i < transactionsData.length; i += batchSize) {
     const batch = transactionsData.slice(i, i + batchSize)
@@ -244,7 +242,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parser les fichiers multipart
     const form = new multiparty.Form()
     
     const { fields, files } = await new Promise((resolve, reject) => {
@@ -287,9 +284,7 @@ export default async function handler(req, res) {
     res.status(500).json({
       error: 'Erreur lors de la mise à jour',
       message: error.message,
-      stack: error.stack,
-      prismaAvailable: !!prisma,
-      prismaType: typeof prisma
+      stack: error.stack
     })
   }
 }
