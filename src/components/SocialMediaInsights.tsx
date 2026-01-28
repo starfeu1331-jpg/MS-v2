@@ -373,7 +373,7 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
                 </tr>
               </thead>
               <tbody>
-                {getTopProducts(loadedData.produitsWeb || {}, 10).map((p, idx) => (
+                {getTopProducts(loadedData?.produitsWeb || {}, 10).map((p, idx) => (
                   <tr key={p.code} className="border-b border-zinc-800 hover:bg-zinc-800/50">
                     <td className="px-3 py-2 text-sm font-bold text-zinc-400">#{idx + 1}</td>
                     <td className="px-3 py-2 text-sm font-mono text-zinc-300">{p.code}</td>
@@ -406,10 +406,13 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
               </thead>
               <tbody>
                 {(() => {
-                  const topWeb = getTopProducts(data.produitsWeb || {}, 10)
-                  const topMag = getTopProducts(data.produitsMag || {}, 10)
+                  const topWeb = getTopProducts(loadedData?.produitsWeb || {}, 10)
+                  const topMag = getTopProducts(loadedData?.produitsMagasin?.[selectedMonth] || {}, 10)
                   const webCodes = new Set(topWeb.map(p => p.code))
                   const folie = topMag.filter(p => webCodes.has(p.code))
+                  if (folie.length === 0) {
+                    return <tr><td colSpan={4} className="px-3 py-6 text-center text-zinc-500">Aucun produit commun ce mois</td></tr>
+                  }
                   return folie.map((p, idx) => (
                     <tr key={p.code} className="border-b border-zinc-800 hover:bg-zinc-800/50">
                       <td className="px-3 py-2 text-sm font-bold text-yellow-400">#{idx + 1}</td>
@@ -466,7 +469,7 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
           <h3 className="text-xl font-bold text-white">Zones Géographiques à Cibler</h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {getTopZones(currentMonthData.zones, 10).map((zone) => (
+          {getTopZones(loadedData?.zones || {}, 10).map((zone) => (
             <div key={zone.dept} className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
               <div className="text-center">
                 <p className="text-2xl font-bold text-purple-400 mb-1">{zone.dept}</p>
