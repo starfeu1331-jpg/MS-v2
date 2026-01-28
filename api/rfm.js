@@ -40,30 +40,21 @@ module.exports = async (req, res) => {
     console.log(`🔍 RFM Analysis - Filtre: ${magasin || 'TOUS'}`)
 
     const today = new Date()
-    
-    // Étape 1: Récupérer TOUS les clients avec leurs transactions
-    // Filtrer par dépôt si nécessaire
-    let whereClause = {}
-    if (showWebOnly) {
-      whereClause = { depot: 'WEB' }
-    } else if (showMagasinOnly) {
-      whereClause = { depot: { not: 'WEB' } }
-    }
 
     console.log('📊 Chargement des clients et transactions...')
     
-    // Requête optimisée : on charge tout d'un coup avec les transactions groupées
+    // Requête optimisée : agrégation directe dans PostgreSQL
     let clientsData
     
     if (showWebOnly) {
       clientsData = await prisma.$queryRaw`
         SELECT 
-          c.carte,
-          c.ville,
+          c.carte::text,
+          c.ville::text,
           COUNT(t.id)::int as nb_transactions,
-          SUM(t.ca)::float as ca_total,
-          MAX(t.date) as last_purchase_date,
-          MIN(t.date) as first_purchase_date
+          SUM(t.ca)::numeric as ca_total,
+          MAX(t.date)::date as last_purchase_date,
+          MIN(t.date)::date as first_purchase_date
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
         WHERE t.depot = 'WEB'
@@ -74,12 +65,12 @@ module.exports = async (req, res) => {
     } else if (showMagasinOnly) {
       clientsData = await prisma.$queryRaw`
         SELECT 
-          c.carte,
-          c.ville,
+          c.carte::text,
+          c.ville::text,
           COUNT(t.id)::int as nb_transactions,
-          SUM(t.ca)::float as ca_total,
-          MAX(t.date) as last_purchase_date,
-          MIN(t.date) as first_purchase_date
+          SUM(t.ca)::numeric as ca_total,
+          MAX(t.date)::date as last_purchase_date,
+          MIN(t.date)::date as first_purchase_date
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
         WHERE t.depot != 'WEB'
@@ -90,12 +81,12 @@ module.exports = async (req, res) => {
     } else {
       clientsData = await prisma.$queryRaw`
         SELECT 
-          c.carte,
-          c.ville,
+          c.carte::text,
+          c.ville::text,
           COUNT(t.id)::int as nb_transactions,
-          SUM(t.ca)::float as ca_total,
-          MAX(t.date) as last_purchase_date,
-          MIN(t.date) as first_purchase_date
+          SUM(t.ca)::numeric as ca_total,
+          MAX(t.date)::date as last_purchase_date,
+          MIN(t.date)::date as first_purchase_date
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
         GROUP BY c.carte, c.ville
@@ -260,9 +251,11 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erreur RFM:', error)
+    console.error('Stack:', error.stack)
     return res.status(500).json({ 
       error: 'Erreur lors du calcul RFM',
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     })
   } finally {
     await prisma.$disconnect()
