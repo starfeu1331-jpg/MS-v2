@@ -67,19 +67,30 @@ export default function ABCAnalysis() {
   
   // Sélectionner les données selon le canal et le niveau
   const getData = () => {
+    if (!data) return {}
+    
     if (level === 'familles') {
-      return channel === 'all' ? data.familles : 
-             channel === 'mag' ? data.famillesMag : data.famillesWeb
+      return channel === 'all' ? (data.familles || {}) : 
+             channel === 'mag' ? (data.famillesMag || {}) : (data.famillesWeb || {})
     } else if (level === 'sousFamilles') {
-      return channel === 'all' ? data.sousFamilles :
-             channel === 'mag' ? data.sousFamillesMag : data.sousFamillesWeb
+      return channel === 'all' ? (data.sousFamilles || {}) :
+             channel === 'mag' ? (data.sousFamillesMag || {}) : (data.sousFamillesWeb || {})
     } else {
-      return channel === 'all' ? data.produits :
-             channel === 'mag' ? data.produitsMag : data.produitsWeb
+      return channel === 'all' ? (data.produits || {}) :
+             channel === 'mag' ? (data.produitsMag || {}) : (data.produitsWeb || {})
     }
   }
   
   const sourceData = getData()
+  
+  // Vérifier qu'on a des données
+  if (!sourceData || Object.keys(sourceData).length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-zinc-400">Aucune donnée disponible pour cette sélection</div>
+      </div>
+    )
+  }
   
   // Analyse ABC
   const analyzeABC = () => {
@@ -123,6 +134,15 @@ export default function ABCAnalysis() {
         item.category = 'C'
         item.color = 'zinc'
         item.priority = '⚠️ Question Mark'
+  // Vérifier qu'on a des items
+  if (!items || items.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-zinc-400">Aucun élément trouvé</div>
+      </div>
+    )
+  }
+  
       }
       
       item.cumulativePercent = cumulativePercent
