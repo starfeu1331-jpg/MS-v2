@@ -66,123 +66,25 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
     return <div className="flex items-center justify-center min-h-[400px]"><div className="text-red-400">Erreur: {error}</div></div>
   }
 
-  if (!loadedData || !loadedData.allClients) {
+  if (!loadedData || !loadedData.monthlyStats) {
     return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Aucune donnée</div></div>
   }
-
-  const actualData = loadedData
 
   const formatEuro = (value: number) => {
     if (!value || isNaN(value)) return '0€'
     return `${Math.round(value).toLocaleString('fr-FR')}€`
   }
 
-  // Analyser les ventes par mois
-  const analyzeMonthlyData = () => {
-    const monthlyData: Record<string, {
-      ca_web: number
-      ca_magasin: number
-      produits_web: Record<string, { ca: number, volume: number, famille: string, sousFamille: string }>
-      produits_magasin: Record<string, { ca: number, volume: number, famille: string, sousFamille: string }>
-      zones: Record<string, number>
-      nouveaux_clients: Set<string>
-      total_clients: Set<string>
-    }> = {}
-    
-    // Le CA web TOTAL est dans data.webStats.ca (calculé pendant l'import)
-    // Les achats avec fidélité n'incluent QUE les achats de clients avec carte
-    // Les achats web sont soit sans carte, soit combinés différemment
-    // On distribue le CA web proportionnellement au volume de transactions
-    
-    const webCATotal = actualData.webStats?.ca || 0
-    
-    actualData.allClients.forEach((client: any) => {
-      if (client.achats) {
-        client.achats.forEach((achat: any) => {
-          if (achat.date && achat.date !== 'N/A') {
-            const [, month, year] = achat.date.split('/')
-            const monthKey = `${year}-${month.padStart(2, '0')}`
-            
-            if (!monthlyData[monthKey]) {
-              monthlyData[monthKey] = {
-                ca_web: 0,
-                ca_magasin: 0,
-                produits_web: {},
-                produits_magasin: {},
-                zones: {},
-                nouveaux_clients: new Set(),
-                total_clients: new Set()
-              }
-            }
-
-            // TOUS les achats clients avec fidélité sont des magasins (pas de web)
-            // car web purchases ne sont pas associés à une carte de fidélité
-            const ca = achat.ca || 0
-            monthlyData[monthKey].ca_magasin += ca
-
-            // Produits - tous vont dans produits_magasin car web n'a pas de clients fidélité
-            if (achat.produits && Array.isArray(achat.produits)) {
-              achat.produits.forEach((p: any) => {
-                const produitCode = p.produit || 'Non défini'
-                const produits = monthlyData[monthKey].produits_magasin
-                
-                if (!produits[produitCode]) {
-                  produits[produitCode] = { 
-                    ca: 0, 
-                    volume: 0,
-                    famille: p.famille || achat.famille || 'Non défini',
-                    sousFamille: p.sousFamille || achat.sousFamille || 'Non défini'
-                  }
-                }
-                produits[produitCode].ca += p.ca || 0
-                produits[produitCode].volume++
-              })
-            }
-
-            // Zones géographiques
-            if (client.cp && client.cp !== '-' && client.cp !== 'N/A') {
-              const dept = client.cp.substring(0, 2)
-              monthlyData[monthKey].zones[dept] = (monthlyData[monthKey].zones[dept] || 0) + ca
-            }
-
-            // Clients
-            monthlyData[monthKey].total_clients.add(client.carte)
-            if (client.firstPurchaseDate === achat.date) {
-              monthlyData[monthKey].nouveaux_clients.add(client.carte)
-            }
-          }
-        })
-      }
-    })
-    
-    // AJOUTER le CA Web TOTAL directement (depuis data.webStats qui l'a calculé pendant l'import)
-    // Les achats avec fidélité ne contiennent PAS les achats web (M41, M42)
-    // On distribute le web CA sur TOUS les mois proportionnellement
-    if (webCATotal > 0) {
-      const totalMonths = Object.keys(monthlyData).length
-      if (totalMonths > 0) {
-        const webCAPerMonth = webCATotal / totalMonths
-        Object.keys(monthlyData).forEach(monthKey => {
-          monthlyData[monthKey].ca_web = webCAPerMonth
-        })
-      }
-    }
-    
-    console.log('💰 CA WebStats total:', webCATotal)
-    console.log('📊 CA Calculé après ajout web:', Object.values(monthlyData).reduce((sum, m) => ({ web: sum.web + m.ca_web, mag: sum.mag + m.ca_magasin }), { web: 0, mag: 0 }))
-
-    return monthlyData
-  }
-
-  const monthlyData = analyzeMonthlyData()
-  
-  const months = Object.keys(monthlyData).sort().reverse().slice(0, 12)
+  const months = loadedData.monthlyStats.map((m: any) => m.month).slice(0, 12)
 
   if (!selectedMonth && months.length > 0) {
     setSelectedMonth(months[0])
   }
 
-  const currentMonthData = selectedMonth ? monthlyData[selectedMonth] : null
+  const currentMonthData = loadedData.monthlyStats.find((m: any) => m.month === selectedMonth)
+  if (!currentMonthData) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Aucune donnée pour ce mois</div></div>
+  }
 
   const getMonthName = (monthKey: string) => {
     const [year, month] = monthKey.split('-')
@@ -197,21 +99,20 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
       .slice(0, limit)
   }
 
-  const getTopZones = (zones: Record<string, number>, limit = 5) => {
+  const getTopZones = (zones: Record<string, any>, limit = 5) => {
     return Object.entries(zones)
-      .map(([dept, ca]) => ({ dept, ca }))
+      .map(([dept, stats]: [string, any]) => ({ dept, ca: stats.ca, clients: stats.clients }))
       .sort((a, b) => b.ca - a.ca)
       .slice(0, limit)
   }
 
   const getSocialMediaRecommendations = (monthData: any) => {
-    const caTotal = monthData.ca_web + monthData.ca_magasin
+    const caTotal = (loadedData.webStats?.ca || 0) + monthData.ca
+    const caWeb = loadedData.webStats?.ca || 0
     
-    // Utiliser data.produitsWeb (pré-calculé depuis l'import) pour les produits web
-    // et monthData.produits_magasin pour les produits magasin
-    const topProduitsWeb = getTopProducts(actualData.produitsWeb || {}, 3)
-    const topProduitsStore = getTopProducts(monthData.produits_magasin, 3)
-    const topZones = getTopZones(monthData.zones, 3)
+    const topProduitsWeb = getTopProducts(loadedData.produitsWeb || {}, 3)
+    const topProduitsStore = getTopProducts(loadedData.produitsMagasin?.[selectedMonth] || {}, 3)
+    const topZones = getTopZones(loadedData.zones || {}, 3)
 
     const recommendations = []
 
@@ -264,7 +165,7 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
     }
 
     // Google Ads - produits web
-    const budgetSuggere = Math.max(500, Math.round(monthData.ca_web * 0.08)) // 8% du CA web
+    const budgetSuggere = Math.max(500, Math.round(caWeb * 0.08)) // 8% du CA web
     recommendations.push({
       platform: 'Google Ads',
       icon: Target,
@@ -289,17 +190,11 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
     return recommendations
   }
 
-  if (!currentMonthData) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-zinc-400">Aucune donnée disponible</div>
-      </div>
-    )
-  }
+  const caWeb = loadedData.webStats?.ca || 0
+  const caTotal = caWeb + currentMonthData.ca
 
-  const caTotal = currentMonthData.ca_web + currentMonthData.ca_magasin
   const recommendations = getSocialMediaRecommendations(currentMonthData)
-  const topProduitsStore = getTopProducts(currentMonthData.produits_magasin, 10)
+  const topProduitsStore = getTopProducts(loadedData.produitsMagasin?.[selectedMonth] || {}, 10)
 
   return (
     <div className="space-y-6">
@@ -350,9 +245,9 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
               <ShoppingBag className="w-5 h-5 text-blue-400" />
               <p className="text-xs text-zinc-500 font-semibold uppercase">CA Web</p>
             </div>
-            <p className="text-3xl font-bold text-white">{formatEuro(currentMonthData.ca_web)}</p>
+            <p className="text-3xl font-bold text-white">{formatEuro(caWeb)}</p>
             <p className="text-sm text-blue-400 mt-1">
-              {((currentMonthData.ca_web / caTotal) * 100).toFixed(1)}% du total
+              {((caWeb / caTotal) * 100).toFixed(1)}% du total
             </p>
           </div>
 
@@ -361,9 +256,9 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
               <Store className="w-5 h-5 text-orange-400" />
               <p className="text-xs text-zinc-500 font-semibold uppercase">CA Magasin</p>
             </div>
-            <p className="text-3xl font-bold text-white">{formatEuro(currentMonthData.ca_magasin)}</p>
+            <p className="text-3xl font-bold text-white">{formatEuro(currentMonthData.ca)}</p>
             <p className="text-sm text-orange-400 mt-1">
-              {((currentMonthData.ca_magasin / caTotal) * 100).toFixed(1)}% du total
+              {((currentMonthData.ca / caTotal) * 100).toFixed(1)}% du total
             </p>
           </div>
 
@@ -372,9 +267,9 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
               <Target className="w-5 h-5 text-purple-400" />
               <p className="text-xs text-zinc-500 font-semibold uppercase">Nouveaux Clients</p>
             </div>
-            <p className="text-3xl font-bold text-white">{currentMonthData.nouveaux_clients.size}</p>
+            <p className="text-3xl font-bold text-white">{currentMonthData.nouveauxClients}</p>
             <p className="text-sm text-purple-400 mt-1">
-              sur {currentMonthData.total_clients.size} total
+              sur {currentMonthData.clients} total
             </p>
           </div>
         </div>
@@ -431,7 +326,7 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
                 </tr>
               </thead>
               <tbody>
-                {getTopProducts(data.produitsWeb || {}, 10).map((p, idx) => (
+                {getTopProducts(loadedData.produitsWeb || {}, 10).map((p, idx) => (
                   <tr key={p.code} className="border-b border-zinc-800 hover:bg-zinc-800/50">
                     <td className="px-3 py-2 text-sm font-bold text-zinc-400">#{idx + 1}</td>
                     <td className="px-3 py-2 text-sm font-mono text-zinc-300">{p.code}</td>

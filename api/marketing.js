@@ -16,31 +16,20 @@ export default async function handler(req, res) {
   try {
     console.log('🚀 Marketing API - Début');
 
-    // 1. Récupérer tous les clients avec leurs achats groupés par client
-    const clientsData = await sql`
+    // 1. Données mensuelles magasin (clients avec carte)
+    const monthlyMagasin = await sql`
       SELECT 
-        c.carte,
-        c.ville,
-        c.cp,
-        ARRAY_AGG(
-          JSON_BUILD_OBJECT(
-            'date', TO_CHAR(t.date, 'DD/MM/YYYY'),
-            'ca', t.ca::numeric,
-            'facture', t.facture,
-            'depot', t.depot,
-            'produit', t.produit,
-            'famille', p.famille,
-            'sousFamille', p.sous_famille
-          ) ORDER BY t.date
-        ) as achats
-      FROM clients c
-      LEFT JOIN transactions t ON c.carte = t.carte
-      LEFT JOIN produits p ON t.produit = p.id
-      WHERE c.carte != '0'
-      GROUP BY c.carte, c.ville, c.cp
+        TO_CHAR(t.date, 'YYYY-MM') as month,
+        SUM(t.ca)::numeric as ca,
+        COUNT(DISTINCT t.facture)::int as volume,
+        COUNT(DISTINCT t.carte)::int as clients
+      FROM transactions t
+      WHERE t.depot != 'WEB' AND t.carte != '0'
+      GROUP BY TO_CHAR(t.date, 'YYYY-MM')
+      ORDER BY month DESC
     `;
 
-    // 2. Stats Web (depot = 'WEB')
+    // 2. Stats Web
     const webStats = await sql`
       SELECT 
         SUM(ca)::numeric as ca,
@@ -49,7 +38,23 @@ export default async function handler(req, res) {
       WHERE depot = 'WEB'
     `;
 
-    // 3. Produits Web (top produits vendus en ligne)
+    // 3. Top Produits Magasin par mois (3 derniers mois)
+    const topProduitsMagasin = await sql`
+      SELECT 
+        TO_CHAR(t.date, 'YYYY-MM') as month,
+        p.id as code,
+        p.famille,
+        p.sous_famille as sousFamille,
+        SUM(t.ca)::numeric as ca,
+        COUNT(*)::int as volume
+      FROM transactions t
+      LEFT JOIN produits p ON t.produit = p.id
+      WHERE t.depot != 'WEB' AND t.date >= NOW() - INTERVAL '3 months'
+      GROUP BY TO_CHAR(t.date, 'YYYY-MM'), p.id, p.famille, p.sous_famille
+      ORDER BY month DESC, SUM(t.ca) DESC
+    `;
+
+    // 4. Top Produits Web
     const produitsWeb = await sql`
       SELECT 
         p.id as code,
@@ -62,34 +67,40 @@ export default async function handler(req, res) {
       WHERE t.depot = 'WEB'
       GROUP BY p.id, p.famille, p.sous_famille
       ORDER BY SUM(t.ca) DESC
-      LIMIT 100
+      LIMIT 50
     `;
 
-    // 4. Calculer firstPurchaseDate pour chaque client
-    const firstPurchases = await sql`
+    // 5. Top Zones géographiques (départements)
+    const topZones = await sql`
       SELECT 
-        carte,
-        TO_CHAR(MIN(date), 'DD/MM/YYYY') as first_purchase
-      FROM transactions
-      WHERE carte != '0'
-      GROUP BY carte
+        SUBSTRING(c.cp, 1, 2) as dept,
+        SUM(t.ca)::numeric as ca,
+        COUNT(DISTINCT t.carte)::int as clients
+      FROM transactions t
+      JOIN clients c ON t.carte = c.carte
+      WHERE t.carte != '0' AND c.cp IS NOT NULL AND c.cp != '' AND c.cp != 'N/A'
+      GROUP BY SUBSTRING(c.cp, 1, 2)
+      ORDER BY SUM(t.ca) DESC
+      LIMIT 20
     `;
 
-    const firstPurchaseMap = {};
-    firstPurchases.forEach(fp => {
-      firstPurchaseMap[fp.carte] = fp.first_purchase;
-    });
+    // 6. Nouveaux clients par mois
+    const nouveauxClients = await sql`
+      WITH first_purchase AS (
+        SELECT carte, MIN(date) as first_date
+        FROM transactions
+        WHERE carte != '0'
+        GROUP BY carte
+      )
+      SELECT 
+        TO_CHAR(first_date, 'YYYY-MM') as month,
+        COUNT(*)::int as nouveaux_clients
+      FROM first_purchase
+      GROUP BY TO_CHAR(first_date, 'YYYY-MM')
+      ORDER BY month DESC
+    `;
 
-    // Formater les données pour le module
-    const allClients = clientsData.map(client => ({
-      carte: client.carte,
-      ville: client.ville || 'N/A',
-      cp: client.cp || 'N/A',
-      achats: client.achats || [],
-      firstPurchaseDate: firstPurchaseMap[client.carte] || 'N/A'
-    }));
-
-    // Formater produitsWeb comme un objet indexé par code
+    // Formater les données
     const produitsWebObj = {};
     produitsWeb.forEach(p => {
       produitsWebObj[p.code] = {
@@ -100,19 +111,57 @@ export default async function handler(req, res) {
       };
     });
 
+    // Organiser produits magasin par mois
+    const produitsMagasinByMonth = {};
+    topProduitsMagasin.forEach(p => {
+      if (!produitsMagasinByMonth[p.month]) {
+        produitsMagasinByMonth[p.month] = {};
+      }
+      produitsMagasinByMonth[p.month][p.code] = {
+        ca: parseFloat(p.ca) || 0,
+        volume: p.volume || 0,
+        famille: p.famille || 'Non défini',
+        sousFamille: p.sousfamille || 'Non défini'
+      };
+    });
+
+    // Organiser zones en objet
+    const zonesObj = {};
+    topZones.forEach(z => {
+      zonesObj[z.dept] = {
+        ca: parseFloat(z.ca) || 0,
+        clients: z.clients || 0
+      };
+    });
+
+    // Organiser nouveaux clients par mois
+    const nouveauxClientsObj = {};
+    nouveauxClients.forEach(nc => {
+      nouveauxClientsObj[nc.month] = nc.nouveaux_clients;
+    });
+
     const result = {
-      allClients,
+      monthlyStats: monthlyMagasin.map(m => ({
+        month: m.month,
+        ca: parseFloat(m.ca) || 0,
+        volume: m.volume || 0,
+        clients: m.clients || 0,
+        nouveauxClients: nouveauxClientsObj[m.month] || 0
+      })),
       webStats: {
         ca: parseFloat(webStats[0]?.ca) || 0,
         volume: webStats[0]?.volume || 0
       },
-      produitsWeb: produitsWebObj
+      produitsWeb: produitsWebObj,
+      produitsMagasin: produitsMagasinByMonth,
+      zones: zonesObj
     };
 
     console.log('✅ Marketing API - Succès:', {
-      clients: allClients.length,
+      months: result.monthlyStats.length,
       webCA: result.webStats.ca,
-      produitsWeb: Object.keys(produitsWebObj).length
+      produitsWeb: Object.keys(produitsWebObj).length,
+      zones: Object.keys(zonesObj).length
     });
 
     res.status(200).json(result);
@@ -120,7 +169,8 @@ export default async function handler(req, res) {
     console.error('❌ Erreur Marketing API:', error);
     res.status(500).json({ 
       error: 'Erreur serveur',
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
