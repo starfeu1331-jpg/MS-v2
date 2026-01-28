@@ -71,8 +71,8 @@ export default async function handler(req, res) {
             last_date,
             first_date,
             (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r,
-            NTILE(5) OVER (ORDER BY frequency DESC)::int as f,
-            NTILE(5) OVER (ORDER BY monetary DESC)::int as m
+            (6 - NTILE(5) OVER (ORDER BY frequency DESC))::int as f,
+            (6 - NTILE(5) OVER (ORDER BY monetary DESC))::int as m
           FROM client_metrics
         )
         SELECT * FROM rfm_scores ORDER BY carte
@@ -106,8 +106,8 @@ export default async function handler(req, res) {
             last_date,
             first_date,
             (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r,
-            NTILE(5) OVER (ORDER BY frequency DESC)::int as f,
-            NTILE(5) OVER (ORDER BY monetary DESC)::int as m
+            (6 - NTILE(5) OVER (ORDER BY frequency DESC))::int as f,
+            (6 - NTILE(5) OVER (ORDER BY monetary DESC))::int as m
           FROM client_metrics
         )
         SELECT * FROM rfm_scores ORDER BY carte
@@ -140,8 +140,8 @@ export default async function handler(req, res) {
             last_date,
             first_date,
             (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r,
-            NTILE(5) OVER (ORDER BY frequency DESC)::int as f,
-            NTILE(5) OVER (ORDER BY monetary DESC)::int as m
+            (6 - NTILE(5) OVER (ORDER BY frequency DESC))::int as f,
+            (6 - NTILE(5) OVER (ORDER BY monetary DESC))::int as m
           FROM client_metrics
         )
         SELECT * FROM rfm_scores ORDER BY carte
