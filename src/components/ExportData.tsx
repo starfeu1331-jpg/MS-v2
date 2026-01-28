@@ -31,11 +31,11 @@ export default function ExportData({ data }: ExportDataProps) {
   
   // Export KPIs
   const exportKPIs = () => {
-    const totalCA = Object.values(data.familles).reduce((sum: number, f: any) => sum + f.ca, 0)
-    const totalTransactions = Object.values(data.familles).reduce((sum: number, f: any) => sum + f.volume, 0)
-    const panierMoyen = totalCA / totalTransactions
+    const totalCA = Object.values(data.familles).reduce((sum: number, f: any) => sum + (Number(f.ca) || 0), 0)
+    const totalTransactions = Object.values(data.familles).reduce((sum: number, f: any) => sum + (Number(f.volume) || 0), 0)
+    const panierMoyen = totalCA / (totalTransactions || 1)
     const nbClients = data.allClients.size
-    const tauxFidelite = (data.fidelite.oui / (data.fidelite.oui + data.fidelite.non)) * 100
+    const tauxFidelite = ((Number(data.fidelite.oui) || 0) / ((Number(data.fidelite.oui) || 0) + (Number(data.fidelite.non) || 0))) * 100
     
     const kpis = [{
       Indicateur: 'CA Total',
@@ -63,7 +63,7 @@ export default function ExportData({ data }: ExportDataProps) {
       Type: 'Financier'
     }, {
       Indicateur: 'Part Web',
-      Valeur: `${((data.webStats.ca / totalCA) * 100).toFixed(2)}%`,
+      Valeur: `${(((Number(data.webStats.ca) || 0) / (totalCA || 1)) * 100).toFixed(2)}%`,
       Type: 'Distribution'
     }]
     

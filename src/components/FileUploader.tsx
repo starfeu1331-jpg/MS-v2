@@ -583,7 +583,7 @@ export default function FileUploader({ onDataLoaded }: FileUploaderProps) {
     console.log('  Magasins:', Object.keys(processed.geo.magasins).length)
     console.log('  Villes:', Object.keys(processed.villes).length)
     console.log('  Date range:', processed.dateRange)
-    console.log('  CA total:', Object.values(processed.familles).reduce((sum: number, f: any) => sum + f.ca, 0).toFixed(2), '€')
+    console.log('  CA total:', Object.values(processed.familles).reduce((sum: number, f: any) => sum + (Number(f.ca) || 0), 0).toFixed(2), '€')
 
     return processed
   }

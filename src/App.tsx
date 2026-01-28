@@ -325,7 +325,7 @@ function App() {
                     </button>
                     <button
                       onClick={() => {
-                        setCurrentPeriod({ type: 'all', value: 'all' })
+                        setCurrentPeriod({ type: 'all', value: 'all' as any })
                         setShowPeriodMenu(false)
                       }}
                       className={`w-full text-left px-4 py-2 transition-all ${
@@ -392,7 +392,7 @@ function App() {
                             if (startObj <= endObj) {
                               setCurrentPeriod({ 
                                 type: 'custom', 
-                                value: `${customStartDate}_${customEndDate}`,
+                                value: `${customStartDate}_${customEndDate}` as any,
                                 label: `${new Date(customStartDate).toLocaleDateString('fr-FR')} - ${new Date(customEndDate).toLocaleDateString('fr-FR')}`
                               })
                               setShowCustomDatePicker(false)

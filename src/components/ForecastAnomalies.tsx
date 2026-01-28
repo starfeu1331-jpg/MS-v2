@@ -87,13 +87,14 @@ export default function ForecastAnomalies({ data }: ForecastAnomaliesProps) {
   })
   
   // Stats
-  const avgCA = monthlyData.length > 0 ? monthlyData.reduce((sum, d) => sum + d.ca, 0) / monthlyData.length : 0
+  const avgCA = monthlyData.length > 0 ? monthlyData.reduce((sum, d) => sum + (Number(d.ca) || 0), 0) / monthlyData.length : 0
   const lastMonth = monthlyData[monthlyData.length - 1] || { ca: 0 }
+  const prevMonth = monthlyData[monthlyData.length - 2] || { ca: 0 }
   const growth = monthlyData.length > 1 
-    ? ((lastMonth.ca - monthlyData[monthlyData.length - 2].ca) / monthlyData[monthlyData.length - 2].ca) * 100
+    ? (((Number(lastMonth.ca) || 0) - (Number(prevMonth.ca) || 0)) / (Number(prevMonth.ca) || 1)) * 100
     : 0
   
-  const avgForecast = forecasts.length > 0 ? forecasts.reduce((sum, f) => sum + f.forecast!, 0) / forecasts.length : 0
+  const avgForecast = forecasts.length > 0 ? forecasts.reduce((sum, f) => sum + (Number(f.forecast) || 0), 0) / forecasts.length : 0
   
   return (
     <div className="space-y-6">
