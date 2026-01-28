@@ -3,6 +3,10 @@ import multiparty from 'multiparty'
 import fs from 'fs'
 import { parse } from 'csv-parse/sync'
 
+const prisma = new PrismaClient({
+  log: ['error', 'warn']
+})
+
 export const config = {
   api: {
     bodyParser: false,
@@ -14,8 +18,10 @@ const parseCSV = (filePath) => {
   return parse(content, { columns: true, skip_empty_lines: true })
 }
 
-const handleDailyUpdate = async (files, prisma) => {
+const handleDailyUpdate = async (files) => {
   console.log('📅 Mise à jour quotidienne...')
+  console.log('🔍 Prisma models:', Object.keys(prisma).filter(k => !k.startsWith('_') && !k.startsWith('$')))
+  console.log('🔍 prisma.transactions:', typeof prisma.transactions)
   
   if (!files.transactions) {
     throw new Error('Fichier transactions.csv manquant')
@@ -120,7 +126,7 @@ const handleDailyUpdate = async (files, prisma) => {
   }
 }
 
-const handleWeeklyUpdate = async (files, prisma) => {
+const handleWeeklyUpdate = async (files) => {
   console.log('🗓️ Mise à jour hebdomadaire (complète)...')
   
   if (!files.transactions || !files.clients || !files.produits) {
@@ -229,9 +235,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Créer Prisma APRÈS le parsing du form
-    const prisma = new PrismaClient({ log: ['error', 'warn'] })
-    
     const form = new multiparty.Form()
     
     const { fields, files } = await new Promise((resolve, reject) => {
@@ -244,7 +247,7 @@ export default async function handler(req, res) {
     const mode = fields.mode?.[0]
 
     if (mode === 'daily') {
-      const result = await handleDailyUpdate(files, prisma)
+      const result = await handleDailyUpdate(files)
       res.status(200).json({
         success: true,
         message: 'Mise à jour quotidienne réussie',
@@ -253,7 +256,7 @@ export default async function handler(req, res) {
         maxDate: result.maxDate
       })
     } else if (mode === 'weekly') {
-      const totals = await handleWeeklyUpdate(files, prisma)
+      const totals = await handleWeeklyUpdate(files)
       res.status(200).json({
         success: true,
         message: 'Recréation complète réussie',
