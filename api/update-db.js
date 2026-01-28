@@ -3,17 +3,9 @@ import multiparty from 'multiparty'
 import fs from 'fs'
 import { parse } from 'csv-parse/sync'
 
-console.log('🔍 Initialisation Prisma...')
-
-let prisma
-try {
-  prisma = new PrismaClient({ 
-    log: ['error', 'warn']
-  })
-  console.log('✅ Prisma initialisé')
-} catch (error) {
-  console.error('❌ Erreur init Prisma:', error)
-}
+const prisma = new PrismaClient({ 
+  log: ['error', 'warn']
+})
 
 export const config = {
   api: {
@@ -230,7 +222,6 @@ const handleWeeklyUpdate = async (files) => {
 
 export default async function handler(req, res) {
   console.log('📥 Request reçue, method:', req.method)
-  console.log('🔍 Prisma disponible?', !!prisma)
   
   res.setHeader('Access-Control-Allow-Credentials', 'true')
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -243,14 +234,6 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' })
-  }
-
-  if (!prisma) {
-    console.error('❌ Prisma non disponible')
-    return res.status(500).json({ 
-      error: 'Prisma non initialisé', 
-      message: 'Le client Prisma n\'a pas pu être créé' 
-    })
   }
 
   try {
