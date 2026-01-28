@@ -51,7 +51,8 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
       console.log(`📊 Chargement Dashboard période:`, period)
 
       // Construction de l'URL selon le type de période
-      let url = 'http://localhost:3000/api/dashboard/'
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+      let url = `${API_URL}/api/dashboard/`
       if (period.type === 'year') {
         url += period.value
       } else if (period.type === 'months') {
