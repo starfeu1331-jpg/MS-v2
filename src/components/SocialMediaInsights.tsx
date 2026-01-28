@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Instagram, Facebook, TrendingUp, MapPin, Target, Megaphone, ShoppingBag, Store } from 'lucide-react'
 
 interface SocialMediaInsightsProps {
@@ -6,34 +6,59 @@ interface SocialMediaInsightsProps {
 }
 
 export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) {
-  // Module désactivé - nécessite des données de réseaux sociaux non disponibles
-  return (
-    <div className="flex items-center justify-center min-h-[600px]">
-      <div className="text-center max-w-2xl p-12 glass rounded-3xl border border-zinc-800">
-        <div className="flex items-center justify-center gap-4 mb-6">
-          <Instagram className="w-12 h-12 text-pink-500" />
-          <Facebook className="w-12 h-12 text-blue-500" />
-        </div>
-        <h3 className="text-2xl font-bold text-white mb-4">Module Réseaux Sociaux</h3>
-        <p className="text-zinc-400 mb-6">
-          Ce module nécessite des données de réseaux sociaux (Instagram, Facebook) qui ne sont pas encore intégrées à la base de données.
-        </p>
-        <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800 text-left">
-          <p className="text-sm text-zinc-500 font-semibold mb-2">Données requises :</p>
-          <ul className="text-sm text-zinc-400 space-y-2">
-            <li>• Posts Instagram/Facebook avec engagement</li>
-            <li>• Conversion des posts en ventes</li>
-            <li>• Données démographiques des followers</li>
-            <li>• Campagnes publicitaires et ROI</li>
-          </ul>
+  const [selectedMonth, setSelectedMonth] = useState<string>('')
+  const [loadedData, setLoadedData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Charger les données si non fournies
+  useEffect(() => {
+    if (data) {
+      setLoadedData(data)
+      setLoading(false)
+      return
+    }
+
+    // Module désactivé - nécessite migration complète vers API
+    setLoading(false)
+  }, [data])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+      </div>
+    )
+  }
+
+  if (!loadedData || !loadedData.allClients) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px]">
+        <div className="text-center max-w-2xl p-12 glass rounded-3xl border border-zinc-800">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <Instagram className="w-12 h-12 text-pink-500" />
+            <Facebook className="w-12 h-12 text-blue-500" />
+            <Megaphone className="w-12 h-12 text-purple-500" />
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-4">Module Stratégie Marketing</h3>
+          <p className="text-zinc-400 mb-6">
+            Ce module génère des recommandations pour Instagram, Facebook et Google Ads basées sur vos données de ventes.
+          </p>
+          <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800 text-left">
+            <p className="text-sm text-zinc-500 font-semibold mb-2">Actuellement indisponible :</p>
+            <ul className="text-sm text-zinc-400 space-y-2">
+              <li>• Migration vers API PostgreSQL en cours</li>
+              <li>• Nécessite agrégation complexe de données clients/produits</li>
+              <li>• Sera disponible dans une prochaine version</li>
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
-  const [selectedMonth, setSelectedMonth] = useState<string>('')
+  const actualData = loadedData
 
-  if (!data || !data.allClients) {
+  if (!actualData || !actualData.allClients) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
