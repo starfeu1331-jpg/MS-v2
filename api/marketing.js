@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     // 1. Données mensuelles magasin (clients avec carte)
     const monthlyMagasin = await sql`
       SELECT 
-        TO_CHAR(t.date, 'YYYY-MM') as month,
+        TO_CHAR(t.date, 'YYYY-MM')::text as month,
         SUM(t.ca)::numeric as ca,
         COUNT(DISTINCT t.facture)::int as volume,
         COUNT(DISTINCT t.carte)::int as clients
@@ -28,6 +28,8 @@ export default async function handler(req, res) {
       GROUP BY TO_CHAR(t.date, 'YYYY-MM')
       ORDER BY month DESC
     `;
+
+    console.log('✅ Step 1: monthlyMagasin OK', monthlyMagasin.length);
 
     // 2. Stats Web
     const webStats = await sql`
@@ -38,49 +40,30 @@ export default async function handler(req, res) {
       WHERE depot = 'WEB'
     `;
 
-    // 3. Top Produits Magasin par mois (derniers mois disponibles)
-    const topProduitsMagasin = await sql`
-      WITH recent_months AS (
-        SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') as month
-        FROM transactions
-        ORDER BY month DESC
-        LIMIT 3
-      )
-      SELECT 
-        TO_CHAR(t.date, 'YYYY-MM') as month,
-        p.id as code,
-        p.famille,
-        p.sous_famille as sousFamille,
-        SUM(t.ca)::numeric as ca,
-        COUNT(*)::int as volume
-      FROM transactions t
-      LEFT JOIN produits p ON t.produit = p.id
-      WHERE t.depot != 'WEB' 
-        AND TO_CHAR(t.date, 'YYYY-MM') IN (SELECT month FROM recent_months)
-      GROUP BY TO_CHAR(t.date, 'YYYY-MM'), p.id, p.famille, p.sous_famille
-      ORDER BY month DESC, SUM(t.ca) DESC
-    `;
+    console.log('✅ Step 2: webStats OK');
 
-    // 4. Top Produits Web
+    // 3. Top Produits Web
     const produitsWeb = await sql`
       SELECT 
-        p.id as code,
-        p.famille,
-        p.sous_famille as sousFamille,
+        p.id::text as code,
+        p.famille::text,
+        p.sous_famille::text as sousFamille,
         SUM(t.ca)::numeric as ca,
         COUNT(*)::int as volume
       FROM transactions t
       LEFT JOIN produits p ON t.produit = p.id
-      WHERE t.depot = 'WEB'
+      WHERE t.depot = 'WEB' AND p.id IS NOT NULL
       GROUP BY p.id, p.famille, p.sous_famille
       ORDER BY SUM(t.ca) DESC
       LIMIT 50
     `;
 
-    // 5. Top Zones géographiques (départements)
+    console.log('✅ Step 3: produitsWeb OK', produitsWeb.length);
+
+    // 4. Top Zones géographiques (départements)
     const topZones = await sql`
       SELECT 
-        SUBSTRING(c.cp, 1, 2) as dept,
+        SUBSTRING(c.cp, 1, 2)::text as dept,
         SUM(t.ca)::numeric as ca,
         COUNT(DISTINCT t.carte)::int as clients
       FROM transactions t
@@ -91,7 +74,9 @@ export default async function handler(req, res) {
       LIMIT 20
     `;
 
-    // 6. Nouveaux clients par mois
+    console.log('✅ Step 4: topZones OK', topZones.length);
+
+    // 5. Nouveaux clients par mois
     const nouveauxClients = await sql`
       WITH first_purchase AS (
         SELECT carte, MIN(date) as first_date
@@ -100,31 +85,21 @@ export default async function handler(req, res) {
         GROUP BY carte
       )
       SELECT 
-        TO_CHAR(first_date, 'YYYY-MM') as month,
+        TO_CHAR(first_date, 'YYYY-MM')::text as month,
         COUNT(*)::int as nouveaux_clients
       FROM first_purchase
       GROUP BY TO_CHAR(first_date, 'YYYY-MM')
       ORDER BY month DESC
     `;
 
+    console.log('✅ Step 5: nouveauxClients OK', nouveauxClients.length);
+
+    console.log('✅ Step 5: nouveauxClients OK', nouveauxClients.length);
+
     // Formater les données
     const produitsWebObj = {};
     produitsWeb.forEach(p => {
       produitsWebObj[p.code] = {
-        ca: parseFloat(p.ca) || 0,
-        volume: p.volume || 0,
-        famille: p.famille || 'Non défini',
-        sousFamille: p.sousfamille || 'Non défini'
-      };
-    });
-
-    // Organiser produits magasin par mois
-    const produitsMagasinByMonth = {};
-    topProduitsMagasin.forEach(p => {
-      if (!produitsMagasinByMonth[p.month]) {
-        produitsMagasinByMonth[p.month] = {};
-      }
-      produitsMagasinByMonth[p.month][p.code] = {
         ca: parseFloat(p.ca) || 0,
         volume: p.volume || 0,
         famille: p.famille || 'Non défini',
@@ -160,7 +135,7 @@ export default async function handler(req, res) {
         volume: webStats[0]?.volume || 0
       },
       produitsWeb: produitsWebObj,
-      produitsMagasin: produitsMagasinByMonth,
+      produitsMagasin: {}, // Simplifié pour l'instant
       zones: zonesObj
     };
 
