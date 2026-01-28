@@ -1,16 +1,74 @@
 import { Download, FileSpreadsheet, FileText, Check } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface ExportDataProps {
-  data: any
+  data?: any
 }
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://ms-v2.vercel.app'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// Cache global
+let exportCache: { data: any; timestamp: number } | null = null
 
 export default function ExportData({ data }: ExportDataProps) {
   const [exporting, setExporting] = useState(false)
   const [exportSuccess, setExportSuccess] = useState(false)
-  
-  if (!data || !data.familles) {
-    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Chargement...</div></div>
+  const [loadedData, setLoadedData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Charger les données depuis l'API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Vérifier le cache
+        const now = Date.now()
+        if (exportCache && (now - exportCache.timestamp < CACHE_DURATION)) {
+          console.log('🔍 Export: Utilisation cache')
+          setLoadedData(exportCache.data)
+          setLoading(false)
+          return
+        }
+
+        console.log('🔄 Export: Chargement depuis API')
+        setLoading(true)
+        
+        const response = await fetch(`${API_URL}/api/export`)
+        if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
+        
+        const result = await response.json()
+        
+        // Mettre en cache
+        exportCache = { data: result, timestamp: Date.now() }
+        
+        setLoadedData(result)
+        console.log('✅ Export: Données chargées')
+      } catch (err: any) {
+        console.error('❌ Erreur chargement Export:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-red-400">Erreur: {error}</div></div>
+  }
+
+  if (!loadedData || !loadedData.familles) {
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="text-zinc-400">Aucune donnée</div></div>
   }
   
   const formatEuro = (value: number) => `${value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`
@@ -31,12 +89,12 @@ export default function ExportData({ data }: ExportDataProps) {
   
   // Export KPIs
   const exportKPIs = () => {
-    const famillesArray: any[] = (data.familles && typeof data.familles === 'object') ? Object.values(data.familles) : []
+    const famillesArray: any[] = (loadedData.familles && typeof loadedData.familles === 'object') ? Object.values(loadedData.familles) : []
     const totalCA: number = famillesArray.reduce((sum: number, f: any) => sum + (Number(f?.ca) || 0), 0) as number
     const totalTransactions: number = famillesArray.reduce((sum: number, f: any) => sum + (Number(f?.volume) || 0), 0) as number
     const panierMoyen: number = Number(totalCA) / Number(totalTransactions || 1)
-    const nbClients = Number(data.allClients?.size) || 0
-    const tauxFidelite = ((Number(data.fidelite?.oui) || 0) / ((Number(data.fidelite?.oui) || 0) + (Number(data.fidelite?.non) || 0) || 1)) * 100
+    const nbClients = loadedData.allClients?.length || 0
+    const tauxFidelite = ((Number(loadedData.fidelite?.oui) || 0) / ((Number(loadedData.fidelite?.oui) || 0) + (Number(loadedData.fidelite?.non) || 0) || 1)) * 100
     
     const kpis = [{
       Indicateur: 'CA Total',
@@ -60,11 +118,11 @@ export default function ExportData({ data }: ExportDataProps) {
       Type: 'Client'
     }, {
       Indicateur: 'CA Web',
-      Valeur: formatEuro(Number(data.webStats?.ca) || 0),
+      Valeur: formatEuro(Number(loadedData.webStats?.ca) || 0),
       Type: 'Financier'
     }, {
       Indicateur: 'Part Web',
-      Valeur: `${((Number(data.webStats?.ca || 0) / Number(totalCA || 1)) * 100).toFixed(2)}%`,
+      Valeur: `${((Number(loadedData.webStats?.ca || 0) / Number(totalCA || 1)) * 100).toFixed(2)}%`,
       Type: 'Distribution'
     }]
     
@@ -73,7 +131,7 @@ export default function ExportData({ data }: ExportDataProps) {
   
   // Export Top Familles
   const exportTopFamilles = () => {
-    const familles = Object.entries(data.familles)
+    const familles = Object.entries(loadedData.familles)
       .map(([nom, stats]: [string, any]) => ({
         Famille: nom,
         CA: formatEuro(stats.ca),
@@ -87,7 +145,7 @@ export default function ExportData({ data }: ExportDataProps) {
   
   // Export Top Produits
   const exportTopProduits = () => {
-    const produits = Object.entries(data.produits)
+    const produits = Object.entries(loadedData.produits)
       .map(([numero, stats]: [string, any]) => ({
         'Numéro Produit': numero,
         Famille: stats.famille,
@@ -103,17 +161,14 @@ export default function ExportData({ data }: ExportDataProps) {
   
   // Export Clients
   const exportTopClients = () => {
-    const clients: any[] = []
-    data.allClients.forEach((client: any, carte: string) => {
-      clients.push({
-        Carte: carte,
-        Ville: client.ville,
-        CP: client.cp,
-        'CA Total': formatEuro(client.ca_total),
-        'Nombre Achats': client.achats.length,
-        'Panier Moyen': formatEuro(client.ca_total / client.achats.length),
-      })
-    })
+    const clients: any[] = loadedData.allClients.map((client: any) => ({
+      Carte: client.carte,
+      Ville: client.ville,
+      CP: client.cp,
+      'CA Total': formatEuro(client.ca_total),
+      'Nombre Achats': client.achats.length,
+      'Panier Moyen': formatEuro(client.panier_moyen || 0)
+    }))
     
     clients.sort((a, b) => parseFloat(b['CA Total'].replace(/[^0-9,-]/g, '').replace(',', '.')) - parseFloat(a['CA Total'].replace(/[^0-9,-]/g, '').replace(',', '.')))
     
@@ -122,7 +177,7 @@ export default function ExportData({ data }: ExportDataProps) {
   
   // Export Magasins
   const exportMagasins = () => {
-    const magasins = Object.entries(data.geo.magasins)
+    const magasins = Object.entries(loadedData.geo.magasins)
       .map(([mag, stats]: [string, any]) => ({
         Magasin: mag,
         CA: formatEuro(stats.ca),
