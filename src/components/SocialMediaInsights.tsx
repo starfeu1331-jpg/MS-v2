@@ -39,17 +39,16 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
             <Facebook className="w-12 h-12 text-blue-500" />
             <Megaphone className="w-12 h-12 text-purple-500" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-4">Module Stratégie Marketing</h3>
+          <h3 className="text-2xl font-bold text-white mb-4">Recommandations Marketing</h3>
           <p className="text-zinc-400 mb-6">
-            Ce module génère des recommandations pour Instagram, Facebook et Google Ads basées sur vos données de ventes.
+            Ce module analyse vos ventes pour générer des recommandations Instagram, Facebook et Google Ads personnalisées.
           </p>
           <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800 text-left">
-            <p className="text-sm text-zinc-500 font-semibold mb-2">Actuellement indisponible :</p>
-            <ul className="text-sm text-zinc-400 space-y-2">
-              <li>• Migration vers API PostgreSQL en cours</li>
-              <li>• Nécessite agrégation complexe de données clients/produits</li>
-              <li>• Sera disponible dans une prochaine version</li>
-            </ul>
+            <p className="text-sm text-zinc-500 font-semibold mb-2">Module temporairement désactivé</p>
+            <p className="text-sm text-zinc-400">
+              L'ancien système chargeait toutes les données clients en mémoire. 
+              Avec PostgreSQL, ce module nécessite une refonte pour fonctionner efficacement avec l'API.
+            </p>
           </div>
         </div>
       </div>
