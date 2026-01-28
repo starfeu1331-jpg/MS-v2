@@ -23,7 +23,17 @@ const handleDailyUpdate = async (files) => {
     throw new Error('Fichier transactions.csv manquant')
   }
 
+  // 🔍 Récupérer la date maximale actuelle dans la BDD
+  const maxDateResult = await prisma.transactions.findFirst({
+    select: { date: true },
+    orderBy: { date: 'desc' }
+  })
+  
+  const maxDate = maxDateResult?.date
+  console.log(`📅 Date max actuelle dans la BDD: ${maxDate ? maxDate.toISOString().split('T')[0] : 'aucune'}`)
+
   let totalInserted = 0
+  let totalFiltered = 0
 
   // 1. Clients (optionnel)
   if (files.clients) {
@@ -59,14 +69,30 @@ const handleDailyUpdate = async (files) => {
     })
   }
 
-  // 3. Transactions (obligatoire)
+  // 3. Transactions (obligatoire) - FILTRER PAR DATE
   const transactionsData = parseCSV(files.transactions[0].path)
-  console.log(`📥 ${transactionsData.length} transactions à insérer...`)
+  console.log(`📥 ${transactionsData.length} transactions dans le CSV...`)
   
+  // Filtrer: ne garder que les transactions APRÈS la date max
+  const newTransactions = maxDate 
+    ? transactionsData.filter(row => {
+        const rowDate = new Date(row.date)
+        return rowDate > maxDate
+      })
+    : transactionsData // Si pas de date max, tout charger
+
+  totalFiltered = transactionsData.length - newTransactions.length
+  console.log(`🔍 ${newTransactions.length} nouvelles transactions (${totalFiltered} ignorées car déjà présentes)`)
+  
+  if (newTransactions.length === 0) {
+    console.log('✅ Aucune nouvelle transaction à ajouter')
+    return { inserted: 0, filtered: totalFiltered, maxDate }
+  }
+
   // Utiliser createMany pour insérer par batch (beaucoup plus rapide)
   const batchSize = 500
-  for (let i = 0; i < transactionsData.length; i += batchSize) {
-    const batch = transactionsData.slice(i, i + batchSize)
+  for (let i = 0; i < newTransactions.length; i += batchSize) {
+    const batch = newTransactions.slice(i, i + batchSize)
     
     await prisma.transactions.createMany({
       data: batch.map(row => ({
@@ -78,14 +104,24 @@ const handleDailyUpdate = async (files) => {
         ca: parseFloat(row.ca),
         quantite: parseInt(row.quantite)
       })),
-      skipDuplicates: true // Ignorer les doublons
+      skipDuplicates: true // Sécurité supplémentaire
     })
     
     totalInserted += batch.length
-    console.log(`  ✅ ${totalInserted}/${transactionsData.length}`)
+    console.log(`  ✅ ${totalInserted}/${newTransactions.length}`)
   }
 
-  return { inserted: totalInserted }
+  // Récupérer la nouvelle date max
+  const newMaxDateResult = await prisma.transactions.findFirst({
+    select: { date: true },
+    orderBy: { date: 'desc' }
+  })
+
+  return { 
+    inserted: totalInserted, 
+    filtered: totalFiltered,
+    maxDate: newMaxDateResult?.date 
+  }
 }
 
 const handleWeeklyUpdate = async (files) => {
@@ -116,48 +152,42 @@ const handleWeeklyUpdate = async (files) => {
   const clientsData = parseCSV(files.clients[0].path)
   console.log(`📥 ${clientsData.length} clients...`)
   
-  for (const row of clientsData) {
-    await prisma.clients.create({
-      data: {
-        carte: row.carte,
-        ville: row.ville,
-        cp: row.cp
-      }
-    })
-    totals.clients++
-  }
+  await prisma.clients.createMany({
+    data: clientsData.map(row => ({
+      carte: row.carte,
+      ville: row.ville,
+      cp: row.cp
+    }))
+  })
+  totals.clients = clientsData.length
 
   // 3. Charger produits
   const produitsData = parseCSV(files.produits[0].path)
   console.log(`📥 ${produitsData.length} produits...`)
   
-  for (const row of produitsData) {
-    await prisma.produits.create({
-      data: {
-        id: row.id,
-        famille: row.famille,
-        sous_famille: row.sous_famille,
-        sous_sous_famille: row.sous_sous_famille,
-        sous_sous_sous_famille: row.sous_sous_sous_famille
-      }
-    })
-    totals.produits++
-  }
+  await prisma.produits.createMany({
+    data: produitsData.map(row => ({
+      id: row.id,
+      famille: row.famille,
+      sous_famille: row.sous_famille,
+      sous_sous_famille: row.sous_sous_famille,
+      sous_sous_sous_famille: row.sous_sous_sous_famille
+    }))
+  })
+  totals.produits = produitsData.length
 
   // 4. Charger dépôts (optionnel)
   if (files.depots) {
     const depotsData = parseCSV(files.depots[0].path)
     console.log(`📥 ${depotsData.length} dépôts...`)
     
-    for (const row of depotsData) {
-      await prisma.depots.create({
-        data: {
-          code: row.code,
-          nom: row.nom
-        }
-      })
-      totals.depots++
-    }
+    await prisma.depots.createMany({
+      data: depotsData.map(row => ({
+        code: row.code,
+        nom: row.nom
+      }))
+    })
+    totals.depots = depotsData.length
   }
 
   // 5. Charger transactions
@@ -220,7 +250,9 @@ export default async function handler(req, res) {
       res.status(200).json({
         success: true,
         message: 'Mise à jour quotidienne réussie',
-        inserted: result.inserted
+        inserted: result.inserted,
+        filtered: result.filtered,
+        maxDate: result.maxDate
       })
     } else if (mode === 'weekly') {
       const totals = await handleWeeklyUpdate(files)

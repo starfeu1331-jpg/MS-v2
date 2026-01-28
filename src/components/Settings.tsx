@@ -10,6 +10,7 @@ export default function Settings() {
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null)
   const [updateError, setUpdateError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<string | null>(null)
+  const [maxDate, setMaxDate] = useState<string | null>(null)
   
   const API_URL = import.meta.env.VITE_API_URL || 'https://ms-v2.vercel.app'
 
@@ -22,6 +23,17 @@ export default function Settings() {
       const response = await fetch(`${API_URL}/api/export`)
       const data = await response.json()
       console.log('📊 Stats chargées:', data.stats)
+      
+      // Récupérer la date max des transactions
+      const maxDateResponse = await fetch(`${API_URL}/api/dashboard?year=2025`)
+      const dashboardData = await maxDateResponse.json()
+      
+      // Extraire la date max du dataset
+      if (dashboardData.monthlyData && dashboardData.monthlyData.length > 0) {
+        const lastMonth = dashboardData.monthlyData[dashboardData.monthlyData.length - 1]
+        setMaxDate(lastMonth.month)
+      }
+      
       setDbStats({
         totalCA: data.stats?.ca_total || 0,
         totalTransactions: data.stats?.nb_transactions || 0,
@@ -102,7 +114,10 @@ export default function Settings() {
         throw new Error(result.error || 'Erreur lors de la mise à jour')
       }
 
-      setUpdateSuccess(`✅ ${result.message} - ${result.inserted} transactions ajoutées`)
+      setUpdateSuccess(`✅ ${result.message} - ${result.inserted} transactions ajoutées, ${result.filtered || 0} ignorées (déjà présentes)`)
+      if (result.maxDate) {
+        setMaxDate(new Date(result.maxDate).toISOString().split('T')[0])
+      }
       setUploadedFiles({})
       loadDbStats() // Rafraîchir les stats
     } catch (error: any) {
@@ -232,6 +247,18 @@ export default function Settings() {
         ) : (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+          </div>
+        )}
+
+        {maxDate && (
+          <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-blue-400" />
+              <div>
+                <p className="text-sm font-semibold text-blue-400">Dernière transaction</p>
+                <p className="text-xs text-zinc-400 mt-1">Données à jour jusqu'au {maxDate}</p>
+              </div>
+            </div>
           </div>
         )}
 
