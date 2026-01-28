@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build && npx prisma generate",
+  "buildCommand": "npm install && npx prisma generate && npm run build",
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
@@ -9,7 +9,8 @@
   ],
   "functions": {
     "api/**/*.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "node_modules/.prisma/client/**"
     }
   }
 }
