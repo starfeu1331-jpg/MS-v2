@@ -194,11 +194,7 @@ export default function StorePerformance() {
                     color: '#ffffff'
                   }}
                 />
-                <Bar dataKey="ca" radius={[8, 8, 0, 0]}>
-                  {webVsMagData.map((_, index) => (
-                    <Bar key={index} fill={index === 0 ? 'url(#colorMag)' : 'url(#colorWeb)'} />
-                  ))}
-                </Bar>
+                <Bar dataKey="ca" radius={[8, 8, 0, 0]} fill={(entry: any) => entry.name === 'Magasins' ? 'url(#colorMag)' : 'url(#colorWeb)'} />
               </BarChart>
             </ResponsiveContainer>
           </Suspense>
