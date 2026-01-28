@@ -27,14 +27,14 @@ export default async function handler(req, res) {
       const topProduits = await prisma.$queryRaw`
         SELECT 
           p.id as code,
-          p.nom,
+          p.id as nom,
           p.famille,
           p.sous_famille,
           SUM(t.ca)::float as ca,
           SUM(t.quantite)::float as volume
         FROM transactions t
         JOIN produits p ON t.produit = p.id
-        GROUP BY p.id, p.nom, p.famille, p.sous_famille
+        GROUP BY p.id, p.famille, p.sous_famille
         ORDER BY ca DESC
         LIMIT 10
       `
@@ -140,7 +140,7 @@ export default async function handler(req, res) {
     const topProduits = await prisma.$queryRaw(Prisma.sql`
       SELECT 
         p.id as code,
-        p.nom,
+        p.id as nom,
         p.famille,
         p.sous_famille,
         SUM(t.ca)::float as ca,
@@ -148,7 +148,7 @@ export default async function handler(req, res) {
       FROM transactions t
       JOIN produits p ON t.produit = p.id
       WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
-      GROUP BY p.id, p.nom, p.famille, p.sous_famille
+      GROUP BY p.id, p.famille, p.sous_famille
       ORDER BY ca DESC
       LIMIT 10
     `)

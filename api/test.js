@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     }
 
     // Test 2: Connexion simple
-    const result = await prisma.$queryRaw`SELECT NOW() as now, COUNT(*) as count FROM transactions LIMIT 1`
+    const result = await prisma.$queryRaw`SELECT NOW() as now, COUNT(*)::int as count FROM transactions LIMIT 1`
     
     // Test 3: Requête simple
     const transactions = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM transactions`
@@ -24,9 +24,9 @@ export default async function handler(req, res) {
     res.status(200).json({ 
       success: true,
       dbUrl: dbUrl.substring(0, 30) + '...',
-      timestamp: result[0]?.now,
-      queryResult: result[0]?.count,
-      transactionsCount: transactions[0]?.count
+      timestamp: result[0]?.now?.toString(),
+      queryResult: Number(result[0]?.count || 0),
+      transactionsCount: Number(transactions[0]?.count || 0)
     })
   } catch (error) {
     res.status(500).json({ 
