@@ -1,4 +1,4 @@
-import { Crown, TrendingUp, Package, Download } from 'lucide-react'
+import { Crown } from 'lucide-react'
 
 export default function KingQuentin() {
   // Module désactivé : nécessite fichier catalogue_web.csv non disponible en base
@@ -21,6 +21,7 @@ export default function KingQuentin() {
     </div>
   )
 }
+
 
   // Créer un Set des codes articles disponibles sur le web
   const produitsWebSet = new Set(
