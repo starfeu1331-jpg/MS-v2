@@ -41,12 +41,13 @@ interface ClientResult {
 }
 
 export default function SearchPanel({ initialSearch }: SearchPanelProps) {
-  const [mode, setMode] = useState<'ticket' | 'client'>('client')
+  const [mode, setMode] = useState<'ticket' | 'client' | 'produit'>('client')
   const [searchTerm, setSearchTerm] = useState(initialSearch || '')
   const [loading, setLoading] = useState(false)
   const [ticketResults, setTicketResults] = useState<Transaction[]>([])
   const [ticketInfo, setTicketInfo] = useState<any>(null)
   const [clientResult, setClientResult] = useState<ClientResult | null>(null)
+  const [produitResult, setProduitResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
   const formatEuro = (value: number) =>
@@ -68,6 +69,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
     setTicketResults([])
     setTicketInfo(null)
     setClientResult(null)
+    setProduitResult(null)
 
     try {
       if (mode === 'ticket') {
@@ -81,7 +83,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         if (!data.transactions || data.transactions.length === 0) {
           setError('Aucun ticket trouvé avec ce numéro')
         }
-      } else {
+      } else if (mode === 'client') {
         const response = await fetch(`/api/clients?carte=${searchTerm.trim()}`)
         if (!response.ok) throw new Error('Client non trouvé')
         
@@ -103,10 +105,21 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
           totalCA,
           nbAchats
         })
+      } else {
+        // Mode produit
+        const response = await fetch(`/api/produits?produit=${searchTerm.trim()}`)
+        if (!response.ok) throw new Error('Produit non trouvé')
+        
+        const data = await response.json()
+        setProduitResult(data)
+        
+        if (!data || !data.produit) {
+          setError('Produit non trouvé')
+        }
       }
     } catch (err) {
       console.error('Erreur recherche:', err)
-      setError(mode === 'ticket' ? 'Ticket non trouvé' : 'Client non trouvé')
+      setError(mode === 'ticket' ? 'Ticket non trouvé' : mode === 'client' ? 'Client non trouvé' : 'Produit non trouvé')
     } finally {
       setLoading(false)
     }
@@ -179,6 +192,33 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
     }, 100)
   }
 
+  const switchToProduitSearch = (produit: string) => {
+    setMode('produit')
+    setSearchTerm(produit)
+    setTimeout(() => {
+      setLoading(true)
+      setError(null)
+      setTicketResults([])
+      setTicketInfo(null)
+      setClientResult(null)
+      setProduitResult(null)
+      
+      fetch(`/api/produits?produit=${produit}`)
+        .then(res => res.json())
+        .then(data => {
+          setProduitResult(data)
+          if (!data || !data.produit) {
+            setError('Produit non trouvé')
+          }
+        })
+        .catch(err => {
+          console.error('Erreur recherche:', err)
+          setError('Produit non trouvé')
+        })
+        .finally(() => setLoading(false))
+    }, 100)
+  }
+
   return (
     <div className="space-y-8 relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
@@ -220,6 +260,24 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
           <User className="w-5 h-5" />
           Recherche Client
         </button>
+        <button
+          onClick={() => {
+            setMode('produit')
+            setSearchTerm('')
+            setTicketResults([])
+            setClientResult(null)
+            setProduitResult(null)
+            setError(null)
+          }}
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-bold transition-all ${
+            mode === 'produit'
+              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+              : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+          }`}
+        >
+          <Package className="w-5 h-5" />
+          Recherche Produit
+        </button>
       </div>
 
       <div className="glass rounded-2xl p-6 shadow-2xl border border-zinc-800">
@@ -231,7 +289,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={
-                mode === 'ticket' ? '🎫 Entrez un numéro de ticket...' : '👤 Entrez un numéro de carte...'
+                mode === 'ticket' ? '🎫 Entrez un numéro de ticket...' : mode === 'client' ? '👤 Entrez un numéro de carte...' : '📦 Entrez un code produit...'
               }
               className="w-full px-6 py-4 bg-zinc-900/50 border-2 border-zinc-800 rounded-xl focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/20 text-lg font-medium transition-all text-white placeholder-zinc-500"
             />
@@ -332,7 +390,13 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
                         {(transaction as any).famille} - {(transaction as any).sous_famille}
                       </p>
                       <p className="text-sm text-zinc-400 mt-1">
-                        Produit: <span className="text-blue-400 font-medium">{(transaction as any).produitNom}</span>
+                        Produit:{' '}
+                        <button
+                          onClick={() => switchToProduitSearch((transaction as any).produitNom)}
+                          className="text-blue-400 hover:text-blue-300 font-medium underline decoration-dotted hover:decoration-solid transition-all"
+                        >
+                          {(transaction as any).produitNom}
+                        </button>
                       </p>
                     </div>
                     <div className="flex items-center gap-6 text-right">
@@ -437,6 +501,121 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {mode === 'produit' && produitResult && !loading && (
+        <div className="glass rounded-3xl shadow-2xl p-8 border border-zinc-800">
+          {/* En-tête produit */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg">
+              <Package className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-3xl font-black text-gradient">Produit {produitResult.produit.id}</h3>
+              <p className="text-sm text-zinc-400 font-medium mt-1">
+                {produitResult.produit.famille} › {produitResult.produit.sousFamille}
+              </p>
+            </div>
+          </div>
+
+          {/* Stats principales */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-emerald-500/10 rounded-2xl p-6 border border-emerald-500/20">
+              <p className="text-sm text-zinc-400 font-bold uppercase mb-2">CA Total</p>
+              <p className="text-3xl font-black text-gradient">{formatEuro(produitResult.stats.caTotal || 0)}</p>
+            </div>
+            <div className="bg-blue-500/10 rounded-2xl p-6 border border-blue-500/20">
+              <p className="text-sm text-zinc-400 font-bold uppercase mb-2">Volume Total</p>
+              <p className="text-3xl font-black text-gradient">{produitResult.stats.volumeTotal?.toFixed(0) || 0}</p>
+            </div>
+            <div className="bg-purple-500/10 rounded-2xl p-6 border border-purple-500/20">
+              <p className="text-sm text-zinc-400 font-bold uppercase mb-2">Nb Ventes</p>
+              <p className="text-3xl font-black text-gradient">{produitResult.stats.nbTransactions || 0}</p>
+            </div>
+            <div className="bg-cyan-500/10 rounded-2xl p-6 border border-cyan-500/20">
+              <p className="text-sm text-zinc-400 font-bold uppercase mb-2">Nb Clients</p>
+              <p className="text-3xl font-black text-gradient">{produitResult.stats.nbClients || 0}</p>
+            </div>
+            <div className="bg-pink-500/10 rounded-2xl p-6 border border-pink-500/20">
+              <p className="text-sm text-zinc-400 font-bold uppercase mb-2">Nb Magasins</p>
+              <p className="text-3xl font-black text-gradient">{produitResult.stats.nbMagasins || 0}</p>
+            </div>
+            <div className="bg-orange-500/10 rounded-2xl p-6 border border-orange-500/20">
+              <p className="text-sm text-zinc-400 font-bold uppercase mb-2">CA Moyen</p>
+              <p className="text-3xl font-black text-gradient">{formatEuro(produitResult.stats.caMoyen || 0)}</p>
+            </div>
+          </div>
+
+          {/* Top Magasins */}
+          {produitResult.topMagasins && produitResult.topMagasins.length > 0 && (
+            <div className="mb-8">
+              <h4 className="text-xl font-black text-white mb-4 flex items-center gap-2">
+                <Store className="w-5 h-5 text-purple-400" />
+                Top 5 Magasins
+              </h4>
+              <div className="grid grid-cols-1 gap-3">
+                {produitResult.topMagasins.map((magasin: any, idx: number) => (
+                  <div key={idx} className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">{magasin.nom}</p>
+                      <p className="text-sm text-zinc-400">{magasin.ville} • {magasin.nbVentes} ventes</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-emerald-400 text-lg">{formatEuro(magasin.ca)}</p>
+                      <p className="text-sm text-zinc-400">{magasin.volume?.toFixed(0)} unités</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Dernières transactions */}
+          {produitResult.dernieresTransactions && produitResult.dernieresTransactions.length > 0 && (
+            <div>
+              <h4 className="text-xl font-black text-white mb-4 flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-blue-400" />
+                Dernières Ventes
+              </h4>
+              <div className="space-y-2">
+                {produitResult.dernieresTransactions.map((trans: any, idx: number) => (
+                  <div key={idx} className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800 flex items-center justify-between hover:border-blue-500/30 transition-all">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => switchToTicketSearch(trans.facture)}
+                          className="text-blue-400 hover:text-blue-300 font-bold underline decoration-dotted"
+                        >
+                          #{trans.facture}
+                        </button>
+                        <span className="text-zinc-500">•</span>
+                        <span className="text-sm text-zinc-400">{formatDate(trans.date)}</span>
+                        {trans.magasinNom && (
+                          <>
+                            <span className="text-zinc-500">•</span>
+                            <span className="text-sm text-zinc-400">{trans.magasinNom}</span>
+                          </>
+                        )}
+                      </div>
+                      {trans.clientCarte && (
+                        <button
+                          onClick={() => switchToClientSearch(trans.clientCarte)}
+                          className="text-sm text-blue-400 hover:text-blue-300 mt-1 underline decoration-dotted"
+                        >
+                          Client {trans.clientCarte} - {trans.clientVille}
+                        </button>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-white">{trans.quantite} unités</p>
+                      <p className="text-emerald-400 font-bold">{formatEuro(trans.ca)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
