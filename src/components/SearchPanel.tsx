@@ -73,9 +73,9 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         if (!response.ok) throw new Error('Ticket non trouvé')
         
         const data = await response.json()
-        setTicketResults(data)
+        setTicketResults(data.transactions || [])
         
-        if (data.length === 0) {
+        if (!data.transactions || data.transactions.length === 0) {
           setError('Aucun ticket trouvé avec ce numéro')
         }
       } else {
@@ -84,18 +84,18 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
         
         const data = await response.json()
         
-        if (!data || !data.transactions) {
+        if (!data || !data.client) {
           setError('Client non trouvé')
           return
         }
 
-        const totalCA = data.transactions.reduce((sum: number, t: Transaction) => sum + Number(t.ca), 0)
+        const totalCA = data.transactions.reduce((sum: number, t: any) => sum + Number(t.ca || 0), 0)
         const nbAchats = data.transactions.length
 
         setClientResult({
-          carte: data.carte,
-          ville: data.ville,
-          cp: data.cp,
+          carte: data.client.carte,
+          ville: data.client.ville,
+          cp: data.client.cp,
           transactions: data.transactions,
           totalCA,
           nbAchats
