@@ -44,19 +44,19 @@ export default async function handler(req, res) {
   // Route: /api/stores?action=all (vue globale de tous les magasins)
   if (action === 'all') {
     try {
-      // Agréger toutes les données par code postal client
+      // Agréger toutes les données par code postal UNIQUEMENT
       const allData = await prisma.$queryRawUnsafe(`
         SELECT 
           c.cp::text,
-          c.ville::text,
+          STRING_AGG(DISTINCT c.ville, ', ') as ville,
           COUNT(DISTINCT t.carte)::int as nb_clients,
           SUM(t.ca)::numeric as total_ca,
           COUNT(*)::int as nb_transactions
         FROM transactions t
         INNER JOIN clients c ON t.carte = c.carte
         WHERE t.ca > 0 AND c.cp IS NOT NULL AND c.cp != '' AND t.carte != '0'
-        GROUP BY c.cp, c.ville
-        HAVING SUM(t.ca) > 0
+        GROUP BY c.cp
+        HAVING COUNT(*) >= 10
         ORDER BY SUM(t.ca) DESC
       `);
 
@@ -194,37 +194,37 @@ async function handleCatchmentArea(req, res, storeCode) {
       });
     }
 
-    // Grouper par CP + Ville avec agrégation
+    // Grouper UNIQUEMENT par CP (pas par ville) pour éviter duplications
     const groupedData = {};
 
     transactions.forEach((transaction) => {
       const client = transaction.client;
-      if (!client) return;
+      if (!client || !client.cp) return;
 
-      const cp = client.cp || 'UNKNOWN';
-      const ville = client.ville || 'N/A';
-      const key = `${cp}|${ville}`;
+      const cp = client.cp;
 
-      if (!groupedData[key]) {
-        groupedData[key] = {
+      if (!groupedData[cp]) {
+        groupedData[cp] = {
           cp,
-          ville,
+          villes: new Set(),
           nbClients: new Set(),
           totalCA: 0,
           nbTransactions: 0,
         };
       }
 
-      groupedData[key].nbClients.add(client.carte);
-      groupedData[key].totalCA += transaction.ca || 0;
-      groupedData[key].nbTransactions += 1;
+      if (client.ville) groupedData[cp].villes.add(client.ville);
+      groupedData[cp].nbClients.add(client.carte);
+      groupedData[cp].totalCA += transaction.ca || 0;
+      groupedData[cp].nbTransactions += 1;
     });
 
-    // Convertir en array et calculer intensités
+    // Convertir en array, filtrer < 10 transactions, calculer intensités
     const data = Object.values(groupedData)
+      .filter((item) => item.nbTransactions >= 10) // Seuil de significativité
       .map((item) => ({
         cp: item.cp,
-        ville: item.ville,
+        ville: Array.from(item.villes).join(', ') || 'N/A',
         nbClients: item.nbClients.size,
         totalCA: Math.round(item.totalCA * 100) / 100,
         nbTransactions: item.nbTransactions,

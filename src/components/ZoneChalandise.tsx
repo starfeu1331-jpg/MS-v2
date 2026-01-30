@@ -100,10 +100,21 @@ export default function ZoneChalandise() {
 
   // Charger les polygones GeoJSON pour chaque code postal
   useEffect(() => {
-    if (!catchmentData || !catchmentData.data) return;
+    if (!catchmentData || !catchmentData.data || catchmentData.data.length === 0) return;
 
     const loadGeoJson = async () => {
       const geoJsonArray = [];
+      
+      // Calculer les quintiles pour les 10 couleurs
+      const values = catchmentData.data.map(item => 
+        viewMode === 'ca' ? item.totalCA : item.nbClients
+      ).sort((a, b) => a - b);
+      
+      const getQuintile = (value: number) => {
+        if (values.length === 0) return 0;
+        const position = values.filter(v => v <= value).length / values.length;
+        return position;
+      };
       
       // Limiter à 50 codes postaux pour éviter trop de requêtes
       const topPostalCodes = catchmentData.data.slice(0, 50);
@@ -120,10 +131,13 @@ export default function ZoneChalandise() {
             if (geojson && geojson.features && geojson.features.length > 0) {
               // Ajouter les données de chalandise aux propriétés
               geojson.features.forEach((feature: any) => {
+                const value = viewMode === 'ca' ? item.totalCA : item.nbClients;
+                const quintileIntensity = getQuintile(value);
+                
                 feature.properties = {
                   ...feature.properties,
                   ...item,
-                  intensity: getIntensity(item),
+                  intensity: quintileIntensity,
                 };
               });
               geoJsonArray.push(...geojson.features);
@@ -144,12 +158,24 @@ export default function ZoneChalandise() {
   }, [catchmentData, viewMode]);
 
   const getColor = (intensity: number) => {
-    // Échelle logarithmique pour mieux différencier les valeurs faibles vs fortes
-    // Transforme l'intensité linéaire (0-1) en échelle log pour plus de contraste
-    const logIntensity = intensity > 0 ? Math.log10(1 + intensity * 9) : 0;
+    // Dégradé avec 10 couleurs distinctes (quintiles de 10%)
+    const colorScale = chroma
+      .scale([
+        '#1e293b', // 0-10%: Très sombre
+        '#334155', // 10-20%: Sombre
+        '#475569', // 20-30%: Gris foncé
+        '#64748b', // 30-40%: Gris
+        '#3b82f6', // 40-50%: Bleu
+        '#10b981', // 50-60%: Vert
+        '#eab308', // 60-70%: Jaune
+        '#f59e0b', // 70-80%: Orange
+        '#f97316', // 80-90%: Orange foncé
+        '#dc2626', // 90-100%: Rouge
+      ])
+      .mode('lch')
+      .domain([0, 1]);
     
-    const colorScale = chroma.scale(['#4B5563', '#2E7D9E', '#FFEB3B', '#FF9800', '#DC3545']).domain([0, 1]);
-    return colorScale(logIntensity).hex();
+    return colorScale(intensity).hex();
   };
 
   const getIntensity = (data: CatchmentData) => {
@@ -300,9 +326,9 @@ export default function ZoneChalandise() {
               />
 
               {/* Marqueur du magasin */}
-              {catchmentData && catchmentData.storeCP && selectedStore !== 'ALL' && (
+              {catchmentData && catchmentData.storeCP && selectedStore !== 'ALL' && storeIcon && (
                 <Marker 
-                  position={L.latLng(getPostcodeCoords(catchmentData.storeCP))}
+                  position={getPostcodeCoords(catchmentData.storeCP) as [number, number]}
                   icon={storeIcon}
                 >
                   <Popup>
@@ -320,7 +346,7 @@ export default function ZoneChalandise() {
               )}
 
               {/* Afficher les polygones GeoJSON */}
-              {geoJsonData.length > 0 && geoJsonData.map((feature, idx) => {
+              {geoJsonData && geoJsonData.length > 0 && geoJsonData.map((feature, idx) => {
                 const intensity = feature.properties.intensity || 0;
                 const color = getColor(intensity);
                 
