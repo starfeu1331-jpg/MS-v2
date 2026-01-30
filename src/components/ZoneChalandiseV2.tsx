@@ -165,35 +165,42 @@ export default function ZoneChalandiseV2() {
             const features: any[] = [];
             const failedCP: string[] = [];
             
-            // Charger les GeoJSON de tous les CP de cette zone DEPUIS LE FICHIER LOCAL
-            for (const zone of zones) {
-              try {
-                if (codesPostauxData && codesPostauxData.features) {
-                  // Chercher dans le fichier local
-                  const feature = codesPostauxData.features.find((f: any) => 
-                    f.properties.code_postal === zone.cp
-                  );
+            // OPTIMISATION: Charger TOUS les CP de cette zone en UNE SEULE requête
+            const allCPs = zones.map(z => z.cp).join(',');
+            
+            try {
+              // Essayer de charger tous les CP en batch via l'API
+              const response = await fetch(
+                `https://geo.api.gouv.fr/communes?codePostal=${allCPs}&fields=contour&format=geojson&geometry=contour&limit=1000`
+              );
+              
+              if (response.ok) {
+                const geojson = await response.json();
+                if (geojson.features && geojson.features.length > 0) {
+                  // Succès! On a chargé tous les CP en une fois
+                  features.push(...geojson.features);
                   
-                  if (feature) {
-                    features.push(feature);
-                  } else {
-                    // Fallback API si pas trouvé dans le fichier
-                    const response = await fetch(
-                      `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=contour&format=geojson&geometry=contour`
-                    );
-                    if (response.ok) {
-                      const geojson = await response.json();
-                      if (geojson.features && geojson.features.length > 0) {
-                        features.push(geojson.features[0]);
-                      } else {
-                        failedCP.push(zone.cp);
-                      }
-                    } else {
+                  // Vérifier quels CP manquent
+                  const loadedCPs = new Set(geojson.features.map((f: any) => f.properties.code || f.properties.codePostal || f.properties.postal_code));
+                  zones.forEach(zone => {
+                    if (!loadedCPs.has(zone.cp)) {
                       failedCP.push(zone.cp);
                     }
-                  }
+                  });
                 } else {
-                  // Pas de fichier local, utiliser l'API
+                  // L'API n'a retourné aucune feature - fallback individuel
+                  throw new Error('Aucune feature retournée par batch');
+                }
+              } else {
+                // Erreur API - fallback individuel
+                throw new Error(`API batch failed: ${response.status}`);
+              }
+            } catch (batchError) {
+              console.warn(`⚠️ Batch loading failed for ${key}, fallback to individual:`, batchError);
+              
+              // Fallback: charger individuellement comme avant
+              for (const zone of zones) {
+                try {
                   const response = await fetch(
                     `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=contour&format=geojson&geometry=contour`
                   );
@@ -207,12 +214,12 @@ export default function ZoneChalandiseV2() {
                   } else {
                     failedCP.push(zone.cp);
                   }
+                } catch (err) {
+                  console.error(`❌ CP ${zone.cp}:`, err);
+                  failedCP.push(zone.cp);
                 }
-              } catch (err) {
-                console.error(`❌ CP ${zone.cp}:`, err);
-                failedCP.push(zone.cp);
+                await new Promise(resolve => setTimeout(resolve, 10));
               }
-              await new Promise(resolve => setTimeout(resolve, 10)); // Délai réduit car lecture locale
             }
             
             console.log(`  ✅ ${features.length} géométries chargées, ❌ ${failedCP.length} échecs`);
