@@ -196,76 +196,108 @@ export default function ZoneChalandiseSimple() {
   const center: LatLngTuple = [46.603354, 1.888334]; // Centre de la France
 
   return (
-    <div className="h-full w-full relative">
+    <>
       {/* Map plein écran */}
-      <MapContainer
-        center={center}
-        zoom={6}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        {/* Zones colorées */}
-        {geoData.map((feature, idx) => (
-          <GeoJSON
-            key={`zone-${idx}`}
-            data={feature}
-            style={{
-              fillColor: feature.properties.color,
-              fillOpacity: 0.5,
-              color: feature.properties.color,
-              weight: 2,
-              opacity: 0.8
-            }}
-            onEachFeature={onEachFeature}
+      <div className="h-full w-full">
+        <MapContainer
+          center={center}
+          zoom={6}
+          style={{ height: '100%', width: '100%' }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-        ))}
 
-        {/* Marqueur magasin */}
-        {stores
-          .filter(s => s.code === selectedStore && s.lat && s.lon)
-          .map(store => (
-            <Marker key={store.code} position={[store.lat!, store.lon!]}>
-              <Popup>
-                <div className="text-center">
-                  <strong>{store.nom}</strong>
-                </div>
-              </Popup>
-            </Marker>
+          {/* Zones colorées */}
+          {geoData.map((feature, idx) => (
+            <GeoJSON
+              key={`zone-${idx}`}
+              data={feature}
+              style={{
+                fillColor: feature.properties.color,
+                fillOpacity: 0.5,
+                color: feature.properties.color,
+                weight: 2,
+                opacity: 0.8
+              }}
+              onEachFeature={onEachFeature}
+            />
           ))}
-      </MapContainer>
 
-      {/* Panneau de contrôle flottant - bas droite */}
+          {/* Marqueur magasin */}
+          {stores
+            .filter(s => s.code === selectedStore && s.lat && s.lon)
+            .map(store => (
+              <Marker key={store.code} position={[store.lat!, store.lon!]}>
+                <Popup>
+                  <div className="text-center">
+                    <strong>{store.nom}</strong>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+        </MapContainer>
+      </div>
+
+      {/* Panneau de contrôle flottant - HORS de la div map */}
       <div 
-        className="fixed bottom-6 right-6 bg-white rounded-lg shadow-2xl border-2 border-blue-500"
-        style={{ zIndex: 1500, minWidth: '320px' }}
+        style={{ 
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
+          minWidth: '340px',
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+          border: '3px solid #3b82f6'
+        }}
       >
         {/* En-tête avec bouton replier */}
         <div 
-          className="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-200 cursor-pointer hover:bg-blue-100"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px',
+            backgroundColor: '#dbeafe',
+            borderTopLeftRadius: '10px',
+            borderTopRightRadius: '10px',
+            borderBottom: '2px solid #93c5fd',
+            cursor: 'pointer'
+          }}
           onClick={() => setPanelOpen(!panelOpen)}
         >
-          <h3 className="font-bold text-blue-900 text-lg">📍 Sélection Magasin</h3>
-          <button className="text-blue-700 hover:text-blue-900">
+          <h3 style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '18px', margin: 0 }}>
+            📍 Sélection Magasin
+          </h3>
+          <button style={{ color: '#1e40af', background: 'none', border: 'none', cursor: 'pointer' }}>
             {panelOpen ? <ChevronDown size={22} /> : <ChevronUp size={22} />}
           </button>
         </div>
 
         {/* Contenu du panneau */}
         {panelOpen && (
-          <div className="p-4 space-y-3">
+          <div style={{ padding: '16px' }}>
             {/* Sélection magasin */}
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}>
                 Choisir un magasin:
               </label>
               <select
                 value={selectedStore}
                 onChange={(e) => setSelectedStore(e.target.value)}
-                className="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  border: '2px solid #d1d5db',
+                  borderRadius: '8px',
+                  backgroundColor: 'white',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
               >
                 {stores.map(store => (
                   <option key={store.code} value={store.code}>
@@ -277,21 +309,44 @@ export default function ZoneChalandiseSimple() {
 
             {/* Indicateur de chargement */}
             {loading && (
-              <div className="flex items-center gap-2 text-sm text-blue-700 font-medium bg-blue-50 px-3 py-2 rounded-lg">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                fontSize: '14px', 
+                color: '#1d4ed8',
+                fontWeight: '500',
+                backgroundColor: '#dbeafe',
+                padding: '10px 12px',
+                borderRadius: '8px'
+              }}>
+                <div style={{ 
+                  width: '16px', 
+                  height: '16px', 
+                  border: '2px solid #2563eb',
+                  borderTopColor: 'transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
                 Chargement des zones...
               </div>
             )}
 
             {/* Info zones */}
             {!loading && geoData.length > 0 && (
-              <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+              <div style={{ 
+                fontSize: '14px', 
+                color: '#4b5563',
+                backgroundColor: '#f3f4f6',
+                padding: '10px 12px',
+                borderRadius: '8px'
+              }}>
                 ✅ <strong>{geoData.length}</strong> zones affichées
               </div>
             )}
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
