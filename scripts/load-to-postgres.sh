@@ -16,6 +16,11 @@ fi
 
 CSV_DIR="$1"
 
+# Si chemin relatif, le rendre absolu
+if [[ "$CSV_DIR" != /* ]]; then
+  CSV_DIR="$PWD/$CSV_DIR"
+fi
+
 if [ ! -d "$CSV_DIR" ]; then
   echo "❌ Dossier introuvable: $CSV_DIR"
   exit 1
@@ -55,7 +60,7 @@ $PSQL_CMD "$DB_URL" -c "
 # 3. Charger clients
 if [ -f "$CSV_DIR/clients.csv" ]; then
   echo "📥 Chargement clients..."
-  $PSQL_CMD "$DB_URL" -c "\COPY clients FROM '$PWD/$CSV_DIR/clients.csv' CSV HEADER"
+  $PSQL_CMD "$DB_URL" -c "\COPY clients FROM '$CSV_DIR/clients.csv' CSV HEADER"
 else
   echo "⚠️  Fichier clients.csv introuvable"
 fi
@@ -63,7 +68,7 @@ fi
 # 4. Charger produits
 if [ -f "$CSV_DIR/produits.csv" ]; then
   echo "📥 Chargement produits..."
-  $PSQL_CMD "$DB_URL" -c "\COPY produits FROM '$PWD/$CSV_DIR/produits.csv' CSV HEADER"
+  $PSQL_CMD "$DB_URL" -c "\COPY produits FROM '$CSV_DIR/produits.csv' CSV HEADER"
 else
   echo "⚠️  Fichier produits.csv introuvable"
 fi
@@ -71,7 +76,7 @@ fi
 # 5. Charger dépôts
 if [ -f "$CSV_DIR/depots.csv" ]; then
   echo "📥 Chargement dépôts..."
-  $PSQL_CMD "$DB_URL" -c "\COPY depots FROM '$PWD/$CSV_DIR/depots.csv' CSV HEADER"
+  $PSQL_CMD "$DB_URL" -c "\COPY depots FROM '$CSV_DIR/depots.csv' CSV HEADER"
 else
   echo "⚠️  Fichier depots.csv introuvable"
 fi
@@ -79,7 +84,7 @@ fi
 # 6. Charger transactions
 if [ -f "$CSV_DIR/transactions.csv" ]; then
   echo "📥 Chargement transactions..."
-  $PSQL_CMD "$DB_URL" -c "\COPY transactions(facture,carte,depot,date,produit,quantite,prix,ca,is_web,ville,cp) FROM '$PWD/$CSV_DIR/transactions.csv' CSV HEADER"
+  $PSQL_CMD "$DB_URL" -c "\COPY transactions(facture,carte,depot,date,produit,quantite,prix,ca,is_web,ville,cp) FROM '$CSV_DIR/transactions.csv' CSV HEADER"
 else
   echo "❌ Fichier transactions.csv introuvable (obligatoire)"
   exit 1

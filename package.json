@@ -16,18 +16,23 @@
   "dependencies": {
     "@prisma/client": "5.22.0",
     "@tanstack/react-virtual": "^3.13.18",
+    "chroma-js": "^3.2.0",
     "csv-parse": "^6.1.0",
+    "leaflet": "^1.9.4",
+    "leaflet.heat": "^0.2.0",
     "lucide-react": "^0.562.0",
     "multiparty": "^4.2.3",
     "papaparse": "^5.5.3",
     "prisma": "5.22.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-leaflet": "^5.0.0",
     "recharts": "^3.6.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^24.10.1",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.5",

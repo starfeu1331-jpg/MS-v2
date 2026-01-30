@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense, useEffect, useRef } from 'react'
-import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone, Calendar, ChevronDown } from 'lucide-react'
+import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone, Calendar, ChevronDown, Map } from 'lucide-react'
 import { LoadingFallback } from './components/LoadingFallback'
 
 // Lazy loading des composants - 100% PostgreSQL
@@ -14,13 +14,14 @@ const CrossSellingAnalysis = lazy(() => import('./components/CrossSellingAnalysi
 const CohortAnalysis = lazy(() => import('./components/CohortAnalysis'))
 const ABCAnalysis = lazy(() => import('./components/ABCAnalysis'))
 const KingQuentin = lazy(() => import('./components/KingQuentin'))
+const ZoneChalandise = lazy(() => import('./components/ZoneChalandise'))
 const StorePerformance = lazy(() => import('./components/StorePerformance'))
 const ForecastAnomalies = lazy(() => import('./components/ForecastAnomalies'))
 const SocialMediaInsights = lazy(() => import('./components/SocialMediaInsights'))
 const ExportData = lazy(() => import('./components/ExportData'))
 const SettingsView = lazy(() => import('./components/Settings'))
 
-type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'stores' | 'forecast' | 'social' | 'exports' | 'settings'
+type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'zones' | 'stores' | 'forecast' | 'social' | 'exports' | 'settings'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
@@ -165,6 +166,17 @@ function App() {
                 {sidebarOpen && <span>King Quentin</span>}
               </button>
               <button
+                onClick={() => setActiveTab('zones')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+                  activeTab === 'zones'
+                    ? 'bg-green-500 text-white'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                }`}
+              >
+                <Map className="w-5 h-5" />
+                {sidebarOpen && <span>Zone de Chalandise</span>}
+              </button>
+              <button
                 onClick={() => setActiveTab('stores')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'stores'
@@ -247,6 +259,7 @@ function App() {
               {activeTab === 'cohortes' && 'Analyse de Cohortes'}
               {activeTab === 'abc' && 'ABC Analysis'}
               {activeTab === 'kingquentin' && 'King Quentin 👑'}
+              {activeTab === 'zones' && 'Zone de Chalandise 🗺️'}
               {activeTab === 'stores' && 'Performance Magasins'}
               {activeTab === 'forecast' && 'Prévisions & Anomalies'}
               {activeTab === 'social' && 'Réseaux Sociaux'}
@@ -452,21 +465,22 @@ function App() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 bg-zinc-950">
+        <main className="flex-1 overflow-y-auto bg-zinc-950">
           <Suspense fallback={<LoadingFallback />}>
-            {activeTab === 'dashboard' && <DashboardV2 period={currentPeriod} onNavigate={setActiveTab} />}
-            {activeTab === 'search' && <SearchPanel data={null} />}
-            {activeTab === 'rfm' && <RFMAnalysis data={null} showWebData={showWebData} />}
-            {activeTab === 'subFamilies' && <SubFamilyAnalysis data={null} showWebData={showWebData} />}
-            {activeTab === 'crossSelling' && <CrossSellingAnalysis data={null} />}
-            {activeTab === 'cohortes' && <CohortAnalysis />}
-            {activeTab === 'abc' && <ABCAnalysis />}
-            {activeTab === 'kingquentin' && <KingQuentin />}
-            {activeTab === 'stores' && <StorePerformance />}
-            {activeTab === 'forecast' && <ForecastAnomalies />}
-            {activeTab === 'social' && <SocialMediaInsights data={null} />}
-            {activeTab === 'exports' && <ExportData data={null} />}
-            {activeTab === 'settings' && <SettingsView />}
+            {activeTab === 'dashboard' && <div className="p-6"><DashboardV2 period={currentPeriod} onNavigate={setActiveTab} /></div>}
+            {activeTab === 'search' && <div className="p-6"><SearchPanel data={null} /></div>}
+            {activeTab === 'rfm' && <div className="p-6"><RFMAnalysis data={null} showWebData={showWebData} /></div>}
+            {activeTab === 'subFamilies' && <div className="p-6"><SubFamilyAnalysis data={null} showWebData={showWebData} /></div>}
+            {activeTab === 'crossSelling' && <div className="p-6"><CrossSellingAnalysis data={null} /></div>}
+            {activeTab === 'cohortes' && <div className="p-6"><CohortAnalysis /></div>}
+            {activeTab === 'abc' && <div className="p-6"><ABCAnalysis /></div>}
+            {activeTab === 'kingquentin' && <div className="p-6"><KingQuentin /></div>}
+            {activeTab === 'zones' && <ZoneChalandise />}
+            {activeTab === 'stores' && <div className="p-6"><StorePerformance /></div>}
+            {activeTab === 'forecast' && <div className="p-6"><ForecastAnomalies /></div>}
+            {activeTab === 'social' && <div className="p-6"><SocialMediaInsights data={null} /></div>}
+            {activeTab === 'exports' && <div className="p-6"><ExportData data={null} /></div>}
+            {activeTab === 'settings' && <div className="p-6"><SettingsView /></div>}
           </Suspense>
         </main>
       </div>

@@ -1,0 +1,138 @@
+<div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; line-height: 1.6;">
+
+<div style="background: linear-gradient(135deg, #FF4B12 0%, #FF6B3D 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 12px; margin-bottom: 30px;">
+  <h1 style="font-size: 2.5em; margin: 0 0 15px 0; font-weight: 900;">Mini budget.<br>Maxi confort.</h1>
+  <p style="font-size: 1.3em; margin: 0 0 20px 0; font-weight: 500;">Le mois des prix bas.</p>
+  <p style="font-size: 1.1em; margin: 0; opacity: 0.9;">Ton banquier nous a bloqués 💸</p>
+  <p style="margin: 20px 0 0 0; font-size: 0.95em; font-style: italic;">Spoiler : pas besoin de vendre un rein.</p>
+  <button id="heroBtn" style="background: white; color: #FF4B12; padding: 12px 30px; font-size: 1.1em; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px;">Je veux les bons plans</button>
+</div>
+
+<div id="jsTest" style="background: #ffffcc; border: 2px solid #FFB300; padding: 15px; border-radius: 8px; margin-bottom: 30px; text-align: center; display: none;">
+  <strong style="color: #00C853;">✅ JavaScript FONCTIONNE!</strong><br>
+  <span id="clickCount">Tu as cliqué 0 fois</span>
+</div>
+
+<h2 style="font-size: 1.8em; text-align: center; margin-bottom: 30px;">Comment ça marche?</h2>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+  <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; transition: all 0.3s ease;" class="card">
+    <div style="font-size: 2.5em; margin-bottom: 10px;">📱</div>
+    <h3 style="font-size: 1.1em; margin: 0 0 10px 0;">Tu scannes</h3>
+    <p style="font-size: 0.9em; color: #666; margin: 0;">Le QR code à l'entrée.</p>
+  </div>
+  <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; transition: all 0.3s ease;" class="card">
+    <div style="font-size: 2.5em; margin-bottom: 10px;">🔍</div>
+    <h3 style="font-size: 1.1em; margin: 0 0 10px 0;">Tu repères</h3>
+    <p style="font-size: 0.9em; color: #666; margin: 0;">Les macarons en magasin.</p>
+  </div>
+  <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; transition: all 0.3s ease;" class="card">
+    <div style="font-size: 2.5em; margin-bottom: 10px;">✨</div>
+    <h3 style="font-size: 1.1em; margin: 0 0 10px 0;">Tu repars</h3>
+    <p style="font-size: 0.9em; color: #666; margin: 0;">Plus heureux, moins ruiné.</p>
+  </div>
+</div>
+
+<h2 style="font-size: 1.8em; text-align: center; margin-bottom: 30px;">Les deals 🔥</h2>
+
+<div style="background: #fafafa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+  <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #FF4B12; cursor: pointer; transition: all 0.2s ease;" class="dealCard">
+    <strong style="font-size: 1.1em;">Canapé 3 places gris</strong><br>
+    <span style="font-size: 1.3em; color: #FF4B12; font-weight: 900;">299€</span>
+    <span style="background: #FFB300; color: #1A1A1A; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-left: 10px;">PRIX CHOC</span>
+  </div>
+  <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #FF4B12; cursor: pointer; transition: all 0.2s ease;" class="dealCard">
+    <strong style="font-size: 1.1em;">Matelas mémoire 140x190</strong><br>
+    <span style="font-size: 1.3em; color: #FF4B12; font-weight: 900;">199€</span>
+    <span style="background: #00C853; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-left: 10px;">TOP VENTE</span>
+  </div>
+  <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #FF4B12; cursor: pointer; transition: all 0.2s ease;" class="dealCard">
+    <strong style="font-size: 1.1em;">Fauteuil relax microfibre</strong><br>
+    <span style="font-size: 1.3em; color: #FF4B12; font-weight: 900;">à partir de 149€</span>
+    <span style="background: #FFB300; color: #1A1A1A; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-left: 10px;">STOCK LIMITÉ</span>
+  </div>
+  <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #FF4B12; cursor: pointer; transition: all 0.2s ease;" class="dealCard">
+    <strong style="font-size: 1.1em;">Table basse design chêne</strong><br>
+    <span style="font-size: 1.3em; color: #FF4B12; font-weight: 900;">79€</span>
+    <span style="background: #FFB300; color: #1A1A1A; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-left: 10px;">PRIX MINI</span>
+  </div>
+  <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #FF4B12; cursor: pointer; transition: all 0.2s ease;" class="dealCard">
+    <strong style="font-size: 1.1em;">Tapis salon 160x230</strong><br>
+    <span style="font-size: 1.3em; color: #FF4B12; font-weight: 900;">à partir de 49€</span>
+    <span style="background: #FFB300; color: #1A1A1A; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-left: 10px;">-30%</span>
+  </div>
+  <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #FF4B12; cursor: pointer; transition: all 0.2s ease;" class="dealCard">
+    <strong style="font-size: 1.1em;">Lot 4 chaises scandinaves</strong><br>
+    <span style="font-size: 1.3em; color: #FF4B12; font-weight: 900;">99€</span>
+    <span style="background: #00C853; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-left: 10px;">BEST DEAL</span>
+  </div>
+</div>
+
+<div style="background: #1A1A1A; color: white; padding: 40px 20px; text-align: center; border-radius: 12px; margin-bottom: 30px;">
+  <h2 style="font-size: 1.5em; margin-bottom: 20px;">On t'aide à trouver vite</h2>
+  <p style="margin-bottom: 20px; font-size: 1.1em;">T'es devant l'entrée? Parfait.</p>
+  <p style="margin-bottom: 20px; font-size: 1.1em;">Les macarons "Mini Budget Maxi Confort" te guident.</p>
+  <button id="ctaBtn" style="background: #FF4B12; color: white; padding: 12px 30px; font-size: 1.1em; font-weight: bold; border: none; border-radius: 8px; cursor: pointer;">Ok, je rentre</button>
+</div>
+
+<div style="background: #fafafa; padding: 30px 20px; text-align: center; border-radius: 12px; color: #666;">
+  <p style="margin: 0 0 10px 0; font-weight: bold;">Opération du 02/02 au 08/03</p>
+  <p style="margin: 0 0 10px 0;">Valable dans les 23 magasins Décor Discount</p>
+  <p style="margin: 0; font-size: 1.1em; font-weight: 600;">Décor Discount — le confort sans l'addition salée.</p>
+</div>
+
+</div>
+
+<script>
+console.log('✅ Script chargé!');
+
+let clickCount = 0;
+
+// Test 1: Bouton Hero
+const heroBtn = document.getElementById('heroBtn');
+if (heroBtn) {
+  heroBtn.addEventListener('click', function() {
+    clickCount++;
+    const jsTest = document.getElementById('jsTest');
+    jsTest.style.display = 'block';
+    document.getElementById('clickCount').textContent = 'Tu as cliqué ' + clickCount + ' fois';
+    console.log('Click détecté! Total: ' + clickCount);
+  });
+}
+
+// Test 2: Hover sur les cards
+const cards = document.querySelectorAll('.card');
+cards.forEach(function(card) {
+  card.addEventListener('mouseenter', function() {
+    card.style.transform = 'translateY(-4px)';
+    card.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+  });
+  card.addEventListener('mouseleave', function() {
+    card.style.transform = 'translateY(0)';
+    card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+  });
+});
+
+// Test 3: Click sur les deals
+const dealCards = document.querySelectorAll('.dealCard');
+dealCards.forEach(function(deal) {
+  deal.addEventListener('click', function() {
+    deal.style.backgroundColor = '#fff5f5';
+    deal.style.borderLeftColor = '#FF6B3D';
+    setTimeout(function() {
+      deal.style.backgroundColor = 'white';
+      deal.style.borderLeftColor = '#FF4B12';
+    }, 300);
+  });
+});
+
+// Test 4: CTA Button
+const ctaBtn = document.getElementById('ctaBtn');
+if (ctaBtn) {
+  ctaBtn.addEventListener('click', function() {
+    alert('🎉 JavaScript fonctionne! Merci de ton soutien.');
+  });
+}
+
+console.log('✅ Tous les event listeners sont actifs!');
+</script>
