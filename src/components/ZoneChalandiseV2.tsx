@@ -167,10 +167,10 @@ export default function ZoneChalandiseV2() {
             
             // Charger chaque CP individuellement (l'API ne supporte pas le batch)
             for (const zone of zones) {
+              // IMPORTANT: Normaliser le CP à 5 chiffres (ajouter 0 devant si nécessaire)
+              const normalizedCP = zone.cp.toString().padStart(5, '0');
+              
               try {
-                // IMPORTANT: Normaliser le CP à 5 chiffres (ajouter 0 devant si nécessaire)
-                const normalizedCP = zone.cp.toString().padStart(5, '0');
-                
                 const response = await fetch(
                   `https://geo.api.gouv.fr/communes?codePostal=${normalizedCP}&fields=contour&format=geojson&geometry=contour`
                 );
