@@ -15,6 +15,8 @@ export default function ZoneChalandiseV2() {
   const [geoJsonData, setGeoJsonData] = useState<any[]>([]);
   const [storeContours, setStoreContours] = useState<any[]>([]); // Contours globaux par magasin
   const [loading, setLoading] = useState(false);
+  const [loadingZones, setLoadingZones] = useState(false); // Loading spécifique zones
+  const [loadingProgress, setLoadingProgress] = useState(0); // Progression %
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'ca' | 'clients'>('ca');
   const [mapCenter, setMapCenter] = useState<[number, number]>([46.5, 2.5]);
@@ -48,6 +50,8 @@ export default function ZoneChalandiseV2() {
     if (!allZones || allZones.length === 0) return;
 
     const loadGeoJson = async () => {
+      setLoadingZones(true);
+      setLoadingProgress(0);
       const geoJsonArray = [];
       
       // Filtrer selon le magasin sélectionné
@@ -60,39 +64,51 @@ export default function ZoneChalandiseV2() {
       
       console.log('✅ Zones filtrées:', zonesToDisplay.length, 'sur', allZones.length);
       
-      // Utiliser toutes les zones (pas de limite)
-      const topZones = zonesToDisplay;
+      // Charger par paquets de 50 pour éviter les crashs
+      const BATCH_SIZE = 50;
+      const total = zonesToDisplay.length;
       
-      for (const zone of topZones) {
-        try {
-          const response = await fetch(
-            `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=nom,code,codesPostaux,centre,contour&format=geojson&geometry=contour`
-          );
-          
-          if (response.ok) {
-            const geojson = await response.json();
-            if (geojson && geojson.features && geojson.features.length > 0) {
-              geojson.features.forEach((feature: any) => {
-                const intensity = viewMode === 'ca' ? zone.intensiteCA : zone.intensiteClients;
-                feature.properties = {
-                  ...feature.properties,
-                  ...zone,
-                  intensity,
-                };
-              });
-              geoJsonArray.push(...geojson.features);
+      for (let i = 0; i < total; i += BATCH_SIZE) {
+        const batch = zonesToDisplay.slice(i, i + BATCH_SIZE);
+        
+        for (const zone of batch) {
+          try {
+            const response = await fetch(
+              `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=nom,code,codesPostaux,centre,contour&format=geojson&geometry=contour`
+            );
+            
+            if (response.ok) {
+              const geojson = await response.json();
+              if (geojson && geojson.features && geojson.features.length > 0) {
+                geojson.features.forEach((feature: any) => {
+                  const intensity = viewMode === 'ca' ? zone.intensiteCA : zone.intensiteClients;
+                  feature.properties = {
+                    ...feature.properties,
+                    ...zone,
+                    intensity,
+                  };
+                });
+                geoJsonArray.push(...geojson.features);
+              }
             }
+            
+            await new Promise(resolve => setTimeout(resolve, 50));
+          } catch (err) {
+            console.error(`Erreur GeoJSON pour ${zone.cp}:`, err);
           }
-          
-          await new Promise(resolve => setTimeout(resolve, 50));
-        } catch (err) {
-          console.error(`Erreur GeoJSON pour ${zone.cp}:`, err);
         }
+        
+        // Mettre à jour la progression
+        setLoadingProgress(Math.round(((i + BATCH_SIZE) / total) * 100));
+        
+        // Mettre à jour l'affichage après chaque paquet
+        setGeoJsonData([...geoJsonArray]);
       }
       
       setGeoJsonData(geoJsonArray);
       
-      // Créer contours globaux par magasin
+      // Créer contours globaux par magasin (par paquets)
+      setLoadingProgress(95);
       const contoursMap: Record<string, any[]> = {};
       geoJsonArray.forEach((feature: any) => {
         const storeCode = feature.properties.storeCode;
@@ -127,6 +143,8 @@ export default function ZoneChalandiseV2() {
       }
       
       setStoreContours(contours);
+      setLoadingProgress(100);
+      setLoadingZones(false);
     };
 
     loadGeoJson();
@@ -191,10 +209,25 @@ export default function ZoneChalandiseV2() {
 
   return (
     <div className="h-screen w-full bg-zinc-900 relative overflow-hidden">
-      {/* Loading */}
+      {/* Loading initial */}
       {loading && (
         <div className="absolute inset-0 bg-zinc-900/80 z-50 flex items-center justify-center">
           <Loader className="w-8 h-8 text-blue-500 animate-spin" />
+        </div>
+      )}
+      
+      {/* Loading zones avec progression */}
+      {loadingZones && (
+        <div className="absolute inset-0 bg-zinc-900/90 z-40 flex flex-col items-center justify-center">
+          <Loader className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+          <p className="text-white text-lg mb-2">Chargement des zones de chalandise...</p>
+          <div className="w-64 h-2 bg-zinc-700 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-blue-500 transition-all duration-300"
+              style={{ width: `${loadingProgress}%` }}
+            />
+          </div>
+          <p className="text-zinc-400 text-sm mt-2">{loadingProgress}%</p>
         </div>
       )}
 
