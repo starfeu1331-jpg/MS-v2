@@ -63,7 +63,7 @@ export default async function handler(req, res) {
           AND c.cp IS NOT NULL 
           AND c.cp != ''
         GROUP BY c.cp
-        HAVING COUNT(DISTINCT t.carte) >= 1
+        HAVING COUNT(DISTINCT t.carte) >= 10
         ORDER BY SUM(t.ca) DESC
       `;
 
