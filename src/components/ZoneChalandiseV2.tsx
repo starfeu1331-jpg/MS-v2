@@ -45,106 +45,106 @@ export default function ZoneChalandiseV2() {
     fetchAllData();
   }, []);
 
-  // Charger les polygones GeoJSON
+  // Charger les polygones GeoJSON par ZONES DE COULEUR (optimisé)
   useEffect(() => {
     if (!allZones || allZones.length === 0) return;
 
     const loadGeoJson = async () => {
       setLoadingZones(true);
       setLoadingProgress(0);
-      const geoJsonArray = [];
       
       // Filtrer selon le magasin sélectionné
-      console.log('🔍 selectedStore:', selectedStore);
-      console.log('🔍 allZones sample:', allZones.slice(0, 3).map(z => ({ code: z.storeCode, name: z.storeName })));
-      
       const zonesToDisplay = selectedStore === 'ALL' 
         ? allZones 
         : allZones.filter(z => String(z.storeCode).trim() === String(selectedStore).trim());
       
-      console.log('✅ Zones filtrées:', zonesToDisplay.length, 'sur', allZones.length);
+      console.log('✅ Zones à traiter:', zonesToDisplay.length);
       
-      // Charger par paquets de 50 pour éviter les crashs
-      const BATCH_SIZE = 50;
-      const total = zonesToDisplay.length;
+      // ÉTAPE 1: Grouper par magasin ET tranche d'intensité (zone de couleur)
+      const colorZonesMap: Record<string, any[]> = {};
       
-      for (let i = 0; i < total; i += BATCH_SIZE) {
-        const batch = zonesToDisplay.slice(i, i + BATCH_SIZE);
+      zonesToDisplay.forEach(zone => {
+        const intensity = viewMode === 'ca' ? zone.intensiteCA : zone.intensiteClients;
+        const colorIndex = Math.min(Math.floor(intensity * 10), 9); // 0-9
+        const key = `${zone.storeCode}_${colorIndex}`;
         
-        for (const zone of batch) {
-          try {
-            const response = await fetch(
-              `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=nom,code,codesPostaux,centre,contour&format=geojson&geometry=contour`
-            );
-            
-            if (response.ok) {
-              const geojson = await response.json();
-              if (geojson && geojson.features && geojson.features.length > 0) {
-                geojson.features.forEach((feature: any) => {
-                  const intensity = viewMode === 'ca' ? zone.intensiteCA : zone.intensiteClients;
-                  feature.properties = {
-                    ...feature.properties,
-                    ...zone,
-                    intensity,
-                  };
-                });
-                geoJsonArray.push(...geojson.features);
-              }
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 50));
-          } catch (err) {
-            console.error(`Erreur GeoJSON pour ${zone.cp}:`, err);
-          }
+        if (!colorZonesMap[key]) {
+          colorZonesMap[key] = [];
         }
-        
-        // Mettre à jour la progression
-        setLoadingProgress(Math.round(((i + BATCH_SIZE) / total) * 100));
-        
-        // Mettre à jour l'affichage après chaque paquet
-        setGeoJsonData([...geoJsonArray]);
-      }
-      
-      setGeoJsonData(geoJsonArray);
-      
-      // Créer contours globaux par magasin (par paquets)
-      setLoadingProgress(95);
-      const contoursMap: Record<string, any[]> = {};
-      geoJsonArray.forEach((feature: any) => {
-        const storeCode = feature.properties.storeCode;
-        if (!contoursMap[storeCode]) {
-          contoursMap[storeCode] = [];
-        }
-        contoursMap[storeCode].push(feature);
+        colorZonesMap[key].push(zone);
       });
       
-      const contours = [];
-      for (const [storeCode, features] of Object.entries(contoursMap)) {
-        try {
-          // Union de tous les polygones d'un magasin
-          let combined = features[0];
-          for (let i = 1; i < features.length; i++) {
-            try {
-              combined = turf.union(turf.featureCollection([combined, features[i]]));
-            } catch (e) {
-              // Ignore les erreurs d'union
-            }
-          }
+      console.log('🎨 Zones de couleur:', Object.keys(colorZonesMap).length);
+      
+      // ÉTAPE 2: Pour chaque zone de couleur, charger et fusionner les CP
+      const colorZones: any[] = [];
+      const groups = Object.entries(colorZonesMap);
+      const BATCH_SIZE = 5; // Traiter 5 zones de couleur à la fois
+      
+      for (let i = 0; i < groups.length; i += BATCH_SIZE) {
+        const batch = groups.slice(i, i + BATCH_SIZE);
+        
+        for (const [key, zones] of batch) {
+          const [storeCode, colorIndexStr] = key.split('_');
+          const colorIndex = parseInt(colorIndexStr);
           
-          if (combined) {
-            contours.push({
-              storeCode,
-              geometry: combined.geometry,
-            });
+          try {
+            const features: any[] = [];
+            
+            // Charger les GeoJSON de tous les CP de cette zone
+            for (const zone of zones) {
+              const response = await fetch(
+                `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=contour&format=geojson&geometry=contour`
+              );
+              if (response.ok) {
+                const geojson = await response.json();
+                if (geojson.features && geojson.features.length > 0) {
+                  features.push(geojson.features[0]);
+                }
+              }
+              await new Promise(resolve => setTimeout(resolve, 30));
+            }
+            
+            // Fusionner tous les polygones de cette zone de couleur
+            if (features.length > 0) {
+              let combined = features[0];
+              for (let j = 1; j < features.length; j++) {
+                try {
+                  combined = turf.union(turf.featureCollection([combined, features[j]]));
+                } catch (err) {
+                  console.error('Erreur union:', err);
+                }
+              }
+              
+              // Ajouter la zone fusionnée avec ses propriétés
+              colorZones.push({
+                type: 'Feature',
+                geometry: combined.geometry,
+                properties: {
+                  storeCode,
+                  colorIndex,
+                  intensity: (colorIndex + 0.5) / 10, // Milieu de la tranche
+                  nbCodes: zones.length,
+                  totalCA: zones.reduce((sum, z) => sum + z.totalCA, 0),
+                  nbClients: zones.reduce((sum, z) => sum + z.nbClients, 0)
+                }
+              });
+            }
+          } catch (err) {
+            console.error(`Erreur zone ${key}:`, err);
           }
-        } catch (err) {
-          console.error(`Erreur contour pour ${storeCode}:`, err);
         }
+        
+        setLoadingProgress(Math.round(((i + BATCH_SIZE) / groups.length) * 100));
+        setGeoJsonData([...colorZones]); // Affichage progressif
       }
       
-      setStoreContours(contours);
+      setGeoJsonData(colorZones);
+      setStoreContours([]); // Plus besoin de contours séparés
       setLoadingProgress(100);
       setLoadingZones(false);
+      
+      console.log('✅ Zones de couleur chargées:', colorZones.length);
     };
 
     loadGeoJson();
@@ -218,7 +218,7 @@ export default function ZoneChalandiseV2() {
       
       {/* Loading zones avec progression */}
       {loadingZones && (
-        <div className="absolute inset-0 bg-zinc-900/90 z-40 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 bg-zinc-900/90 flex flex-col items-center justify-center" style={{ zIndex: 10000 }}>
           <Loader className="w-12 h-12 text-blue-500 animate-spin mb-4" />
           <p className="text-white text-lg mb-2">Chargement des zones de chalandise...</p>
           <div className="w-64 h-2 bg-zinc-700 rounded-full overflow-hidden">
@@ -364,65 +364,44 @@ export default function ZoneChalandiseV2() {
               );
             })}
 
-            {/* Polygones GeoJSON des CP (sans bordure) */}
+            {/* Polygones fusionnés par zone de couleur */}
             {geoJsonData && geoJsonData.length > 0 && geoJsonData.map((feature, idx) => {
               const intensity = feature.properties.intensity || 0;
               const color = getColor(intensity);
+              const borderColor = storeBorderColors[feature.properties.storeCode] || '#666';
               
               return (
                 <GeoJSON
-                  key={`geojson-${idx}`}
+                  key={`zone-${feature.properties.storeCode}-${feature.properties.colorIndex}`}
                   data={feature}
                   style={{
-                    color: '#333',
+                    color: borderColor,
                     fillColor: color,
-                    fillOpacity: 0.6,
-                    weight: 0.5,
-                    opacity: 0.3,
+                    fillOpacity: 0.65,
+                    weight: 2,
+                    opacity: 0.8,
                   }}
                   onEachFeature={(feature, layer) => {
                     const props = feature.properties;
+                    const storeData = stores.find(s => String(s.code) === String(props.storeCode));
                     layer.bindPopup(`
                       <div style="font-family: Inter, sans-serif;">
-                        <p style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">
-                          ${props.cp} - ${props.ville}
+                        <p style="font-weight: bold; font-size: 14px; margin-bottom: 8px; color: ${borderColor};">
+                          🎨 Zone ${Math.round(props.intensity * 100)}%
                         </p>
                         <p style="font-size: 11px; color: #0066cc; margin-bottom: 6px;">
-                          <strong>Magasin:</strong> ${props.storeName} (${props.storeCode})
+                          <strong>Magasin:</strong> ${storeData?.nom || props.storeCode}
                         </p>
                         <div style="font-size: 11px;">
-                          <p><strong>CA:</strong> ${new Intl.NumberFormat('fr-FR', {
+                          <p><strong>Codes postaux:</strong> ${props.nbCodes}</p>
+                          <p><strong>CA total:</strong> ${new Intl.NumberFormat('fr-FR', {
                             style: 'currency',
                             currency: 'EUR',
                           }).format(props.totalCA)}</p>
                           <p><strong>Clients:</strong> ${props.nbClients}</p>
-                          <p><strong>Transactions:</strong> ${props.nbTransactions}</p>
                         </div>
                       </div>
                     `);
-                  }}
-                />
-              );
-            })}
-            
-            {/* Contours globaux par magasin (bordures colorées épaisses) */}
-            {storeContours && storeContours.length > 0 && storeContours.map((contour, idx) => {
-              const borderColor = getStoreBorderColor(contour.storeCode);
-              
-              return (
-                <GeoJSON
-                  key={`contour-${idx}`}
-                  data={{
-                    type: 'Feature',
-                    geometry: contour.geometry,
-                    properties: { storeCode: contour.storeCode },
-                  } as any}
-                  style={{
-                    color: borderColor,
-                    fillColor: 'transparent',
-                    fillOpacity: 0,
-                    weight: 3,
-                    opacity: 1,
                   }}
                 />
               );
