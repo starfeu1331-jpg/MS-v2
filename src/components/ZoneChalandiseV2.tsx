@@ -106,6 +106,13 @@ export default function ZoneChalandiseV2() {
       // Pas besoin de recalculer ici
       console.log('📊 Utilisation des intensités depuis l\'API (déjà calculées par magasin)');
       
+      // ÉTAPE 1: MODE SPÉCIAL pour magasin individuel = afficher chaque CP séparément
+      const isSingleStore = selectedStore !== 'ALL';
+      
+      if (isSingleStore) {
+        console.log(`🔍 MODE DÉTAIL MAGASIN ${selectedStore}: Affichage individuel des CP sans regroupement`);
+      }
+      
       // ÉTAPE 1: Grouper par magasin ET tranche d'intensité (zone de couleur)
       const colorZonesMap: Record<string, any[]> = {};
       const colorsPresent = new Set<number>();
@@ -113,7 +120,11 @@ export default function ZoneChalandiseV2() {
       zonesToDisplay.forEach(zone => {
         const intensity = viewMode === 'ca' ? zone.intensiteCA : zone.intensiteClients;
         const colorIndex = Math.min(Math.floor(intensity * 10), 9); // 0-9
-        const key = `${zone.storeCode}_${colorIndex}`;
+        
+        // MODE SPÉCIAL: Pour magasin individuel, chaque CP a sa propre clé (pas de regroupement)
+        const key = isSingleStore 
+          ? `${zone.storeCode}_${zone.cp}_${colorIndex}`  // Clé unique par CP
+          : `${zone.storeCode}_${colorIndex}`;            // Clé groupée par couleur
         
         colorsPresent.add(colorIndex);
         
@@ -150,7 +161,22 @@ export default function ZoneChalandiseV2() {
       const groups = Object.entries(colorZonesMap);
       const BATCH_SIZE = 3; // Traiter 3 zones de couleur à la fois (plus stable)
       
-      console.log('📦 Groupes à traiter:', groups.map(([k, zones]) => `${k} (${zones.length} CP)`));
+      if (isSingleStore) {
+        console.log(`📦 ${groups.length} CP individuels à afficher pour magasin ${selectedStore}`);
+        // Afficher la liste des CP avec leur couleur
+        groups.slice(0, 20).forEach(([key, zones]) => {
+          const cpMatch = key.match(/_([^_]+)_(\d)$/);
+          if (cpMatch) {
+            const [, cp, colorIdx] = cpMatch;
+            console.log(`  📍 CP ${cp} → couleur ${colorIdx} (${zones[0]?.ville || 'N/A'})`);
+          }
+        });
+        if (groups.length > 20) {
+          console.log(`  ... et ${groups.length - 20} autres CP`);
+        }
+      } else {
+        console.log('📦 Groupes à traiter:', groups.map(([k, zones]) => `${k} (${zones.length} CP)`));
+      }
       
       for (let i = 0; i < groups.length; i += BATCH_SIZE) {
         const batch = groups.slice(i, i + BATCH_SIZE);
@@ -225,8 +251,30 @@ export default function ZoneChalandiseV2() {
               console.log(`  CP manquants: ${failedCP.join(', ')}`);
             }
             
-            // Fusionner tous les polygones de cette zone de couleur
-            if (features.length > 0) {
+            // MODE MAGASIN INDIVIDUEL: Pas de fusion, affichage direct
+            if (features.length > 0 && isSingleStore) {
+              // Mode détail: chaque CP affiché séparément, pas de fusion
+              features.forEach((feature, idx) => {
+                colorZones.push({
+                  type: 'Feature',
+                  geometry: feature.geometry,
+                  properties: {
+                    storeCode,
+                    colorIndex,
+                    intensity: (colorIndex + 0.5) / 10,
+                    cp: zones[idx]?.cp || 'N/A',
+                    ville: zones[idx]?.ville || 'N/A',
+                    nbCodes: 1,
+                    nbCodesLoaded: 1,
+                    totalCA: zones[idx]?.totalCA || 0,
+                    nbClients: zones[idx]?.nbClients || 0
+                  }
+                });
+              });
+              console.log(`  ✅ ${features.length} CP affichés individuellement`);
+            }
+            // MODE TOUS: Fusionner les polygones pour réduire les zones
+            else if (features.length > 0) {
               // Si peu de features ou zone simple, afficher individuellement
               if (features.length === 1) {
                 // Zone unique, pas besoin de fusion
