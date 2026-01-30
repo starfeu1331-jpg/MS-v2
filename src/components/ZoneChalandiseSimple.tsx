@@ -16,6 +16,7 @@ L.Icon.Default.mergeOptions({
 interface Store {
   code: string;
   nom: string;
+  ville?: string;
   lat: number | null;
   lon: number | null;
 }
