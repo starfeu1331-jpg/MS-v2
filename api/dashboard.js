@@ -56,7 +56,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT t.facture)::int as "nbTickets",
           AVG(t.ca)::float as "panierMoyen"
         FROM transactions t
-        JOIN magasins m ON t.depot = m.code
+        JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
         GROUP BY m.code, m.nom, m.zone
         ORDER BY ca DESC
         LIMIT 5
@@ -170,7 +170,7 @@ export default async function handler(req, res) {
         COUNT(DISTINCT t.facture)::int as "nbTickets",
         AVG(t.ca)::float as "panierMoyen"
       FROM transactions t
-      JOIN magasins m ON t.depot = m.code
+      JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
       WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
       GROUP BY m.code, m.nom, m.zone
       ORDER BY ca DESC
