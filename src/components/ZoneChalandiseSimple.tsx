@@ -264,7 +264,7 @@ export default function ZoneChalandiseSimple() {
       <div 
         style={{ 
           position: 'fixed',
-          top: '20px',
+          top: '100px', // Baissé pour ne pas chevaucher le titre
           left: '280px', // Décalé pour ne pas chevaucher le menu
           zIndex: 9999,
           minWidth: panelOpen ? '340px' : 'auto',
