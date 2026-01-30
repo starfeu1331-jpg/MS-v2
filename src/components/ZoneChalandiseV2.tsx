@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import chroma from 'chroma-js';
 import { getPostcodeCoords } from '../utils/postcodeCoordsMap';
+import { getStoreCoords } from '../utils/storesCoords';
 import { AlertCircle, Loader, BarChart3, Users } from 'lucide-react';
 
 export default function ZoneChalandiseV2() {
@@ -100,6 +101,20 @@ export default function ZoneChalandiseV2() {
     return colorScale(intensity).hex();
   };
 
+  // Couleur de bordure unique par magasin
+  const storeBorderColors: Record<string, string> = {
+    'M12': '#ef4444', 'M13': '#f97316', 'M14': '#f59e0b', 'M16': '#eab308',
+    'M17': '#84cc16', 'M19': '#22c55e', 'M22': '#10b981', 'M23': '#14b8a6',
+    'M24': '#06b6d4', 'M25': '#0ea5e9', 'M26': '#3b82f6', 'M27': '#6366f1',
+    'M28': '#8b5cf6', 'M29': '#a855f7', 'M31': '#c026d3', 'M32': '#d946ef',
+    'M33': '#ec4899', 'M34': '#f43f5e', 'M35': '#fb7185', 'M36': '#f472b6',
+    'M37': '#e879f9', 'M38': '#c084fc', 'M39': '#a78bfa', 'M41': '#818cf8',
+  };
+
+  const getStoreBorderColor = (storeCode: string) => {
+    return storeBorderColors[storeCode] || '#1e293b';
+  };
+
   const storeIcon = new L.Icon({
     iconUrl: 'data:image/svg+xml;base64,' + btoa(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#dc2626" width="32" height="32">
@@ -142,12 +157,9 @@ export default function ZoneChalandiseV2() {
               onChange={(e) => {
                 setSelectedStore(e.target.value);
                 if (e.target.value !== 'ALL') {
-                  const store = stores.find(s => s.code === e.target.value);
-                  if (store && store.cp) {
-                    const coords = getPostcodeCoords(store.cp);
-                    setMapCenter([coords[0], coords[1]]);
-                    setMapZoom(9);
-                  }
+                  const coords = getStoreCoords(e.target.value);
+                  setMapCenter([coords[0], coords[1]]);
+                  setMapZoom(9);
                 } else {
                   setMapCenter([46.5, 2.5]);
                   setMapZoom(6);
@@ -235,8 +247,7 @@ export default function ZoneChalandiseV2() {
 
             {/* Marqueurs des magasins */}
             {stores.map((store) => {
-              if (!store.cp) return null;
-              const coords = getPostcodeCoords(store.cp);
+              const coords = getStoreCoords(store.code);
               return (
                 <Marker 
                   key={store.code}
@@ -262,17 +273,18 @@ export default function ZoneChalandiseV2() {
             {geoJsonData && geoJsonData.length > 0 && geoJsonData.map((feature, idx) => {
               const intensity = feature.properties.intensity || 0;
               const color = getColor(intensity);
+              const borderColor = getStoreBorderColor(feature.properties.storeCode);
               
               return (
                 <GeoJSON
                   key={`geojson-${idx}`}
                   data={feature}
                   style={{
-                    color: '#1e293b',
+                    color: borderColor,
                     fillColor: color,
                     fillOpacity: 0.6,
-                    weight: 2.5,
-                    opacity: 0.9,
+                    weight: 3,
+                    opacity: 1,
                   }}
                   onEachFeature={(feature, layer) => {
                     const props = feature.properties;
