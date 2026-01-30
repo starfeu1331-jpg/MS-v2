@@ -52,8 +52,8 @@ export default function ZoneChalandiseV2() {
         ? allZones 
         : allZones.filter(z => z.storeCode === selectedStore);
       
-      // Limiter à 100 codes postaux max
-      const topZones = zonesToDisplay.slice(0, 100);
+      // Utiliser toutes les zones (pas de limite)
+      const topZones = zonesToDisplay;
       
       for (const zone of topZones) {
         try {
@@ -123,7 +123,7 @@ export default function ZoneChalandiseV2() {
 
       {/* Panneau de contrôle flottant */}
       {showPanel && (
-        <div className="absolute top-4 left-4 bg-zinc-800 border border-zinc-700 rounded-lg shadow-2xl p-4 max-w-sm" style={{ zIndex: 1000 }}>
+        <div className="absolute top-4 left-4 bg-zinc-800 border border-zinc-700 rounded-lg shadow-2xl p-4 max-w-sm" style={{ zIndex: 10000 }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-white font-bold">Zone de Chalandise</h2>
             <button
@@ -213,7 +213,7 @@ export default function ZoneChalandiseV2() {
         <button
           onClick={() => setShowPanel(true)}
           className="absolute top-4 left-4 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white hover:bg-zinc-700"
-          style={{ zIndex: 1000 }}
+          style={{ zIndex: 10000 }}
         >
           ⚙️
         </button>
@@ -268,10 +268,11 @@ export default function ZoneChalandiseV2() {
                   key={`geojson-${idx}`}
                   data={feature}
                   style={{
-                    color: color,
+                    color: '#1e293b',
                     fillColor: color,
                     fillOpacity: 0.6,
-                    weight: 2,
+                    weight: 2.5,
+                    opacity: 0.9,
                   }}
                   onEachFeature={(feature, layer) => {
                     const props = feature.properties;
