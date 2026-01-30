@@ -49,9 +49,14 @@ export default function ZoneChalandiseV2() {
       const geoJsonArray = [];
       
       // Filtrer selon le magasin sélectionné
+      console.log('🔍 selectedStore:', selectedStore);
+      console.log('🔍 allZones sample:', allZones.slice(0, 3).map(z => ({ code: z.storeCode, name: z.storeName })));
+      
       const zonesToDisplay = selectedStore === 'ALL' 
         ? allZones 
-        : allZones.filter(z => z.storeCode === selectedStore);
+        : allZones.filter(z => String(z.storeCode).trim() === String(selectedStore).trim());
+      
+      console.log('✅ Zones filtrées:', zonesToDisplay.length, 'sur', allZones.length);
       
       // Utiliser toutes les zones (pas de limite)
       const topZones = zonesToDisplay;
@@ -284,7 +289,7 @@ export default function ZoneChalandiseV2() {
                     color: borderColor,
                     fillColor: color,
                     fillOpacity: 0.6,
-                    weight: 3,
+                    weight: 1.5,
                     opacity: 1,
                   }}
                   onEachFeature={(feature, layer) => {
