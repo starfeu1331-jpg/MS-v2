@@ -73,6 +73,18 @@ export default async function handler(req, res) {
         
         if (storeData.length === 0) continue;
         
+        // IMPORTANT: Toujours inclure le CP du magasin lui-même, même s'il n'a pas de transactions
+        const storeCPExists = storeData.find(row => row.cp === store.cp);
+        if (!storeCPExists && store.cp) {
+          storeData.push({
+            cp: store.cp,
+            ville: store.ville,
+            nb_clients: 0,
+            total_ca: 0,
+            nb_transactions: 0
+          });
+        }
+        
         // NOUVELLE APPROCHE: Calcul par DÉCILES (percentiles de rang)
         // Trier par CA et clients pour attribuer un rang percentile
         const sortedByCA = [...storeData].sort((a, b) => Number(b.total_ca) - Number(a.total_ca));
