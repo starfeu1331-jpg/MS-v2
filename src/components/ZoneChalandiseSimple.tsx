@@ -260,20 +260,20 @@ export default function ZoneChalandiseSimple() {
         </MapContainer>
       </div>
 
-      {/* Panneau de contrôle - HAUT GAUCHE avec effet glassmorphism */}
+      {/* Panneau de contrôle - HAUT GAUCHE avec effet glassmorphism DARK */}
       <div 
         style={{ 
           position: 'fixed',
           top: '20px',
-          left: '20px',
+          left: '280px', // Décalé pour ne pas chevaucher le menu
           zIndex: 9999,
           minWidth: panelOpen ? '340px' : 'auto',
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          backgroundColor: 'rgba(17, 24, 39, 0.85)', // Dark
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           borderRadius: '16px',
-          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4)',
+          border: '1px solid rgba(75, 85, 99, 0.3)',
           overflow: 'hidden',
           transition: 'all 0.3s ease'
         }}
@@ -285,7 +285,7 @@ export default function ZoneChalandiseSimple() {
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: panelOpen ? '14px 16px' : '10px 14px',
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 197, 253, 0.15) 100%)',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%)',
             cursor: 'pointer',
             transition: 'all 0.3s ease'
           }}
@@ -293,7 +293,7 @@ export default function ZoneChalandiseSimple() {
         >
           <h3 style={{ 
             fontWeight: '600', 
-            color: '#1e40af', 
+            color: '#93c5fd', 
             fontSize: panelOpen ? '15px' : '13px',
             margin: 0,
             transition: 'font-size 0.3s ease'
@@ -301,7 +301,7 @@ export default function ZoneChalandiseSimple() {
             {panelOpen ? '📍 Zones de Chalandise' : '📍'}
           </h3>
           <button style={{ 
-            color: '#3b82f6', 
+            color: '#60a5fa', 
             background: 'none', 
             border: 'none', 
             cursor: 'pointer',
@@ -322,7 +322,7 @@ export default function ZoneChalandiseSimple() {
                 display: 'block', 
                 fontSize: '13px', 
                 fontWeight: '600', 
-                color: '#374151', 
+                color: '#d1d5db', 
                 marginBottom: '8px' 
               }}>
                 Magasin:
@@ -334,9 +334,10 @@ export default function ZoneChalandiseSimple() {
                   width: '100%',
                   padding: '10px 12px',
                   fontSize: '14px',
-                  border: '1.5px solid rgba(209, 213, 219, 0.6)',
+                  border: '1.5px solid rgba(75, 85, 99, 0.6)',
                   borderRadius: '10px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                  color: '#f3f4f6',
                   fontWeight: '500',
                   cursor: 'pointer',
                   outline: 'none',
@@ -355,14 +356,14 @@ export default function ZoneChalandiseSimple() {
             <div style={{ 
               marginBottom: '14px',
               padding: '12px',
-              backgroundColor: 'rgba(249, 250, 251, 0.8)',
+              backgroundColor: 'rgba(31, 41, 55, 0.6)',
               borderRadius: '10px',
-              border: '1px solid rgba(229, 231, 235, 0.6)'
+              border: '1px solid rgba(75, 85, 99, 0.4)'
             }}>
               <div style={{ 
                 fontSize: '12px', 
                 fontWeight: '600', 
-                color: '#374151',
+                color: '#d1d5db',
                 marginBottom: '10px',
                 display: 'flex',
                 alignItems: 'center',
@@ -389,10 +390,10 @@ export default function ZoneChalandiseSimple() {
                       height: '16px', 
                       backgroundColor: color,
                       borderRadius: '4px',
-                      border: '1px solid rgba(0,0,0,0.1)',
+                      border: '1px solid rgba(255,255,255,0.2)',
                       flexShrink: 0
                     }}></div>
-                    <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>
+                    <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '500' }}>
                       {label}
                     </span>
                   </div>
@@ -407,9 +408,9 @@ export default function ZoneChalandiseSimple() {
                 alignItems: 'center', 
                 gap: '8px', 
                 fontSize: '13px', 
-                color: '#2563eb',
+                color: '#60a5fa',
                 fontWeight: '500',
-                backgroundColor: 'rgba(219, 234, 254, 0.6)',
+                backgroundColor: 'rgba(37, 99, 235, 0.2)',
                 padding: '10px 12px',
                 borderRadius: '10px'
               }}>
@@ -429,9 +430,9 @@ export default function ZoneChalandiseSimple() {
             {!loading && geoData.length > 0 && (
               <div style={{ 
                 fontSize: '13px', 
-                color: '#059669',
+                color: '#6ee7b7',
                 fontWeight: '500',
-                backgroundColor: 'rgba(209, 250, 229, 0.6)',
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
                 padding: '10px 12px',
                 borderRadius: '10px',
                 textAlign: 'center'
