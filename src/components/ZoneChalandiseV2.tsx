@@ -14,6 +14,7 @@ export default function ZoneChalandiseV2() {
   const [allZones, setAllZones] = useState<any[]>([]);
   const [geoJsonData, setGeoJsonData] = useState<any[]>([]);
   const [storeContours, setStoreContours] = useState<any[]>([]); // Contours globaux par magasin
+  const [availableColors, setAvailableColors] = useState<number[]>([]); // Couleurs présentes dans les zones actuelles
   const [loading, setLoading] = useState(false);
   const [loadingZones, setLoadingZones] = useState(false); // Loading spécifique zones
   const [loadingProgress, setLoadingProgress] = useState(0); // Progression %
@@ -52,6 +53,7 @@ export default function ZoneChalandiseV2() {
     const loadGeoJson = async () => {
       setLoadingZones(true);
       setLoadingProgress(0);
+      setGeoJsonData([]); // VIDER les anciennes zones avant de recharger
       
       // Filtrer selon le magasin sélectionné
       let zonesToDisplay = [];
@@ -106,11 +108,14 @@ export default function ZoneChalandiseV2() {
       
       // ÉTAPE 1: Grouper par magasin ET tranche d'intensité (zone de couleur)
       const colorZonesMap: Record<string, any[]> = {};
+      const colorsPresent = new Set<number>();
       
       zonesToDisplay.forEach(zone => {
         const intensity = viewMode === 'ca' ? zone.intensiteCA : zone.intensiteClients;
         const colorIndex = Math.min(Math.floor(intensity * 10), 9); // 0-9
         const key = `${zone.storeCode}_${colorIndex}`;
+        
+        colorsPresent.add(colorIndex);
         
         if (!colorZonesMap[key]) {
           colorZonesMap[key] = [];
@@ -118,7 +123,9 @@ export default function ZoneChalandiseV2() {
         colorZonesMap[key].push(zone);
       });
       
+      setAvailableColors(Array.from(colorsPresent).sort((a, b) => a - b));
       console.log('🎨 Zones de couleur:', Object.keys(colorZonesMap).length);
+      console.log('🎨 Couleurs présentes:', Array.from(colorsPresent).sort((a, b) => a - b));
       
       // ÉTAPE 2: Pour chaque zone de couleur, charger et fusionner les CP
       const colorZones: any[] = [];
@@ -436,25 +443,36 @@ export default function ZoneChalandiseV2() {
             </button>
           </div>
 
-          {/* Légende 10 couleurs */}
+          {/* Légende dynamique - seulement les couleurs présentes */}
           <div className="text-xs text-zinc-400">
-            <p className="mb-2 font-medium">Intensité par tranche de 10%:</p>
+            <p className="mb-2 font-medium">
+              Intensité ({availableColors.length} tranches présentes):
+            </p>
             <div className="space-y-1">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((index) => {
-                const intensity = (index + 0.5) / 10; // Milieu de la tranche
-                const minPct = index * 10;
-                const maxPct = (index + 1) * 10;
-                return (
-                  <div key={index} className="flex items-center gap-2">
-                    <div
-                      className="w-8 h-4 rounded border border-zinc-600 flex-shrink-0"
-                      style={{ backgroundColor: getColor(intensity) }}
-                    />
-                    <span className="text-[10px]">{minPct}% - {maxPct}%</span>
-                  </div>
-                );
-              })}
+              {availableColors.length > 0 ? (
+                availableColors.map((index) => {
+                  const intensity = (index + 0.5) / 10; // Milieu de la tranche
+                  const minPct = index * 10;
+                  const maxPct = (index + 1) * 10;
+                  return (
+                    <div key={index} className="flex items-center gap-2">
+                      <div
+                        className="w-8 h-4 rounded border border-zinc-600 flex-shrink-0"
+                        style={{ backgroundColor: getColor(intensity) }}
+                      />
+                      <span className="text-[10px]">{minPct}% - {maxPct}%</span>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-[10px] text-zinc-500">Aucune zone chargée</p>
+              )}
             </div>
+            {selectedStore !== 'ALL' && availableColors.length < 10 && (
+              <p className="text-[9px] text-zinc-500 mt-2 italic">
+                Ce magasin n'a pas de zones dans toutes les tranches
+              </p>
+            )}
           </div>
         </div>
       )}
