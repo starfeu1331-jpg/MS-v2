@@ -46,6 +46,15 @@ export default function ZoneChalandiseSimple() {
     fetch('/api/stores?action=list')
       .then(res => res.json())
       .then(data => {
+        console.log('🏪 Magasins chargés:', data.stores);
+        console.log('📍 Magasins avec coordonnées:', data.stores?.filter((s: Store) => s.lat && s.lon).length);
+        data.stores?.forEach((s: Store) => {
+          if (s.lat && s.lon) {
+            console.log(`  ✅ ${s.nom}: lat=${s.lat}, lon=${s.lon}`);
+          } else {
+            console.log(`  ❌ ${s.nom}: PAS de coordonnées (lat=${s.lat}, lon=${s.lon})`);
+          }
+        });
         setStores(data.stores || []);
         if (data.stores && data.stores.length > 0) {
           setSelectedStore(data.stores[0].code);
@@ -252,25 +261,30 @@ export default function ZoneChalandiseSimple() {
           ))}
 
           {/* Marqueurs pour TOUS les magasins */}
-          {stores
-            .filter(s => s.lat && s.lon)
-            .map(store => (
-              <Marker 
-                key={store.code} 
-                position={[store.lat!, store.lon!]}
-                icon={storeIconBig}
-                zIndexOffset={9999}
-              >
-                <Popup>
-                  <div style={{ textAlign: 'center', minWidth: '120px' }}>
-                    <strong style={{ fontSize: '14px', color: '#dc2626' }}>{store.nom}</strong>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                      {store.ville}
+          {(() => {
+            const storesWithCoords = stores.filter(s => s.lat && s.lon);
+            console.log('🎯 Rendu des marqueurs:', storesWithCoords.length, 'magasins avec coordonnées');
+            return storesWithCoords.map(store => {
+              console.log(`  🔴 Marqueur rendu pour ${store.nom} à [${store.lat}, ${store.lon}]`);
+              return (
+                <Marker 
+                  key={store.code} 
+                  position={[store.lat!, store.lon!]}
+                  icon={storeIconBig}
+                  zIndexOffset={9999}
+                >
+                  <Popup>
+                    <div style={{ textAlign: 'center', minWidth: '120px' }}>
+                      <strong style={{ fontSize: '14px', color: '#dc2626' }}>{store.nom}</strong>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                        {store.ville}
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+                  </Popup>
+                </Marker>
+              );
+            });
+          })()}
         </MapContainer>
       </div>
 
