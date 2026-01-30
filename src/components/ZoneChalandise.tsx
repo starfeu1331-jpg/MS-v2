@@ -68,7 +68,7 @@ export default function ZoneChalandise() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/catchment-area?storeCode=${selectedStore}`);
+        const response = await fetch(`/api/stores?action=catchment&storeCode=${selectedStore}`);
         const data = await response.json();
         setCatchmentData(data);
 
