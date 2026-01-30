@@ -41,23 +41,61 @@ export default function ZoneChalandiseSimple() {
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
 
+  // Coordonnées hardcodées des magasins (données manquantes en BDD)
+  const storeCoordinates: Record<string, { lat: number; lon: number }> = {
+    '12': { lat: 44.1281, lon: 4.0810 }, // ALES
+    '13': { lat: 43.3444, lon: 3.2156 }, // BEZIERS
+    '14': { lat: 43.6776, lon: 4.6279 }, // ARLES
+    '16': { lat: 43.5747, lon: 3.8342 }, // SAINT JEAN DE VEDAS
+    '17': { lat: 44.9442, lon: 4.8527 }, // SAINT PERAY
+    '19': { lat: 45.0458, lon: 5.0522 }, // ROMANS
+    '22': { lat: 45.6917, lon: 5.0483 }, // ST BONNET DE MURE
+    '23': { lat: 46.2506, lon: 5.2256 }, // VIRIAT
+    '24': { lat: 45.9447, lon: 6.0536 }, // SILLINGY
+    '25': { lat: 43.2130, lon: 2.3490 }, // CARCASSONNE
+    '26': { lat: 45.2308, lon: 5.6847 }, // SAINT EGREVE
+    '27': { lat: 45.9850, lon: 4.7194 }, // VILLEFRANCHE
+    '28': { lat: 45.1833, lon: 5.7656 }, // ST MARTIN D'HERES
+    '29': { lat: 43.6783, lon: 1.3658 }, // FENOUILLET
+    '31': { lat: 44.5583, lon: 4.7508 }, // MONTELIMAR
+    '32': { lat: 45.7719, lon: 3.1856 }, // LEMPDES
+    '33': { lat: 43.0878, lon: 0.6697 }, // ESTANCARBON
+    '34': { lat: 44.6203, lon: 4.3903 }, // AUBENAS
+    '35': { lat: 43.8367, lon: 4.3594 }, // NIMES
+    '36': { lat: 45.6278, lon: 5.8736 }, // VOGLANS
+    '37': { lat: 44.0078, lon: 4.8703 }, // SORGUES
+    '38': { lat: 44.3667, lon: 2.5989 }, // ONET LE CHATEAU
+    '39': { lat: 43.1842, lon: 3.0036 }  // NARBONNE
+  };
+
   // Charger la liste des magasins
   useEffect(() => {
     fetch('/api/stores?action=list')
       .then(res => res.json())
       .then(data => {
-        console.log('🏪 Magasins chargés:', data.stores);
-        console.log('📍 Magasins avec coordonnées:', data.stores?.filter((s: Store) => s.lat && s.lon).length);
-        data.stores?.forEach((s: Store) => {
+        // Enrichir les magasins avec les coordonnées hardcodées
+        const enrichedStores = (data.stores || []).map((store: Store) => {
+          const coords = storeCoordinates[store.code];
+          return {
+            ...store,
+            lat: coords?.lat ?? store.lat,
+            lon: coords?.lon ?? store.lon
+          };
+        });
+        
+        console.log('🏪 Magasins chargés:', enrichedStores);
+        console.log('📍 Magasins avec coordonnées:', enrichedStores.filter((s: Store) => s.lat && s.lon).length);
+        enrichedStores.forEach((s: Store) => {
           if (s.lat && s.lon) {
             console.log(`  ✅ ${s.nom}: lat=${s.lat}, lon=${s.lon}`);
           } else {
             console.log(`  ❌ ${s.nom}: PAS de coordonnées (lat=${s.lat}, lon=${s.lon})`);
           }
         });
-        setStores(data.stores || []);
-        if (data.stores && data.stores.length > 0) {
-          setSelectedStore(data.stores[0].code);
+        
+        setStores(enrichedStores);
+        if (enrichedStores.length > 0) {
+          setSelectedStore(enrichedStores[0].code);
         }
       })
       .catch(err => console.error('Erreur chargement magasins:', err));
