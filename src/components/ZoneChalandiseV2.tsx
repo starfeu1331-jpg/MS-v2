@@ -167,8 +167,21 @@ export default function ZoneChalandiseV2() {
             
             // Charger chaque CP individuellement (l'API ne supporte pas le batch)
             for (const zone of zones) {
+              // NETTOYAGE: Supprimer les points, virgules, espaces
+              let cleanCP = String(zone.cp).trim()
+                .replace(/\./g, '')   // Supprimer les points
+                .replace(/,/g, '')    // Supprimer les virgules
+                .replace(/\s/g, '');  // Supprimer les espaces
+              
+              // Si notation scientifique ou invalide, skip
+              if (cleanCP.includes('E') || cleanCP.includes('e') || cleanCP.length > 5 || cleanCP.length === 0) {
+                console.warn(`⚠️ CP invalide ignoré: "${zone.cp}" (après nettoyage: "${cleanCP}")`);
+                failedCP.push(zone.cp);
+                continue;
+              }
+              
               // IMPORTANT: Normaliser le CP à 5 chiffres (ajouter 0 devant si nécessaire)
-              const normalizedCP = zone.cp.toString().padStart(5, '0');
+              const normalizedCP = cleanCP.padStart(5, '0');
               
               try {
                 const response = await fetch(
