@@ -41,6 +41,7 @@ export default async function handler(req, res) {
           t.depot::text,
           t.produit::text,
           p.famille::text,
+          p.sous_famille::text,
           t.ca::numeric,
           t.quantite::numeric
         FROM transactions t
@@ -61,6 +62,7 @@ export default async function handler(req, res) {
           t.depot::text,
           t.produit::text,
           p.famille::text,
+          p.sous_famille::text,
           t.ca::numeric,
           t.quantite::numeric
         FROM transactions t
@@ -81,6 +83,7 @@ export default async function handler(req, res) {
           t.depot::text,
           t.produit::text,
           p.famille::text,
+          p.sous_famille::text,
           t.ca::numeric,
           t.quantite::numeric
         FROM transactions t
@@ -105,6 +108,7 @@ export default async function handler(req, res) {
         depot: r.depot,
         produit: r.produit,
         famille: r.famille,
+        sous_famille: r.sous_famille,
         ca: Number(r.ca),
         quantite: Number(r.quantite)
       }))
