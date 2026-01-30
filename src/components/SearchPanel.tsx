@@ -7,7 +7,7 @@ interface SearchPanelProps {
 }
 
 interface Transaction {
-  id: number
+  id?: number
   facture: string
   date: string
   ca: number
@@ -15,6 +15,9 @@ interface Transaction {
   produit: string
   depot: string
   carte: string
+  ville?: string
+  famille?: string
+  sous_famille?: string
   client?: {
     carte: string
     ville: string
@@ -28,6 +31,7 @@ interface Transaction {
   magasin?: {
     code: string
     nom: string
+    ville?: string
   }
 }
 
