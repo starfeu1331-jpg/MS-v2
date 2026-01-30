@@ -26,6 +26,21 @@ export default async function handler(req, res) {
     return handleCatchmentArea(req, res, storeCode);
   }
 
+  // Route: /api/stores?action=list (récupérer la liste des magasins)
+  if (action === 'list') {
+    try {
+      const storesList = await prisma.magasin.findMany({
+        orderBy: { nom: 'asc' }
+      });
+      return res.json({ stores: storesList });
+    } catch (error) {
+      console.error('Erreur récupération magasins:', error);
+      return res.status(500).json({ error: 'Erreur serveur' });
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
   // Route par défaut: liste magasins
   try {
     console.log('🔄 API Stores: Calcul en cours...')

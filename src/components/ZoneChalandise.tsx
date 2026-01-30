@@ -44,7 +44,7 @@ export default function ZoneChalandise() {
   useEffect(() => {
     const fetchStores = async () => {
       try {
-        const response = await fetch('/api/stores');
+        const response = await fetch('/api/stores?action=list');
         const data = await response.json();
         if (data && data.stores) {
           setStores(data.stores);
