@@ -41,31 +41,31 @@ export default function ZoneChalandiseSimple() {
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
 
-  // Coordonnées hardcodées des magasins (données manquantes en BDD)
+  // Coordonnées EXACTES des magasins (géocodées depuis vos adresses précises)
   const storeCoordinates: Record<string, { lat: number; lon: number }> = {
-    '12': { lat: 44.1281, lon: 4.0810 }, // ALES
-    '13': { lat: 43.3444, lon: 3.2156 }, // BEZIERS
-    '14': { lat: 43.6776, lon: 4.6279 }, // ARLES
-    '16': { lat: 43.5747, lon: 3.8342 }, // SAINT JEAN DE VEDAS
-    '17': { lat: 44.9442, lon: 4.8527 }, // SAINT PERAY
-    '19': { lat: 45.0458, lon: 5.0522 }, // ROMANS
-    '22': { lat: 45.6917, lon: 5.0483 }, // ST BONNET DE MURE
-    '23': { lat: 46.2506, lon: 5.2256 }, // VIRIAT
-    '24': { lat: 45.9447, lon: 6.0536 }, // SILLINGY
-    '25': { lat: 43.2130, lon: 2.3490 }, // CARCASSONNE
-    '26': { lat: 45.2308, lon: 5.6847 }, // SAINT EGREVE
-    '27': { lat: 45.9850, lon: 4.7194 }, // VILLEFRANCHE
-    '28': { lat: 45.1833, lon: 5.7656 }, // ST MARTIN D'HERES
-    '29': { lat: 43.6783, lon: 1.3658 }, // FENOUILLET
-    '31': { lat: 44.5583, lon: 4.7508 }, // MONTELIMAR
-    '32': { lat: 45.7719, lon: 3.1856 }, // LEMPDES
-    '33': { lat: 43.0878, lon: 0.6697 }, // ESTANCARBON
-    '34': { lat: 44.6203, lon: 4.3903 }, // AUBENAS
-    '35': { lat: 43.8367, lon: 4.3594 }, // NIMES
-    '36': { lat: 45.6278, lon: 5.8736 }, // VOGLANS
-    '37': { lat: 44.0078, lon: 4.8703 }, // SORGUES
-    '38': { lat: 44.3667, lon: 2.5989 }, // ONET LE CHATEAU
-    '39': { lat: 43.1842, lon: 3.0036 }  // NARBONNE
+    '12': { lat: 44.132500, lon: 4.085100 }, // ALES - 10 Lotissement de Larnac Rocade Est
+    '13': { lat: 43.334800, lon: 3.232600 }, // BEZIERS - 1 Rue Zenobie Gramme Zone de la Giniesse
+    '14': { lat: 43.676900, lon: 4.641300 }, // ARLES - Quartier du Fourchon ZAC Aurelienne
+    '16': { lat: 43.572258, lon: 3.847119 }, // SAINT JEAN DE VEDAS - ZAC Deves de la Condamine
+    '17': { lat: 44.940179, lon: 4.863465 }, // SAINT PERAY - 7 rue du Levant Zone Pôle 2000
+    '19': { lat: 45.051845, lon: 5.081296 }, // ROMANS - 7 avenue des Allobroges
+    '22': { lat: 45.702634, lon: 5.000077 }, // ST BONNET DE MURE - 231 Avenue Charles de Gaulle
+    '23': { lat: 46.222808, lon: 5.203020 }, // VIRIAT - 905 Rue des Vareys Parc de la Chambière
+    '24': { lat: 45.943104, lon: 6.074168 }, // SILLINGY - 39 Route des Pres Rollier
+    '25': { lat: 43.215100, lon: 2.351500 }, // CARCASSONNE - 415 av Paul Henri Mouton ZA La Ferraudiere
+    '26': { lat: 45.218836, lon: 5.678330 }, // SAINT EGREVE - 2 Rue des Glairaux
+    '27': { lat: 45.984220, lon: 4.742440 }, // VILLEFRANCHE - 1605 Route de Frans
+    '28': { lat: 45.184090, lon: 5.774699 }, // ST MARTIN D'HERES - 25 Rue du Champ Roman
+    '29': { lat: 43.677654, lon: 1.408238 }, // FENOUILLET - 54 Route de Paris
+    '31': { lat: 44.558000, lon: 4.750200 }, // MONTELIMAR - 22 Avenue du Meyrol
+    '32': { lat: 45.777465, lon: 3.196072 }, // LEMPDES - Rue Pontel
+    '33': { lat: 43.089200, lon: 0.671300 }, // ESTANCARBON - Avenue du Pic du Gar ZAC des Landes
+    '34': { lat: 44.615308, lon: 4.401042 }, // AUBENAS - 2 Avenue de Bellande
+    '35': { lat: 43.816678, lon: 4.350875 }, // NIMES - Rue des Lauriers Ville Active
+    '36': { lat: 45.616262, lon: 5.886227 }, // VOGLANS - 524 rue de la Françon
+    '37': { lat: 43.984397, lon: 4.886017 }, // SORGUES - 49 Avenue François Mauriac Zone cciale Avignon Nord
+    '38': { lat: 44.393611, lon: 2.601307 }, // ONET LE CHATEAU - Avenue Joel Pilon ZAC de L'Etreniol
+    '39': { lat: 43.185500, lon: 3.008900 }  // NARBONNE - Rue Blaise Pascal ZAC de la Coupe
   };
 
   // Charger la liste des magasins
