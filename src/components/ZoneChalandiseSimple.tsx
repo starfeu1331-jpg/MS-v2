@@ -266,7 +266,7 @@ export default function ZoneChalandiseSimple() {
           position: 'fixed',
           top: '100px', // Baissé pour ne pas chevaucher le titre
           left: '280px', // Décalé pour ne pas chevaucher le menu
-          zIndex: 9999,
+          zIndex: 450, // En dessous des popups Leaflet (500+) mais au-dessus de la carte
           minWidth: panelOpen ? '340px' : 'auto',
           backgroundColor: 'rgba(17, 24, 39, 0.85)', // Dark
           backdropFilter: 'blur(20px) saturate(180%)',
