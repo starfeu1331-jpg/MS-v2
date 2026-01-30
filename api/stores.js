@@ -73,15 +73,29 @@ export default async function handler(req, res) {
         
         if (storeData.length === 0) continue;
         
-        // Calculer intensités POUR CE MAGASIN
-        const maxCA = Math.max(...storeData.map(d => Number(d.total_ca)));
-        const maxClients = Math.max(...storeData.map(d => Number(d.nb_clients)));
+        // NOUVELLE APPROCHE: Calcul par DÉCILES (percentiles de rang)
+        // Trier par CA et clients pour attribuer un rang percentile
+        const sortedByCA = [...storeData].sort((a, b) => Number(b.total_ca) - Number(a.total_ca));
+        const sortedByClients = [...storeData].sort((a, b) => Number(b.nb_clients) - Number(a.nb_clients));
         
         console.log(`📊 Magasin ${store.code} (${store.nom}):`, {
           nbZones: storeData.length,
-          maxCA: maxCA.toFixed(2),
-          maxClients,
-          minCA: Math.min(...storeData.map(d => Number(d.total_ca))).toFixed(2)
+          maxCA: Number(sortedByCA[0].total_ca).toFixed(2),
+          minCA: Number(sortedByCA[sortedByCA.length - 1].total_ca).toFixed(2),
+          maxClients: Number(sortedByClients[0].nb_clients)
+        });
+        
+        // Créer un mapping CP → rang percentile
+        const caRankMap = {};
+        const clientsRankMap = {};
+        
+        sortedByCA.forEach((row, index) => {
+          // Rang percentile: meilleur = 1.0, pire = 0.0
+          caRankMap[row.cp] = 1 - (index / storeData.length);
+        });
+        
+        sortedByClients.forEach((row, index) => {
+          clientsRankMap[row.cp] = 1 - (index / storeData.length);
         });
         
         storeData.forEach(row => {
@@ -95,8 +109,8 @@ export default async function handler(req, res) {
             nbClients: Number(row.nb_clients),
             totalCA: Number(row.total_ca),
             nbTransactions: Number(row.nb_transactions),
-            intensiteCA: maxCA > 0 ? Number(row.total_ca) / maxCA : 0,
-            intensiteClients: maxClients > 0 ? Number(row.nb_clients) / maxClients : 0,
+            intensiteCA: caRankMap[row.cp],
+            intensiteClients: clientsRankMap[row.cp],
           });
         });
       }
