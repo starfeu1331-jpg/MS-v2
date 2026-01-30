@@ -179,14 +179,16 @@ export default function ZoneChalandiseV2() {
                   if (geojson.features && geojson.features.length > 0) {
                     features.push(geojson.features[0]);
                   } else {
-                    failedCP.push(zone.cp);
+                    console.warn(`⚠️ CP ${normalizedCP} (DB: ${zone.cp}): API retourne 0 features`);
+                    failedCP.push(normalizedCP);
                   }
                 } else {
-                  failedCP.push(zone.cp);
+                  console.warn(`⚠️ CP ${normalizedCP} (DB: ${zone.cp}): API error ${response.status}`);
+                  failedCP.push(normalizedCP);
                 }
               } catch (err) {
-                console.error(`❌ CP ${zone.cp}:`, err);
-                failedCP.push(zone.cp);
+                console.error(`❌ CP ${normalizedCP} (DB: ${zone.cp}):`, err);
+                failedCP.push(normalizedCP);
               }
               await new Promise(resolve => setTimeout(resolve, 10));
             }
