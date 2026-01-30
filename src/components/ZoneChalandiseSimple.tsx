@@ -240,17 +240,17 @@ export default function ZoneChalandiseSimple() {
 
       {/* Panneau de contrôle flottant - bas droite */}
       <div 
-        className="fixed bottom-6 right-6 bg-white rounded-lg shadow-2xl border border-gray-200"
-        style={{ zIndex: 1500, position: 'fixed' }}
+        className="fixed bottom-6 right-6 bg-white rounded-lg shadow-2xl border-2 border-blue-500"
+        style={{ zIndex: 1500, minWidth: '320px' }}
       >
         {/* En-tête avec bouton replier */}
         <div 
-          className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50"
+          className="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-200 cursor-pointer hover:bg-blue-100"
           onClick={() => setPanelOpen(!panelOpen)}
         >
-          <h3 className="font-semibold text-gray-900">Zones de Chalandise</h3>
-          <button className="text-gray-500 hover:text-gray-700">
-            {panelOpen ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          <h3 className="font-bold text-blue-900 text-lg">📍 Sélection Magasin</h3>
+          <button className="text-blue-700 hover:text-blue-900">
+            {panelOpen ? <ChevronDown size={22} /> : <ChevronUp size={22} />}
           </button>
         </div>
 
@@ -259,13 +259,13 @@ export default function ZoneChalandiseSimple() {
           <div className="p-4 space-y-3">
             {/* Sélection magasin */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Magasin
+              <label className="block text-sm font-bold text-gray-900 mb-2">
+                Choisir un magasin:
               </label>
               <select
                 value={selectedStore}
                 onChange={(e) => setSelectedStore(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
               >
                 {stores.map(store => (
                   <option key={store.code} value={store.code}>
@@ -277,9 +277,16 @@ export default function ZoneChalandiseSimple() {
 
             {/* Indicateur de chargement */}
             {loading && (
-              <div className="flex items-center gap-2 text-sm text-gray-600" style={{ zIndex: 1500 }}>
+              <div className="flex items-center gap-2 text-sm text-blue-700 font-medium bg-blue-50 px-3 py-2 rounded-lg">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                 Chargement des zones...
+              </div>
+            )}
+
+            {/* Info zones */}
+            {!loading && geoData.length > 0 && (
+              <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                ✅ <strong>{geoData.length}</strong> zones affichées
               </div>
             )}
           </div>
