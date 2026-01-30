@@ -56,9 +56,15 @@ export default function ZoneChalandiseV2() {
       // Filtrer selon le magasin sélectionné
       const zonesToDisplay = selectedStore === 'ALL' 
         ? allZones 
-        : allZones.filter(z => String(z.storeCode).trim() === String(selectedStore).trim());
+        : allZones.filter(z => {
+            const zoneStore = String(z.storeCode || '').trim();
+            const selected = String(selectedStore || '').trim();
+            return zoneStore === selected;
+          });
       
       console.log('✅ Zones à traiter:', zonesToDisplay.length);
+      console.log('   Magasin sélectionné:', selectedStore);
+      console.log('   Magasins dans les zones:', [...new Set(zonesToDisplay.map(z => z.storeCode))]);
       
       // Charger le fichier GeoJSON complet des codes postaux
       setLoadingProgress(5);
@@ -66,8 +72,16 @@ export default function ZoneChalandiseV2() {
       try {
         const response = await fetch('/codes-postaux.json');
         if (response.ok) {
-          codesPostauxData = await response.json();
-          console.log('✅ Fichier codes postaux chargé:', codesPostauxData.features?.length, 'CP');
+          const text = await response.text();
+          // Vérifier si c'est vraiment du JSON et non du HTML
+          if (text.startsWith('{') || text.startsWith('[')) {
+            codesPostauxData = JSON.parse(text);
+            console.log('✅ Fichier codes postaux chargé:', codesPostauxData.features?.length, 'CP');
+          } else {
+            console.warn('⚠️ Fichier JSON non disponible sur Vercel, utilisation API uniquement');
+          }
+        } else {
+          console.warn('⚠️ codes-postaux.json non trouvé (status:', response.status, '), utilisation API');
         }
       } catch (err) {
         console.error('❌ Erreur chargement codes postaux:', err);
