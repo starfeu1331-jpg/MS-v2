@@ -45,7 +45,6 @@ export default async function handler(req, res) {
           AND c.cp IS NOT NULL 
           AND c.cp != ''
         GROUP BY c.cp
-        HAVING COUNT(*) >= 5
         ORDER BY SUM(t.ca) DESC
       `;
 

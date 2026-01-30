@@ -94,11 +94,12 @@ export default function ZoneChalandiseSimple() {
     
     const geoFeatures: any[] = [];
     
-    // Trouver le CA max pour la normalisation des couleurs
-    const maxCA = Math.max(...zonesToLoad.map(z => z.totalCA));
-    console.log(`💰 CA maximum: ${maxCA.toFixed(0)}€`);
+    // Trier les zones par CA pour calculer les déciles (10 tranches de 10%)
+    const sortedZones = [...zonesToLoad].sort((a, b) => a.totalCA - b.totalCA);
+    console.log(`💰 CA min: ${sortedZones[0].totalCA.toFixed(0)}€ → max: ${sortedZones[sortedZones.length - 1].totalCA.toFixed(0)}€`);
 
-    for (const zone of zonesToLoad) {
+    for (let i = 0; i < zonesToLoad.length; i++) {
+      const zone = zonesToLoad[i];
       try {
         // Nettoyer le CP
         let cleanCP = String(zone.cp).trim().replace(/\./g, '').replace(/,/g, '').replace(/\s/g, '');
@@ -127,15 +128,25 @@ export default function ZoneChalandiseSimple() {
           continue;
         }
 
-        // Calculer l'intensité (0 à 1) basée sur le CA
-        const intensity = zone.totalCA / maxCA;
+        // Calculer le rang percentile de cette zone (0 à 1)
+        const rank = sortedZones.findIndex(z => z.cp === zone.cp);
+        const percentile = rank / (sortedZones.length - 1 || 1);
         
-        // Couleur du rouge (fort CA) au jaune (faible CA)
-        const color = intensity > 0.7 ? '#dc2626' : // Rouge foncé
-                     intensity > 0.5 ? '#ea580c' : // Orange
-                     intensity > 0.3 ? '#f59e0b' : // Jaune-orange
-                     intensity > 0.1 ? '#fbbf24' : // Jaune
-                                       '#fde047';  // Jaune clair
+        // Attribuer une couleur basée sur le décile (10 tranches de 10%)
+        const decile = Math.floor(percentile * 10);
+        const colors = [
+          '#1e3a8a', // Bleu très foncé - 0-10%
+          '#1e40af', // Bleu foncé - 10-20%
+          '#2563eb', // Bleu - 20-30%
+          '#3b82f6', // Bleu clair - 30-40%
+          '#60a5fa', // Bleu très clair - 40-50%
+          '#fbbf24', // Jaune - 50-60%
+          '#f59e0b', // Orange - 60-70%
+          '#ea580c', // Orange foncé - 70-80%
+          '#dc2626', // Rouge - 80-90%
+          '#991b1b'  // Rouge très foncé - 90-100%
+        ];
+        const color = colors[Math.min(decile, 9)];
 
         // Ajouter chaque commune séparément (pas de fusion)
         geojson.features.forEach((feature: any) => {
@@ -148,13 +159,14 @@ export default function ZoneChalandiseSimple() {
               nbClients: zone.nbClients,
               totalCA: zone.totalCA,
               nbTransactions: zone.nbTransactions,
-              intensity,
+              percentile,
+              decile,
               color
             }
           });
         });
 
-        console.log(`  ✅ CP ${normalizedCP} (${zone.ville}): ${zone.nbClients} clients → couleur ${color}`);
+        console.log(`  ✅ CP ${normalizedCP} (${zone.ville}): décile ${decile}/10 (${zone.nbClients} clients) → ${color}`);
 
       } catch (err) {
         console.error(`❌ Erreur CP ${zone.cp}:`, err);
@@ -229,7 +241,7 @@ export default function ZoneChalandiseSimple() {
       {/* Panneau de contrôle flottant - bas droite */}
       <div 
         className="fixed bottom-6 right-6 bg-white rounded-lg shadow-2xl border border-gray-200"
-        style={{ zIndex: 1500 }}
+        style={{ zIndex: 1500, position: 'fixed' }}
       >
         {/* En-tête avec bouton replier */}
         <div 
@@ -265,7 +277,7 @@ export default function ZoneChalandiseSimple() {
 
             {/* Indicateur de chargement */}
             {loading && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-gray-600" style={{ zIndex: 1500 }}>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                 Chargement des zones...
               </div>
