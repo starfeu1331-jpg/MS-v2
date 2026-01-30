@@ -137,7 +137,8 @@ export default function ZoneChalandiseV2() {
         console.log('   Nb zones:', zonesToDisplay.length);
         console.log('   Répartition par tranche:');
         for (let i = 0; i < 10; i++) {
-          const count = intensities.filter(int => Math.floor(int * 10) === i).length;
+          // Utiliser la même formule que colorIndex pour capturer intensity=1.0 exactement
+          const count = intensities.filter(int => Math.min(Math.floor(int * 10), 9) === i).length;
           if (count > 0) {
             console.log(`     ${i * 10}%-${(i + 1) * 10}%: ${count} zones`);
           }
