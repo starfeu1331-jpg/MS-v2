@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import type { LatLngTuple } from 'leaflet';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import * as XLSX from 'xlsx';
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -40,6 +41,78 @@ export default function ZoneChalandiseSimple() {
   const [geoData, setGeoData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
+
+  // Fonction d'export Excel
+  const exportToExcel = () => {
+    if (zones.length === 0) {
+      alert('Aucune donnée à exporter');
+      return;
+    }
+
+    const storeName = stores.find(s => s.code === selectedStore)?.nom || 'Magasin';
+    
+    // Préparer les données avec formatage
+    const excelData = zones.map((zone, index) => ({
+      'Rang': index + 1,
+      'Code Postal': zone.cp,
+      'Ville': zone.ville,
+      'Nb Clients': zone.nbClients,
+      'CA Total (€)': Math.round(zone.totalCA),
+      'CA Moyen (€)': Math.round(zone.totalCA / zone.nbClients),
+      'Nb Transactions': zone.nbTransactions,
+      'Tx/Client': (zone.nbTransactions / zone.nbClients).toFixed(1)
+    }));
+
+    // Créer le workbook et la feuille
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Largeurs de colonnes
+    ws['!cols'] = [
+      { wch: 6 },   // Rang
+      { wch: 12 },  // CP
+      { wch: 25 },  // Ville
+      { wch: 12 },  // Nb Clients
+      { wch: 15 },  // CA Total
+      { wch: 15 },  // CA Moyen
+      { wch: 16 },  // Nb Transactions
+      { wch: 10 }   // Tx/Client
+    ];
+
+    // Ajouter des styles aux en-têtes (A1 à H1)
+    const headerStyle = {
+      font: { bold: true, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: { rgb: '1e3a8a' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    };
+
+    // Appliquer le style aux cellules d'en-tête
+    ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'].forEach(cell => {
+      if (ws[cell]) {
+        ws[cell].s = headerStyle;
+      }
+    });
+
+    // Ligne de titre au-dessus
+    XLSX.utils.sheet_add_aoa(ws, [[`Zones de Chalandise - ${storeName}`]], { origin: 'A1' });
+    XLSX.utils.sheet_add_aoa(ws, [['Date d\'export:', new Date().toLocaleDateString('fr-FR')]], { origin: 'A2' });
+    XLSX.utils.sheet_add_aoa(ws, [['']], { origin: 'A3' });
+    
+    // Réinsérer les données après les 3 lignes de titre
+    XLSX.utils.sheet_add_json(ws, excelData, { origin: 'A4', skipHeader: false });
+
+    // Fusionner la cellule du titre
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } } // Fusionner A1:H1
+    ];
+
+    // Ajouter la feuille au workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Zones de Chalandise');
+
+    // Télécharger le fichier
+    const fileName = `ZonesChalandise_${storeName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   // Coordonnées EXACTES des 23 magasins (géocodées depuis vos adresses précises)
   const storeCoordinates: Record<string, { lat: number; lon: number }> = {
@@ -398,7 +471,7 @@ export default function ZoneChalandiseSimple() {
         {/* Contenu */}
         {panelOpen && (
           <div style={{ padding: '16px' }}>
-            {/* Sélection magasin */}
+            {/* Sélection magasin + Bouton Export */}
             <div style={{ marginBottom: '14px' }}>
               <label style={{ 
                 display: 'block', 
@@ -409,29 +482,54 @@ export default function ZoneChalandiseSimple() {
               }}>
                 Magasin:
               </label>
-              <select
-                value={selectedStore}
-                onChange={(e) => setSelectedStore(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  border: '1.5px solid rgba(75, 85, 99, 0.6)',
-                  borderRadius: '10px',
-                  backgroundColor: 'rgba(31, 41, 55, 0.9)',
-                  color: '#f3f4f6',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {stores.map(store => (
-                  <option key={store.code} value={store.code}>
-                    {store.nom}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <select
+                  value={selectedStore}
+                  onChange={(e) => setSelectedStore(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    fontSize: '14px',
+                    border: '1.5px solid rgba(75, 85, 99, 0.6)',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                    color: '#f3f4f6',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {stores.map(store => (
+                    <option key={store.code} value={store.code}>
+                      {store.nom}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={exportToExcel}
+                  disabled={zones.length === 0}
+                  style={{
+                    padding: '10px 14px',
+                    backgroundColor: zones.length > 0 ? 'rgba(34, 197, 94, 0.9)' : 'rgba(75, 85, 99, 0.5)',
+                    color: zones.length > 0 ? '#ffffff' : '#9ca3af',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: zones.length > 0 ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    transition: 'all 0.2s ease',
+                    boxShadow: zones.length > 0 ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none'
+                  }}
+                  title="Exporter en Excel"
+                >
+                  <Download size={16} />
+                  Excel
+                </button>
+              </div>
             </div>
 
             {/* Légende des couleurs */}
