@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Rectangle, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import chroma from 'chroma-js';
@@ -34,6 +34,7 @@ export default function ZoneChalandise() {
   const [stores, setStores] = useState<any[]>([]);
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [catchmentData, setCatchmentData] = useState<CatchmentResponse | null>(null);
+  const [geoJsonData, setGeoJsonData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'ca' | 'clients'>('ca');
@@ -96,6 +97,51 @@ export default function ZoneChalandise() {
 
     fetchCatchmentArea();
   }, [selectedStore]);
+
+  // Charger les polygones GeoJSON pour chaque code postal
+  useEffect(() => {
+    if (!catchmentData || !catchmentData.data) return;
+
+    const loadGeoJson = async () => {
+      const geoJsonArray = [];
+      
+      // Limiter à 50 codes postaux pour éviter trop de requêtes
+      const topPostalCodes = catchmentData.data.slice(0, 50);
+      
+      for (const item of topPostalCodes) {
+        try {
+          // API geo.gouv.fr pour obtenir les contours des communes par code postal
+          const response = await fetch(
+            `https://geo.api.gouv.fr/communes?codePostal=${item.cp}&fields=nom,code,codesPostaux,centre,contour&format=geojson&geometry=contour`
+          );
+          
+          if (response.ok) {
+            const geojson = await response.json();
+            if (geojson && geojson.features && geojson.features.length > 0) {
+              // Ajouter les données de chalandise aux propriétés
+              geojson.features.forEach((feature: any) => {
+                feature.properties = {
+                  ...feature.properties,
+                  ...item,
+                  intensity: getIntensity(item),
+                };
+              });
+              geoJsonArray.push(...geojson.features);
+            }
+          }
+          
+          // Petit délai pour ne pas surcharger l'API
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (err) {
+          console.error(`Erreur chargement GeoJSON pour ${item.cp}:`, err);
+        }
+      }
+      
+      setGeoJsonData(geoJsonArray);
+    };
+
+    loadGeoJson();
+  }, [catchmentData, viewMode]);
 
   const getColor = (intensity: number) => {
     // Créer un gradient: bleu (faible) -> vert -> jaune -> orange -> rouge (fort)
@@ -237,63 +283,42 @@ export default function ZoneChalandise() {
                 attribution="&copy; OpenStreetMap contributors"
               />
 
-              {/* Afficher les zones de chalandise */}
-              {catchmentData.data.map((item, idx) => {
-                const coords = getPostcodeCoords(item.cp);
-                const intensity = getIntensity(item);
+              {/* Afficher les polygones GeoJSON */}
+              {geoJsonData.length > 0 && geoJsonData.map((feature, idx) => {
+                const intensity = feature.properties.intensity || 0;
                 const color = getColor(intensity);
                 
-                // Créer un rectangle pour représenter une zone de code postal
-                // Taille basée sur l'intensité (entre 0.02° et 0.15°)
-                const size = 0.02 + (intensity * 0.13);
-                const bounds: [[number, number], [number, number]] = [
-                  [coords[0] - size, coords[1] - size],
-                  [coords[0] + size, coords[1] + size]
-                ];
-
                 return (
-                  <Rectangle
-                    key={idx}
-                    bounds={bounds}
-                    pathOptions={{
+                  <GeoJSON
+                    key={`geojson-${idx}`}
+                    data={feature}
+                    style={{
                       color: color,
                       fillColor: color,
-                      fillOpacity: 0.5,
+                      fillOpacity: 0.6,
                       weight: 2,
-                    } as any}
-                  >
-                    <Popup>
-                      <div className="text-sm font-semibold">
-                        <p className="font-bold text-lg mb-2">
-                          {item.cp} - {item.ville}
-                        </p>
-                        <div className="space-y-1 text-xs">
-                          <p>
-                            <span className="font-semibold">Clients:</span> {item.nbClients}
+                    }}
+                    onEachFeature={(feature, layer) => {
+                      const props = feature.properties;
+                      layer.bindPopup(`
+                        <div style="font-family: Inter, sans-serif;">
+                          <p style="font-weight: bold; font-size: 16px; margin-bottom: 8px;">
+                            ${props.cp} - ${props.ville}
                           </p>
-                          <p>
-                            <span className="font-semibold">CA:</span>{' '}
-                            {new Intl.NumberFormat('fr-FR', {
+                          <div style="font-size: 12px;">
+                            <p><strong>Clients:</strong> ${props.nbClients}</p>
+                            <p><strong>CA:</strong> ${new Intl.NumberFormat('fr-FR', {
                               style: 'currency',
                               currency: 'EUR',
-                            }).format(item.totalCA)}
-                          </p>
-                          <p>
-                            <span className="font-semibold">Transactions:</span>{' '}
-                            {item.nbTransactions}
-                          </p>
-                          <p>
-                            <span className="font-semibold">Intensité CA:</span>{' '}
-                            {Math.round(item.intensiteCA * 100)}%
-                          </p>
-                          <p>
-                            <span className="font-semibold">Intensité Clients:</span>{' '}
-                            {Math.round(item.intensiteClients * 100)}%
-                          </p>
+                            }).format(props.totalCA)}</p>
+                            <p><strong>Transactions:</strong> ${props.nbTransactions}</p>
+                            <p><strong>Intensité CA:</strong> ${Math.round(props.intensiteCA * 100)}%</p>
+                            <p><strong>Intensité Clients:</strong> ${Math.round(props.intensiteClients * 100)}%</p>
+                          </div>
                         </div>
-                      </div>
-                    </Popup>
-                  </Rectangle>
+                      `);
+                    }}
+                  />
                 );
               })}
             </MapContainer>
