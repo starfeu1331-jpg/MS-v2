@@ -53,6 +53,18 @@ export default function ZoneChalandiseSimple() {
       .catch(err => console.error('Erreur chargement magasins:', err));
   }, []);
 
+  // Icône personnalisée pour les magasins
+  const storeIcon = new L.Icon({
+    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="12" height="12" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="6" cy="6" r="5" fill="#dc2626" stroke="#ffffff" stroke-width="1.5"/>
+      </svg>
+    `),
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+    popupAnchor: [0, -6]
+  });
+
   // Charger les zones quand un magasin est sélectionné
   useEffect(() => {
     if (!selectedStore) return;
@@ -225,14 +237,21 @@ export default function ZoneChalandiseSimple() {
             />
           ))}
 
-          {/* Marqueur magasin */}
+          {/* Marqueurs pour TOUS les magasins */}
           {stores
-            .filter(s => s.code === selectedStore && s.lat && s.lon)
+            .filter(s => s.lat && s.lon)
             .map(store => (
-              <Marker key={store.code} position={[store.lat!, store.lon!]}>
+              <Marker 
+                key={store.code} 
+                position={[store.lat!, store.lon!]}
+                icon={storeIcon}
+              >
                 <Popup>
-                  <div className="text-center">
-                    <strong>{store.nom}</strong>
+                  <div style={{ textAlign: 'center', minWidth: '120px' }}>
+                    <strong style={{ fontSize: '14px', color: '#dc2626' }}>{store.nom}</strong>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                      {store.ville}
+                    </div>
                   </div>
                 </Popup>
               </Marker>
@@ -240,63 +259,87 @@ export default function ZoneChalandiseSimple() {
         </MapContainer>
       </div>
 
-      {/* Panneau de contrôle flottant - HORS de la div map */}
+      {/* Panneau de contrôle - HAUT GAUCHE avec effet glassmorphism */}
       <div 
         style={{ 
           position: 'fixed',
-          bottom: '24px',
-          right: '24px',
+          top: '20px',
+          left: '20px',
           zIndex: 9999,
-          minWidth: '340px',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-          border: '3px solid #3b82f6'
+          minWidth: panelOpen ? '340px' : 'auto',
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          overflow: 'hidden',
+          transition: 'all 0.3s ease'
         }}
       >
-        {/* En-tête avec bouton replier */}
+        {/* En-tête */}
         <div 
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '16px',
-            backgroundColor: '#dbeafe',
-            borderTopLeftRadius: '10px',
-            borderTopRightRadius: '10px',
-            borderBottom: '2px solid #93c5fd',
-            cursor: 'pointer'
+            padding: panelOpen ? '14px 16px' : '10px 14px',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 197, 253, 0.15) 100%)',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
           }}
           onClick={() => setPanelOpen(!panelOpen)}
         >
-          <h3 style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '18px', margin: 0 }}>
-            📍 Sélection Magasin
+          <h3 style={{ 
+            fontWeight: '600', 
+            color: '#1e40af', 
+            fontSize: panelOpen ? '15px' : '13px',
+            margin: 0,
+            transition: 'font-size 0.3s ease'
+          }}>
+            {panelOpen ? '📍 Zones de Chalandise' : '📍'}
           </h3>
-          <button style={{ color: '#1e40af', background: 'none', border: 'none', cursor: 'pointer' }}>
-            {panelOpen ? <ChevronDown size={22} /> : <ChevronUp size={22} />}
+          <button style={{ 
+            color: '#3b82f6', 
+            background: 'none', 
+            border: 'none', 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            padding: 0
+          }}>
+            {panelOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         </div>
 
-        {/* Contenu du panneau */}
+        {/* Contenu */}
         {panelOpen && (
           <div style={{ padding: '16px' }}>
             {/* Sélection magasin */}
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}>
-                Choisir un magasin:
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: '#374151', 
+                marginBottom: '8px' 
+              }}>
+                Magasin:
               </label>
               <select
                 value={selectedStore}
                 onChange={(e) => setSelectedStore(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  border: '2px solid #d1d5db',
-                  borderRadius: '8px',
-                  backgroundColor: 'white',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  border: '1.5px solid rgba(209, 213, 219, 0.6)',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   fontWeight: '500',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 {stores.map(store => (
@@ -307,46 +350,104 @@ export default function ZoneChalandiseSimple() {
               </select>
             </div>
 
+            {/* Légende des couleurs */}
+            <div style={{ 
+              marginBottom: '14px',
+              padding: '12px',
+              backgroundColor: 'rgba(249, 250, 251, 0.8)',
+              borderRadius: '10px',
+              border: '1px solid rgba(229, 231, 235, 0.6)'
+            }}>
+              <div style={{ 
+                fontSize: '12px', 
+                fontWeight: '600', 
+                color: '#374151',
+                marginBottom: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                🎨 Légende (CA par décile)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                {[
+                  { color: '#1e3a8a', label: '0-10%' },
+                  { color: '#1e40af', label: '10-20%' },
+                  { color: '#2563eb', label: '20-30%' },
+                  { color: '#3b82f6', label: '30-40%' },
+                  { color: '#60a5fa', label: '40-50%' },
+                  { color: '#fbbf24', label: '50-60%' },
+                  { color: '#f59e0b', label: '60-70%' },
+                  { color: '#ea580c', label: '70-80%' },
+                  { color: '#dc2626', label: '80-90%' },
+                  { color: '#991b1b', label: '90-100%' }
+                ].map(({ color, label }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ 
+                      width: '16px', 
+                      height: '16px', 
+                      backgroundColor: color,
+                      borderRadius: '4px',
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      flexShrink: 0
+                    }}></div>
+                    <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Indicateur de chargement */}
             {loading && (
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '8px', 
-                fontSize: '14px', 
-                color: '#1d4ed8',
+                fontSize: '13px', 
+                color: '#2563eb',
                 fontWeight: '500',
-                backgroundColor: '#dbeafe',
+                backgroundColor: 'rgba(219, 234, 254, 0.6)',
                 padding: '10px 12px',
-                borderRadius: '8px'
+                borderRadius: '10px'
               }}>
                 <div style={{ 
-                  width: '16px', 
-                  height: '16px', 
-                  border: '2px solid #2563eb',
+                  width: '14px', 
+                  height: '14px', 
+                  border: '2px solid #3b82f6',
                   borderTopColor: 'transparent',
                   borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
+                  animation: 'spin 0.8s linear infinite'
                 }}></div>
-                Chargement des zones...
+                Chargement...
               </div>
             )}
 
             {/* Info zones */}
             {!loading && geoData.length > 0 && (
               <div style={{ 
-                fontSize: '14px', 
-                color: '#4b5563',
-                backgroundColor: '#f3f4f6',
+                fontSize: '13px', 
+                color: '#059669',
+                fontWeight: '500',
+                backgroundColor: 'rgba(209, 250, 229, 0.6)',
                 padding: '10px 12px',
-                borderRadius: '8px'
+                borderRadius: '10px',
+                textAlign: 'center'
               }}>
-                ✅ <strong>{geoData.length}</strong> zones affichées
+                ✓ {geoData.length} zone{geoData.length > 1 ? 's' : ''} affichée{geoData.length > 1 ? 's' : ''}
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Animation CSS pour le spinner */}
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 }
