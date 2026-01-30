@@ -165,6 +165,14 @@ export default function ZoneChalandiseV2() {
             const features: any[] = [];
             const failedCP: string[] = [];
             
+            // DICTIONNAIRE DE CORRECTION: Code INSEE → Code Postal
+            const inseeToPostal: Record<string, string> = {
+              '30180': '30190',  // Montignargues
+              '11090': '11200',  // Lézignan-Corbières (estimation)
+              '34075': '34000',  // Montpellier (estimation)
+              '13632': '13632',  // Saintes-Maries-de-la-Mer (code valide)
+            };
+            
             // Charger chaque CP individuellement (l'API ne supporte pas le batch)
             for (const zone of zones) {
               // NETTOYAGE: Supprimer les points, virgules, espaces
@@ -181,7 +189,13 @@ export default function ZoneChalandiseV2() {
               }
               
               // IMPORTANT: Normaliser le CP à 5 chiffres (ajouter 0 devant si nécessaire)
-              const normalizedCP = cleanCP.padStart(5, '0');
+              let normalizedCP = cleanCP.padStart(5, '0');
+              
+              // CORRECTION: Convertir code INSEE en code postal si connu
+              if (inseeToPostal[normalizedCP]) {
+                console.log(`🔄 Correction INSEE: ${normalizedCP} → ${inseeToPostal[normalizedCP]}`);
+                normalizedCP = inseeToPostal[normalizedCP];
+              }
               
               try {
                 const response = await fetch(
