@@ -41,57 +41,78 @@ export default async function handler(req, res) {
     }
   }
 
-  // Route: /api/stores?action=all (vue globale de tous les magasins)
-  if (action === 'all') {
+  // Route: /api/stores?action=allStores (TOUS les magasins avec leurs zones)
+  if (action === 'allStores') {
     try {
-      // Agréger toutes les données par code postal UNIQUEMENT
-      const allData = await prisma.$queryRawUnsafe(`
-        SELECT 
-          c.cp::text,
-          STRING_AGG(DISTINCT c.ville, ', ') as ville,
-          COUNT(DISTINCT t.carte)::int as nb_clients,
-          SUM(t.ca)::numeric as total_ca,
-          COUNT(*)::int as nb_transactions
-        FROM transactions t
-        INNER JOIN clients c ON t.carte = c.carte
-        WHERE t.ca > 0 AND c.cp IS NOT NULL AND c.cp != '' AND t.carte != '0'
-        GROUP BY c.cp
-        HAVING COUNT(*) >= 10
-        ORDER BY SUM(t.ca) DESC
-      `);
-
-      // Calculer l'intensité
-      const maxCA = Math.max(...allData.map(d => Number(d.total_ca)));
-      const maxClients = Math.max(...allData.map(d => Number(d.nb_clients)));
-
-      const data = allData.map(row => ({
-        cp: row.cp,
-        ville: row.ville || 'Inconnue',
-        nbClients: Number(row.nb_clients),
-        totalCA: Number(row.total_ca),
-        nbTransactions: Number(row.nb_transactions),
-        intensiteCA: maxCA > 0 ? Number(row.total_ca) / maxCA : 0,
-        intensiteClients: maxClients > 0 ? Number(row.nb_clients) / maxClients : 0,
-      }));
-
-      const summary = {
-        totalClients: data.reduce((sum, d) => sum + d.nbClients, 0),
-        totalCA: data.reduce((sum, d) => sum + d.totalCA, 0),
-        uniquePostalCodes: data.length,
-        nbTransactions: data.reduce((sum, d) => sum + d.nbTransactions, 0),
-      };
-
+      // Récupérer tous les magasins
+      const stores = await prisma.magasin.findMany();
+      
+      // Pour chaque magasin, calculer ses zones de chalandise
+      const allStoresData = [];
+      
+      for (const store of stores) {
+        // Données par CP pour ce magasin
+        const storeData = await prisma.$queryRawUnsafe(`
+          SELECT 
+            c.cp::text,
+            STRING_AGG(DISTINCT c.ville, ', ') as ville,
+            COUNT(DISTINCT t.carte)::int as nb_clients,
+            SUM(t.ca)::numeric as total_ca,
+            COUNT(*)::int as nb_transactions
+          FROM transactions t
+          INNER JOIN clients c ON t.carte = c.carte
+          WHERE t.depot = $1
+            AND t.ca > 0 
+            AND c.cp IS NOT NULL 
+            AND c.cp != '' 
+            AND t.carte != '0'
+          GROUP BY c.cp
+          HAVING COUNT(*) >= 10
+          ORDER BY SUM(t.ca) DESC
+        `, store.code);
+        
+        if (storeData.length === 0) continue;
+        
+        // Calculer intensités POUR CE MAGASIN
+        const maxCA = Math.max(...storeData.map(d => Number(d.total_ca)));
+        const maxClients = Math.max(...storeData.map(d => Number(d.nb_clients)));
+        
+        storeData.forEach(row => {
+          allStoresData.push({
+            storeCode: store.code,
+            storeName: store.nom,
+            storeCP: store.cp,
+            storeCity: store.ville,
+            cp: row.cp,
+            ville: row.ville || 'Inconnue',
+            nbClients: Number(row.nb_clients),
+            totalCA: Number(row.total_ca),
+            nbTransactions: Number(row.nb_transactions),
+            intensiteCA: maxCA > 0 ? Number(row.total_ca) / maxCA : 0,
+            intensiteClients: maxClients > 0 ? Number(row.nb_clients) / maxClients : 0,
+          });
+        });
+      }
+      
+      // Dédupliquer: garder seulement le magasin avec le + gros CA par CP
+      const cpMap = {};
+      allStoresData.forEach(zone => {
+        if (!cpMap[zone.cp] || cpMap[zone.cp].totalCA < zone.totalCA) {
+          cpMap[zone.cp] = zone;
+        }
+      });
+      
+      const deduplicatedData = Object.values(cpMap);
+      
       return res.json({
-        storeCode: 'ALL',
-        storeName: 'Tous les magasins',
-        storeCity: '',
-        storeCP: '',
-        data,
-        summary,
+        stores,
+        zones: deduplicatedData,
+        totalStores: stores.length,
+        totalZones: deduplicatedData.length,
       });
     } catch (error) {
-      console.error('Erreur vue globale:', error);
-      return res.status(500).json({ error: 'Erreur serveur' });
+      console.error('Erreur allStores:', error);
+      return res.status(500).json({ error: 'Erreur serveur', details: error.message });
     } finally {
       await prisma.$disconnect();
     }
