@@ -391,7 +391,6 @@ export default function ZoneChalandiseV2() {
                     weight: 3,
                     opacity: 1,
                   }}
-                  }}
                 />
               );
             })}
