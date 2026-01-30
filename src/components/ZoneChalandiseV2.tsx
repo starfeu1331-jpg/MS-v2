@@ -123,7 +123,7 @@ export default function ZoneChalandiseV2() {
 
       {/* Panneau de contrôle flottant */}
       {showPanel && (
-        <div className="absolute top-4 left-4 z-40 bg-zinc-800 border border-zinc-700 rounded-lg shadow-2xl p-4 max-w-sm">
+        <div className="absolute top-4 left-4 bg-zinc-800 border border-zinc-700 rounded-lg shadow-2xl p-4 max-w-sm" style={{ zIndex: 1000 }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-white font-bold">Zone de Chalandise</h2>
             <button
@@ -212,7 +212,8 @@ export default function ZoneChalandiseV2() {
       {!showPanel && (
         <button
           onClick={() => setShowPanel(true)}
-          className="absolute top-4 left-4 z-40 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white hover:bg-zinc-700"
+          className="absolute top-4 left-4 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white hover:bg-zinc-700"
+          style={{ zIndex: 1000 }}
         >
           ⚙️
         </button>
