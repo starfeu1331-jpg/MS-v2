@@ -60,6 +60,19 @@ export default function ZoneChalandiseV2() {
       
       console.log('✅ Zones à traiter:', zonesToDisplay.length);
       
+      // Charger le fichier GeoJSON complet des codes postaux
+      setLoadingProgress(5);
+      let codesPostauxData: any = null;
+      try {
+        const response = await fetch('/codes-postaux.json');
+        if (response.ok) {
+          codesPostauxData = await response.json();
+          console.log('✅ Fichier codes postaux chargé:', codesPostauxData.features?.length, 'CP');
+        }
+      } catch (err) {
+        console.error('❌ Erreur chargement codes postaux:', err);
+      }
+      
       // RECALCULER LES INTENSITÉS PAR MAGASIN (car après déduplication elles sont faussées)
       const storeMaxValues: Record<string, { maxCA: number; maxClients: number }> = {};
       
@@ -119,28 +132,54 @@ export default function ZoneChalandiseV2() {
             const features: any[] = [];
             const failedCP: string[] = [];
             
-            // Charger les GeoJSON de tous les CP de cette zone
+            // Charger les GeoJSON de tous les CP de cette zone DEPUIS LE FICHIER LOCAL
             for (const zone of zones) {
               try {
-                const response = await fetch(
-                  `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=contour&format=geojson&geometry=contour`
-                );
-                
-                if (response.ok) {
-                  const geojson = await response.json();
-                  if (geojson.features && geojson.features.length > 0) {
-                    features.push(geojson.features[0]);
+                if (codesPostauxData && codesPostauxData.features) {
+                  // Chercher dans le fichier local
+                  const feature = codesPostauxData.features.find((f: any) => 
+                    f.properties.code_postal === zone.cp
+                  );
+                  
+                  if (feature) {
+                    features.push(feature);
+                  } else {
+                    // Fallback API si pas trouvé dans le fichier
+                    const response = await fetch(
+                      `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=contour&format=geojson&geometry=contour`
+                    );
+                    if (response.ok) {
+                      const geojson = await response.json();
+                      if (geojson.features && geojson.features.length > 0) {
+                        features.push(geojson.features[0]);
+                      } else {
+                        failedCP.push(zone.cp);
+                      }
+                    } else {
+                      failedCP.push(zone.cp);
+                    }
+                  }
+                } else {
+                  // Pas de fichier local, utiliser l'API
+                  const response = await fetch(
+                    `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=contour&format=geojson&geometry=contour`
+                  );
+                  if (response.ok) {
+                    const geojson = await response.json();
+                    if (geojson.features && geojson.features.length > 0) {
+                      features.push(geojson.features[0]);
+                    } else {
+                      failedCP.push(zone.cp);
+                    }
                   } else {
                     failedCP.push(zone.cp);
                   }
-                } else {
-                  failedCP.push(zone.cp);
                 }
               } catch (err) {
                 console.error(`❌ CP ${zone.cp}:`, err);
                 failedCP.push(zone.cp);
               }
-              await new Promise(resolve => setTimeout(resolve, 30));
+              await new Promise(resolve => setTimeout(resolve, 10)); // Délai réduit car lecture locale
             }
             
             console.log(`  ✅ ${features.length} géométries chargées, ❌ ${failedCP.length} échecs`);
