@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import type { LatLngTuple } from 'leaflet';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -37,6 +38,7 @@ export default function ZoneChalandiseSimple() {
   const [zones, setZones] = useState<Zone[]>([]);
   const [geoData, setGeoData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
 
   // Charger la liste des magasins
   useEffect(() => {
@@ -182,105 +184,94 @@ export default function ZoneChalandiseSimple() {
   const center: LatLngTuple = [46.603354, 1.888334]; // Centre de la France
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Zones de Chalandise</h1>
-            <p className="text-sm text-gray-600 mt-1">Version simplifiée - Affichage direct par CP</p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <select
-              value={selectedStore}
-              onChange={(e) => setSelectedStore(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              {stores.map(store => (
-                <option key={store.code} value={store.code}>
-                  {store.nom}
-                </option>
-              ))}
-            </select>
+    <div className="h-full w-full relative">
+      {/* Map plein écran */}
+      <MapContainer
+        center={center}
+        zoom={6}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
+        {/* Zones colorées */}
+        {geoData.map((feature, idx) => (
+          <GeoJSON
+            key={`zone-${idx}`}
+            data={feature}
+            style={{
+              fillColor: feature.properties.color,
+              fillOpacity: 0.5,
+              color: feature.properties.color,
+              weight: 2,
+              opacity: 0.8
+            }}
+            onEachFeature={onEachFeature}
+          />
+        ))}
+
+        {/* Marqueur magasin */}
+        {stores
+          .filter(s => s.code === selectedStore && s.lat && s.lon)
+          .map(store => (
+            <Marker key={store.code} position={[store.lat!, store.lon!]}>
+              <Popup>
+                <div className="text-center">
+                  <strong>{store.nom}</strong>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+      </MapContainer>
+
+      {/* Panneau de contrôle flottant - bas droite */}
+      <div 
+        className="fixed bottom-6 right-6 bg-white rounded-lg shadow-2xl border border-gray-200"
+        style={{ zIndex: 1500 }}
+      >
+        {/* En-tête avec bouton replier */}
+        <div 
+          className="flex items-center justify-between px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50"
+          onClick={() => setPanelOpen(!panelOpen)}
+        >
+          <h3 className="font-semibold text-gray-900">Zones de Chalandise</h3>
+          <button className="text-gray-500 hover:text-gray-700">
+            {panelOpen ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          </button>
+        </div>
+
+        {/* Contenu du panneau */}
+        {panelOpen && (
+          <div className="p-4 space-y-3">
+            {/* Sélection magasin */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Magasin
+              </label>
+              <select
+                value={selectedStore}
+                onChange={(e) => setSelectedStore(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {stores.map(store => (
+                  <option key={store.code} value={store.code}>
+                    {store.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Indicateur de chargement */}
             {loading && (
-              <div className="text-sm text-gray-600 flex items-center gap-2">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                Chargement...
+                Chargement des zones...
               </div>
             )}
           </div>
-        </div>
-
-        {/* Stats */}
-        {zones.length > 0 && (
-          <div className="mt-4 grid grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs text-gray-600">Zones</div>
-              <div className="text-xl font-bold text-gray-900">{zones.length}</div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs text-gray-600">Clients total</div>
-              <div className="text-xl font-bold text-gray-900">
-                {zones.reduce((sum, z) => sum + z.nbClients, 0)}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs text-gray-600">CA total</div>
-              <div className="text-xl font-bold text-gray-900">
-                {zones.reduce((sum, z) => sum + z.totalCA, 0).toFixed(0)}€
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs text-gray-600">Zones affichées</div>
-              <div className="text-xl font-bold text-gray-900">{geoData.length}</div>
-            </div>
-          </div>
         )}
-      </div>
-
-      {/* Map */}
-      <div className="flex-1 relative">
-        <MapContainer
-          center={center}
-          zoom={6}
-          style={{ height: '100%', width: '100%' }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          {/* Zones colorées */}
-          {geoData.map((feature, idx) => (
-            <GeoJSON
-              key={`zone-${idx}`}
-              data={feature}
-              style={{
-                fillColor: feature.properties.color,
-                fillOpacity: 0.5,
-                color: feature.properties.color,
-                weight: 2,
-                opacity: 0.8
-              }}
-              onEachFeature={onEachFeature}
-            />
-          ))}
-
-          {/* Marqueur magasin */}
-          {stores
-            .filter(s => s.code === selectedStore && s.lat && s.lon)
-            .map(store => (
-              <Marker key={store.code} position={[store.lat!, store.lon!]}>
-                <Popup>
-                  <div className="text-center">
-                    <strong>{store.nom}</strong>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-        </MapContainer>
       </div>
     </div>
   );
