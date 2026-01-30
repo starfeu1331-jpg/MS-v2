@@ -127,6 +127,23 @@ export default function ZoneChalandiseV2() {
       console.log('🎨 Zones de couleur:', Object.keys(colorZonesMap).length);
       console.log('🎨 Couleurs présentes:', Array.from(colorsPresent).sort((a, b) => a - b));
       
+      // DEBUG: Distribution des intensités
+      if (selectedStore !== 'ALL') {
+        const intensities = zonesToDisplay.map(z => viewMode === 'ca' ? z.intensiteCA : z.intensiteClients);
+        console.log('📊 DEBUG - Distribution intensités du magasin', selectedStore);
+        console.log('   Min:', Math.min(...intensities).toFixed(3));
+        console.log('   Max:', Math.max(...intensities).toFixed(3));
+        console.log('   Moyenne:', (intensities.reduce((a, b) => a + b, 0) / intensities.length).toFixed(3));
+        console.log('   Nb zones:', zonesToDisplay.length);
+        console.log('   Répartition par tranche:');
+        for (let i = 0; i < 10; i++) {
+          const count = intensities.filter(int => Math.floor(int * 10) === i).length;
+          if (count > 0) {
+            console.log(`     ${i * 10}%-${(i + 1) * 10}%: ${count} zones`);
+          }
+        }
+      }
+      
       // ÉTAPE 2: Pour chaque zone de couleur, charger et fusionner les CP
       const colorZones: any[] = [];
       const groups = Object.entries(colorZonesMap);

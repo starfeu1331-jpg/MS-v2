@@ -77,6 +77,13 @@ export default async function handler(req, res) {
         const maxCA = Math.max(...storeData.map(d => Number(d.total_ca)));
         const maxClients = Math.max(...storeData.map(d => Number(d.nb_clients)));
         
+        console.log(`📊 Magasin ${store.code} (${store.nom}):`, {
+          nbZones: storeData.length,
+          maxCA: maxCA.toFixed(2),
+          maxClients,
+          minCA: Math.min(...storeData.map(d => Number(d.total_ca))).toFixed(2)
+        });
+        
         storeData.forEach(row => {
           allStoresData.push({
             storeCode: store.code,
