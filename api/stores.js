@@ -60,8 +60,7 @@ export default async function handler(req, res) {
           COUNT(*)::int as nb_transactions
         FROM transactions t
         INNER JOIN clients c ON t.carte = c.carte
-        WHERE t.ca > 0 
-          AND c.cp IS NOT NULL 
+        WHERE c.cp IS NOT NULL 
           AND c.cp != '' 
           AND t.carte != '0'
         GROUP BY t.depot, c.cp
