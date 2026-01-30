@@ -66,6 +66,19 @@ export default function ZoneChalandiseSimple() {
     popupAnchor: [0, -6]
   });
 
+  // Icône plus visible pour les magasins (point rouge plus gros)
+  const storeIconBig = new L.Icon({
+    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="8" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+        <circle cx="10" cy="10" r="4" fill="#ffffff" opacity="0.5"/>
+      </svg>
+    `),
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+    popupAnchor: [0, -10]
+  });
+
   // Charger les zones quand un magasin est sélectionné
   useEffect(() => {
     if (!selectedStore) return;
@@ -245,7 +258,8 @@ export default function ZoneChalandiseSimple() {
               <Marker 
                 key={store.code} 
                 position={[store.lat!, store.lon!]}
-                icon={storeIcon}
+                icon={storeIconBig}
+                zIndexOffset={9999}
               >
                 <Popup>
                   <div style={{ textAlign: 'center', minWidth: '120px' }}>
@@ -266,7 +280,7 @@ export default function ZoneChalandiseSimple() {
           position: 'fixed',
           top: '100px', // Baissé pour ne pas chevaucher le titre
           left: '280px', // Décalé pour ne pas chevaucher le menu
-          zIndex: 450, // En dessous des popups Leaflet (500+) mais au-dessus de la carte
+          zIndex: 9999, // Au-dessus de tout sauf interactions map
           minWidth: panelOpen ? '340px' : 'auto',
           backgroundColor: 'rgba(17, 24, 39, 0.85)', // Dark
           backdropFilter: 'blur(20px) saturate(180%)',
