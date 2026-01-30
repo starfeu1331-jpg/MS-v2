@@ -242,13 +242,13 @@ export default function ZoneChalandise() {
       )}
 
       {/* Map */}
-      <div className="flex-1 relative overflow-hidden">
-        {catchmentData && (
+      <div className="flex-1 relative overflow-hidden" style={{ minHeight: '600px' }}>
+        {catchmentData && catchmentData.data && catchmentData.data.length > 0 ? (
           <>
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
-              style={{ width: '100%', height: '100%' }}
+              style={{ width: '100%', height: '100%', minHeight: '600px' }}
               key={`${selectedStore}-${viewMode}`}
             >
               <TileLayer
@@ -310,8 +310,10 @@ export default function ZoneChalandise() {
                 );
               })}
             </MapContainer>
-          </>
-        )}
+          </>        ) : (
+          <div className="flex items-center justify-center h-full text-zinc-400">
+            <p>Sélectionnez un magasin pour voir sa zone de chalandise</p>
+          </div>        )}
       </div>
 
       {/* Data Table (Bottom) */}
