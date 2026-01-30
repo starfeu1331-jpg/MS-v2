@@ -48,9 +48,8 @@ export default function ZoneChalandise() {
         const data = await response.json();
         if (data && data.stores) {
           setStores(data.stores);
-          if (data.stores.length > 0) {
-            setSelectedStore(data.stores[0].code);
-          }
+          // Par défaut, vue globale
+          setSelectedStore('ALL');
         }
       } catch (err) {
         console.error('Erreur récupération magasins:', err);
@@ -68,15 +67,43 @@ export default function ZoneChalandise() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/stores?action=catchment&storeCode=${selectedStore}`);
-        const data = await response.json();
-        setCatchmentData(data);
+        // Si "ALL", créer une vue globale de tous les magasins
+        if (selectedStore === 'ALL') {
+          const globalData = {
+            storeCode: 'ALL',
+            storeName: 'Tous les magasins',
+            storeCity: '',
+            storeCP: '',
+            data: stores.map(store => ({
+              cp: store.cp || '75001',
+              ville: store.nom,
+              nbClients: 0,
+              totalCA: 0,
+              nbTransactions: 0,
+              intensiteCA: 0.5,
+              intensiteClients: 0.5,
+            })),
+            summary: {
+              totalClients: 0,
+              totalCA: 0,
+              uniquePostalCodes: stores.length,
+              nbTransactions: 0,
+            },
+          };
+          setCatchmentData(globalData);
+          setMapCenter([46.5, 2.5]); // Centre de la France
+          setMapZoom(6);
+        } else {
+          const response = await fetch(`/api/stores?action=catchment&storeCode=${selectedStore}`);
+          const data = await response.json();
+          setCatchmentData(data);
 
-        // Centrer la carte sur le magasin
-        if (data.storeCP) {
-          const coords = getPostcodeCoords(data.storeCP);
-          setMapCenter([coords[0], coords[1]]);
-          setMapZoom(8);
+          // Centrer la carte sur le magasin
+          if (data.storeCP) {
+            const coords = getPostcodeCoords(data.storeCP);
+            setMapCenter([coords[0], coords[1]]);
+            setMapZoom(8);
+          }
         }
       } catch (err) {
         console.error('Erreur:', err);
@@ -122,6 +149,7 @@ export default function ZoneChalandise() {
             onChange={(e) => setSelectedStore(e.target.value)}
             className="flex-1 px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white font-medium hover:bg-zinc-600 transition-colors"
           >
+            <option value="ALL">🗺️ Tous les magasins (Vue France)</option>
             {stores.map((store) => (
               <option key={store.code} value={store.code}>
                 {store.nom} ({store.code})
@@ -157,32 +185,32 @@ export default function ZoneChalandise() {
         </div>
 
         {/* Stats Summary */}
-        {catchmentData && (
+        {catchmentData && catchmentData.summary && (
           <div className="grid grid-cols-4 gap-3">
             <div className="bg-zinc-700 p-3 rounded-lg">
               <p className="text-xs text-zinc-400 uppercase tracking-wider">Total CA</p>
               <p className="text-lg font-bold text-green-400">
                 {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
-                  catchmentData.summary.totalCA
+                  catchmentData.summary.totalCA || 0
                 )}
               </p>
             </div>
             <div className="bg-zinc-700 p-3 rounded-lg">
               <p className="text-xs text-zinc-400 uppercase tracking-wider">Total Clients</p>
               <p className="text-lg font-bold text-blue-400">
-                {catchmentData.summary.totalClients.toLocaleString('fr-FR')}
+                {(catchmentData.summary.totalClients || 0).toLocaleString('fr-FR')}
               </p>
             </div>
             <div className="bg-zinc-700 p-3 rounded-lg">
               <p className="text-xs text-zinc-400 uppercase tracking-wider">Codes Postaux</p>
               <p className="text-lg font-bold text-purple-400">
-                {catchmentData.summary.uniquePostalCodes}
+                {catchmentData.summary.uniquePostalCodes || 0}
               </p>
             </div>
             <div className="bg-zinc-700 p-3 rounded-lg">
               <p className="text-xs text-zinc-400 uppercase tracking-wider">Transactions</p>
               <p className="text-lg font-bold text-orange-400">
-                {catchmentData.summary.nbTransactions.toLocaleString('fr-FR')}
+                {(catchmentData.summary.nbTransactions || 0).toLocaleString('fr-FR')}
               </p>
             </div>
           </div>
