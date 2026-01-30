@@ -19,11 +19,64 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // Route: /api/stores?action=catchment&storeCode=XXX
+  // Route: /api/stores?action=catchment&storeCode=XXX (VERSION ULTRA-SIMPLE)
   const { action, storeCode } = req.query;
 
   if (action === 'catchment') {
-    return handleCatchmentArea(req, res, storeCode);
+    if (!storeCode) {
+      return res.status(400).json({ error: 'storeCode requis' });
+    }
+
+    try {
+      console.log(`🔍 [SIMPLE] Récupération zones pour magasin ${storeCode}...`);
+
+      // Requête ultra-simple: tous les CP avec leur CA pour ce magasin
+      const zones = await prisma.$queryRaw`
+        SELECT 
+          c.cp::text as cp,
+          STRING_AGG(DISTINCT c.ville, ', ') as ville,
+          COUNT(DISTINCT t.carte)::int as nb_clients,
+          SUM(t.ca)::numeric as total_ca,
+          COUNT(*)::int as nb_transactions
+        FROM transactions t
+        INNER JOIN clients c ON t.carte = c.carte
+        WHERE t.depot = ${storeCode}
+          AND t.ca > 0
+          AND c.cp IS NOT NULL 
+          AND c.cp != ''
+        GROUP BY c.cp
+        HAVING COUNT(*) >= 5
+        ORDER BY SUM(t.ca) DESC
+      `;
+
+      const formattedZones = zones.map(row => ({
+        cp: row.cp,
+        ville: row.ville,
+        nbClients: row.nb_clients,
+        totalCA: parseFloat(row.total_ca),
+        nbTransactions: row.nb_transactions
+      }));
+
+      console.log(`✅ ${formattedZones.length} zones trouvées pour ${storeCode}`);
+      if (formattedZones.length > 0) {
+        console.log(`  Top 3: ${formattedZones.slice(0, 3).map(z => `${z.cp} (${z.ville}): ${z.nbClients} clients`).join(' | ')}`);
+      }
+
+      return res.status(200).json({
+        success: true,
+        storeCode,
+        data: formattedZones
+      });
+
+    } catch (error) {
+      console.error(`❌ Erreur catchment pour ${storeCode}:`, error);
+      return res.status(500).json({ 
+        error: 'Erreur serveur',
+        details: error.message 
+      });
+    } finally {
+      await prisma.$disconnect();
+    }
   }
 
   // Route: /api/stores?action=list (récupérer la liste des magasins)
@@ -60,7 +113,8 @@ export default async function handler(req, res) {
           COUNT(*)::int as nb_transactions
         FROM transactions t
         INNER JOIN clients c ON t.carte = c.carte
-        WHERE c.cp IS NOT NULL 
+        WHERE t.ca > 0 
+          AND c.cp IS NOT NULL 
           AND c.cp != '' 
           AND t.carte != '0'
         GROUP BY t.depot, c.cp
