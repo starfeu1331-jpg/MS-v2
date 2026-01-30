@@ -94,21 +94,14 @@ export default async function handler(req, res) {
         });
       }
       
-      // Dédupliquer: garder seulement le magasin avec le + gros CA par CP
-      const cpMap = {};
-      allStoresData.forEach(zone => {
-        if (!cpMap[zone.cp] || cpMap[zone.cp].totalCA < zone.totalCA) {
-          cpMap[zone.cp] = zone;
-        }
-      });
-      
-      const deduplicatedData = Object.values(cpMap);
+      // NE PAS dédupliquer ici - on envoie TOUTES les zones de TOUS les magasins
+      // La déduplication se fera dans le frontend si nécessaire (affichage "tous les magasins")
       
       return res.json({
         stores,
-        zones: deduplicatedData,
+        zones: allStoresData, // TOUTES les zones, pas dédupliquées
         totalStores: stores.length,
-        totalZones: deduplicatedData.length,
+        totalZones: allStoresData.length,
       });
     } catch (error) {
       console.error('Erreur allStores:', error);

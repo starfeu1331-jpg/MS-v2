@@ -54,17 +54,30 @@ export default function ZoneChalandiseV2() {
       setLoadingProgress(0);
       
       // Filtrer selon le magasin sélectionné
-      const zonesToDisplay = selectedStore === 'ALL' 
-        ? allZones 
-        : allZones.filter(z => {
-            const zoneStore = String(z.storeCode || '').trim();
-            const selected = String(selectedStore || '').trim();
-            return zoneStore === selected;
-          });
+      let zonesToDisplay = [];
+      
+      if (selectedStore === 'ALL') {
+        // Mode "tous les magasins" : dédupliquer par CP (garder le magasin avec le + gros CA)
+        const cpMap: Record<string, any> = {};
+        allZones.forEach(zone => {
+          if (!cpMap[zone.cp] || cpMap[zone.cp].totalCA < zone.totalCA) {
+            cpMap[zone.cp] = zone;
+          }
+        });
+        zonesToDisplay = Object.values(cpMap);
+        console.log('📍 Mode TOUS : déduplication de', allZones.length, 'zones vers', zonesToDisplay.length, 'zones uniques');
+      } else {
+        // Mode magasin spécifique : garder TOUTES les zones de CE magasin (pas de déduplication)
+        zonesToDisplay = allZones.filter(z => {
+          const zoneStore = String(z.storeCode || '').trim();
+          const selected = String(selectedStore || '').trim();
+          return zoneStore === selected;
+        });
+        console.log('📍 Mode magasin', selectedStore, ':', zonesToDisplay.length, 'zones trouvées');
+        console.log('   Magasins uniques dans les zones filtrées:', [...new Set(zonesToDisplay.map(z => z.storeCode))]);
+      }
       
       console.log('✅ Zones à traiter:', zonesToDisplay.length);
-      console.log('   Magasin sélectionné:', selectedStore);
-      console.log('   Magasins dans les zones:', [...new Set(zonesToDisplay.map(z => z.storeCode))]);
       
       // Charger le fichier GeoJSON complet des codes postaux
       setLoadingProgress(5);
@@ -87,28 +100,9 @@ export default function ZoneChalandiseV2() {
         console.error('❌ Erreur chargement codes postaux:', err);
       }
       
-      // RECALCULER LES INTENSITÉS PAR MAGASIN (car après déduplication elles sont faussées)
-      const storeMaxValues: Record<string, { maxCA: number; maxClients: number }> = {};
-      
-      // Calculer les max par magasin
-      zonesToDisplay.forEach(zone => {
-        const key = zone.storeCode;
-        if (!storeMaxValues[key]) {
-          storeMaxValues[key] = { maxCA: 0, maxClients: 0 };
-        }
-        storeMaxValues[key].maxCA = Math.max(storeMaxValues[key].maxCA, zone.totalCA || 0);
-        storeMaxValues[key].maxClients = Math.max(storeMaxValues[key].maxClients, zone.nbClients || 0);
-      });
-      
-      // Recalculer les intensités relatives au magasin
-      zonesToDisplay.forEach(zone => {
-        const maxCA = storeMaxValues[zone.storeCode]?.maxCA || 1;
-        const maxClients = storeMaxValues[zone.storeCode]?.maxClients || 1;
-        zone.intensiteCA = zone.totalCA / maxCA;
-        zone.intensiteClients = zone.nbClients / maxClients;
-      });
-      
-      console.log('📊 Intensités recalculées par magasin');
+      // Les intensités sont déjà correctes depuis l'API (calculées par magasin)
+      // Pas besoin de recalculer ici
+      console.log('📊 Utilisation des intensités depuis l\'API (déjà calculées par magasin)');
       
       // ÉTAPE 1: Grouper par magasin ET tranche d'intensité (zone de couleur)
       const colorZonesMap: Record<string, any[]> = {};
