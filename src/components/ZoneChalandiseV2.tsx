@@ -383,7 +383,7 @@ export default function ZoneChalandiseV2() {
                     type: 'Feature',
                     geometry: contour.geometry,
                     properties: { storeCode: contour.storeCode },
-                  }}
+                  } as any}
                   style={{
                     color: borderColor,
                     fillColor: 'transparent',
