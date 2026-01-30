@@ -30,19 +30,25 @@ export default async function handler(req, res) {
     try {
       console.log(`🔍 [SIMPLE] Récupération zones pour magasin ${storeCode}...`);
 
-      // D'abord vérifier combien de transactions ce magasin a
+      // Essayer avec et sans le préfixe "M"
+      const storeCodeWithM = storeCode.startsWith('M') ? storeCode : `M${storeCode}`;
+      const storeCodeWithoutM = storeCode.replace(/^M/, '');
+      
+      console.log(`  🔍 Test codes: "${storeCode}", "${storeCodeWithM}", "${storeCodeWithoutM}"`);
+
+      // D'abord vérifier combien de transactions ce magasin a (tester les 3 formats)
       const totalTx = await prisma.$queryRaw`
         SELECT 
           COUNT(*)::int as nb_tx,
           COUNT(DISTINCT t.carte)::int as nb_clients,
           SUM(t.ca)::numeric as ca_total
         FROM transactions t
-        WHERE t.depot = ${storeCode}
+        WHERE (t.depot = ${storeCode} OR t.depot = ${storeCodeWithM} OR t.depot = ${storeCodeWithoutM})
           AND t.ca > 0
       `;
-      console.log(`  📊 Magasin ${storeCode}: ${totalTx[0].nb_tx} transactions, ${totalTx[0].nb_clients} clients, ${parseFloat(totalTx[0].ca_total).toFixed(0)}€ CA`);
+      console.log(`  📊 Magasin ${storeCode}: ${totalTx[0].nb_tx} transactions, ${totalTx[0].nb_clients} clients, ${parseFloat(totalTx[0].ca_total || 0).toFixed(0)}€ CA`);
 
-      // Requête ultra-simple: tous les CP avec leur CA pour ce magasin
+      // Requête ultra-simple: tous les CP avec leur CA pour ce magasin (tester les 3 formats)
       const zones = await prisma.$queryRaw`
         SELECT 
           c.cp::text as cp,
@@ -52,7 +58,7 @@ export default async function handler(req, res) {
           COUNT(*)::int as nb_transactions
         FROM transactions t
         INNER JOIN clients c ON t.carte = c.carte
-        WHERE t.depot = ${storeCode}
+        WHERE (t.depot = ${storeCode} OR t.depot = ${storeCodeWithM} OR t.depot = ${storeCodeWithoutM})
           AND t.ca > 0
           AND c.cp IS NOT NULL 
           AND c.cp != ''
