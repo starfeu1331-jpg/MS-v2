@@ -94,7 +94,15 @@ export default function ZoneChalandiseSimple() {
         });
         
         setStores(enrichedStores);
-        if (enrichedStores.length > 0) {
+        
+        // Sélectionner le premier VRAI magasin (pas Inconnu ni Ventes Web)
+        const firstRealStore = enrichedStores.find((s: Store) => 
+          s.code !== '0' && !s.nom.toLowerCase().includes('web') && !s.nom.toLowerCase().includes('inconnu')
+        );
+        
+        if (firstRealStore) {
+          setSelectedStore(firstRealStore.code);
+        } else if (enrichedStores.length > 0) {
           setSelectedStore(enrichedStores[0].code);
         }
       })

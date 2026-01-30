@@ -30,6 +30,18 @@ export default async function handler(req, res) {
     try {
       console.log(`🔍 [SIMPLE] Récupération zones pour magasin ${storeCode}...`);
 
+      // D'abord vérifier combien de transactions ce magasin a
+      const totalTx = await prisma.$queryRaw`
+        SELECT 
+          COUNT(*)::int as nb_tx,
+          COUNT(DISTINCT t.carte)::int as nb_clients,
+          SUM(t.ca)::numeric as ca_total
+        FROM transactions t
+        WHERE t.depot = ${storeCode}
+          AND t.ca > 0
+      `;
+      console.log(`  📊 Magasin ${storeCode}: ${totalTx[0].nb_tx} transactions, ${totalTx[0].nb_clients} clients, ${parseFloat(totalTx[0].ca_total).toFixed(0)}€ CA`);
+
       // Requête ultra-simple: tous les CP avec leur CA pour ce magasin
       const zones = await prisma.$queryRaw`
         SELECT 
