@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Rectangle, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import chroma from 'chroma-js';
@@ -67,30 +67,11 @@ export default function ZoneChalandise() {
       setLoading(true);
       setError(null);
       try {
-        // Si "ALL", créer une vue globale de tous les magasins
+        // Si "ALL", charger les vraies données agrégées
         if (selectedStore === 'ALL') {
-          const globalData = {
-            storeCode: 'ALL',
-            storeName: 'Tous les magasins',
-            storeCity: '',
-            storeCP: '',
-            data: stores.map(store => ({
-              cp: store.cp || '75001',
-              ville: store.nom,
-              nbClients: 0,
-              totalCA: 0,
-              nbTransactions: 0,
-              intensiteCA: 0.5,
-              intensiteClients: 0.5,
-            })),
-            summary: {
-              totalClients: 0,
-              totalCA: 0,
-              uniquePostalCodes: stores.length,
-              nbTransactions: 0,
-            },
-          };
-          setCatchmentData(globalData);
+          const response = await fetch(`/api/stores?action=all`);
+          const data = await response.json();
+          setCatchmentData(data);
           setMapCenter([46.5, 2.5]); // Centre de la France
           setMapZoom(6);
         } else {
@@ -261,17 +242,23 @@ export default function ZoneChalandise() {
                 const coords = getPostcodeCoords(item.cp);
                 const intensity = getIntensity(item);
                 const color = getColor(intensity);
-                const radius = Math.max(5, Math.min(50, 10 + intensity * 40));
+                
+                // Créer un rectangle pour représenter une zone de code postal
+                // Taille basée sur l'intensité (entre 0.02° et 0.15°)
+                const size = 0.02 + (intensity * 0.13);
+                const bounds: [[number, number], [number, number]] = [
+                  [coords[0] - size, coords[1] - size],
+                  [coords[0] + size, coords[1] + size]
+                ];
 
                 return (
-                  <CircleMarker
+                  <Rectangle
                     key={idx}
-                    center={L.latLng(coords[0], coords[1])}
-                      radius={radius as any}
+                    bounds={bounds}
                     pathOptions={{
                       color: color,
                       fillColor: color,
-                      fillOpacity: 0.6,
+                      fillOpacity: 0.5,
                       weight: 2,
                     } as any}
                   >
@@ -306,7 +293,7 @@ export default function ZoneChalandise() {
                         </div>
                       </div>
                     </Popup>
-                  </CircleMarker>
+                  </Rectangle>
                 );
               })}
             </MapContainer>

@@ -41,6 +41,62 @@ export default async function handler(req, res) {
     }
   }
 
+  // Route: /api/stores?action=all (vue globale de tous les magasins)
+  if (action === 'all') {
+    try {
+      // Agréger toutes les données par code postal client
+      const allData = await prisma.$queryRawUnsafe(`
+        SELECT 
+          c.cp::text,
+          c.ville::text,
+          COUNT(DISTINCT t.carte)::int as nb_clients,
+          SUM(t.ca)::numeric as total_ca,
+          COUNT(*)::int as nb_transactions
+        FROM transactions t
+        INNER JOIN clients c ON t.carte = c.carte
+        WHERE t.ca > 0 AND c.cp IS NOT NULL AND c.cp != '' AND t.carte != '0'
+        GROUP BY c.cp, c.ville
+        HAVING SUM(t.ca) > 0
+        ORDER BY SUM(t.ca) DESC
+      `);
+
+      // Calculer l'intensité
+      const maxCA = Math.max(...allData.map(d => Number(d.total_ca)));
+      const maxClients = Math.max(...allData.map(d => Number(d.nb_clients)));
+
+      const data = allData.map(row => ({
+        cp: row.cp,
+        ville: row.ville || 'Inconnue',
+        nbClients: Number(row.nb_clients),
+        totalCA: Number(row.total_ca),
+        nbTransactions: Number(row.nb_transactions),
+        intensiteCA: maxCA > 0 ? Number(row.total_ca) / maxCA : 0,
+        intensiteClients: maxClients > 0 ? Number(row.nb_clients) / maxClients : 0,
+      }));
+
+      const summary = {
+        totalClients: data.reduce((sum, d) => sum + d.nbClients, 0),
+        totalCA: data.reduce((sum, d) => sum + d.totalCA, 0),
+        uniquePostalCodes: data.length,
+        nbTransactions: data.reduce((sum, d) => sum + d.nbTransactions, 0),
+      };
+
+      return res.json({
+        storeCode: 'ALL',
+        storeName: 'Tous les magasins',
+        storeCity: '',
+        storeCP: '',
+        data,
+        summary,
+      });
+    } catch (error) {
+      console.error('Erreur vue globale:', error);
+      return res.status(500).json({ error: 'Erreur serveur' });
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
   // Route par défaut: liste magasins
   try {
     console.log('🔄 API Stores: Calcul en cours...')
