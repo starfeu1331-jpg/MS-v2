@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import chroma from 'chroma-js';
+import * as turf from '@turf/turf';
 import { getPostcodeCoords } from '../utils/postcodeCoordsMap';
 import { getStoreCoords } from '../utils/storesCoords';
 import { AlertCircle, Loader, BarChart3, Users } from 'lucide-react';
@@ -12,6 +13,7 @@ export default function ZoneChalandiseV2() {
   const [selectedStore, setSelectedStore] = useState<string>('ALL');
   const [allZones, setAllZones] = useState<any[]>([]);
   const [geoJsonData, setGeoJsonData] = useState<any[]>([]);
+  const [storeContours, setStoreContours] = useState<any[]>([]); // Contours globaux par magasin
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'ca' | 'clients'>('ca');
@@ -89,6 +91,42 @@ export default function ZoneChalandiseV2() {
       }
       
       setGeoJsonData(geoJsonArray);
+      
+      // Créer contours globaux par magasin
+      const contoursMap: Record<string, any[]> = {};
+      geoJsonArray.forEach((feature: any) => {
+        const storeCode = feature.properties.storeCode;
+        if (!contoursMap[storeCode]) {
+          contoursMap[storeCode] = [];
+        }
+        contoursMap[storeCode].push(feature);
+      });
+      
+      const contours = [];
+      for (const [storeCode, features] of Object.entries(contoursMap)) {
+        try {
+          // Union de tous les polygones d'un magasin
+          let combined = features[0];
+          for (let i = 1; i < features.length; i++) {
+            try {
+              combined = turf.union(turf.featureCollection([combined, features[i]]));
+            } catch (e) {
+              // Ignore les erreurs d'union
+            }
+          }
+          
+          if (combined) {
+            contours.push({
+              storeCode,
+              geometry: combined.geometry,
+            });
+          }
+        } catch (err) {
+          console.error(`Erreur contour pour ${storeCode}:`, err);
+        }
+      }
+      
+      setStoreContours(contours);
     };
 
     loadGeoJson();
@@ -106,15 +144,33 @@ export default function ZoneChalandiseV2() {
     return colorScale(intensity).hex();
   };
 
-  // Couleur de bordure unique par magasin
+  // Couleur de bordure unique par magasin (TOUTE la zone du magasin = 1 couleur)
   const storeBorderColors: Record<string, string> = {
-    '0': '#64748b', '12': '#ef4444', '13': '#f97316', '14': '#f59e0b', 
-    '16': '#eab308', '17': '#84cc16', '19': '#22c55e', '22': '#10b981', 
-    '23': '#14b8a6', '24': '#06b6d4', '25': '#0ea5e9', '26': '#3b82f6', 
-    '27': '#6366f1', '28': '#8b5cf6', '29': '#a855f7', '31': '#c026d3', 
-    '32': '#d946ef', '33': '#ec4899', '34': '#f43f5e', '35': '#fb7185', 
-    '36': '#f472b6', '37': '#e879f9', '38': '#c084fc', '39': '#a78bfa', 
-    '41': '#818cf8',
+    '0': '#64748b',   // Gris
+    '12': '#ff0000',  // Rouge vif
+    '13': '#ff8800',  // Orange
+    '14': '#ffdd00',  // Jaune
+    '16': '#88ff00',  // Vert clair
+    '17': '#00ff00',  // Vert vif
+    '19': '#00ff88',  // Vert cyan
+    '22': '#00ffff',  // Cyan
+    '23': '#0088ff',  // Bleu clair
+    '24': '#0000ff',  // Bleu vif
+    '25': '#8800ff',  // Violet
+    '26': '#ff00ff',  // Magenta
+    '27': '#ff0088',  // Rose vif
+    '28': '#cc0066',  // Rose foncé
+    '29': '#990033',  // Bordeaux
+    '31': '#663300',  // Marron
+    '32': '#ff6600',  // Orange foncé
+    '33': '#ccff00',  // Jaune-vert
+    '34': '#00cc88',  // Turquoise
+    '35': '#0066cc',  // Bleu marine
+    '36': '#6600cc',  // Violet foncé
+    '37': '#cc0099',  // Fuchsia
+    '38': '#cc6600',  // Orange brûlé
+    '39': '#99cc00',  // Vert olive
+    '41': '#00cccc',  // Cyan foncé
   };
 
   const getStoreBorderColor = (storeCode: string) => {
@@ -275,22 +331,21 @@ export default function ZoneChalandiseV2() {
               );
             })}
 
-            {/* Polygones GeoJSON */}
+            {/* Polygones GeoJSON des CP (sans bordure) */}
             {geoJsonData && geoJsonData.length > 0 && geoJsonData.map((feature, idx) => {
               const intensity = feature.properties.intensity || 0;
               const color = getColor(intensity);
-              const borderColor = getStoreBorderColor(feature.properties.storeCode);
               
               return (
                 <GeoJSON
                   key={`geojson-${idx}`}
                   data={feature}
                   style={{
-                    color: borderColor,
+                    color: '#333',
                     fillColor: color,
                     fillOpacity: 0.6,
-                    weight: 1.5,
-                    opacity: 1,
+                    weight: 0.5,
+                    opacity: 0.3,
                   }}
                   onEachFeature={(feature, layer) => {
                     const props = feature.properties;
@@ -312,6 +367,30 @@ export default function ZoneChalandiseV2() {
                         </div>
                       </div>
                     `);
+                  }}
+                />
+              );
+            })}
+            
+            {/* Contours globaux par magasin (bordures colorées épaisses) */}
+            {storeContours && storeContours.length > 0 && storeContours.map((contour, idx) => {
+              const borderColor = getStoreBorderColor(contour.storeCode);
+              
+              return (
+                <GeoJSON
+                  key={`contour-${idx}`}
+                  data={{
+                    type: 'Feature',
+                    geometry: contour.geometry,
+                    properties: { storeCode: contour.storeCode },
+                  }}
+                  style={{
+                    color: borderColor,
+                    fillColor: 'transparent',
+                    fillOpacity: 0,
+                    weight: 3,
+                    opacity: 1,
+                  }}
                   }}
                 />
               );
