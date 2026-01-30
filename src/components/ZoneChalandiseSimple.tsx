@@ -165,6 +165,14 @@ export default function ZoneChalandiseSimple() {
   const loadGeometries = async (zonesToLoad: Zone[]) => {
     console.log(`🗺️ Chargement géométries pour ${zonesToLoad.length} zones...`);
     
+    // Si pas de zones, arrêter ici
+    if (zonesToLoad.length === 0) {
+      console.log('ℹ️ Aucune zone à charger (magasin sans données ou < 10 clients par CP)');
+      setGeoData([]);
+      setLoading(false);
+      return;
+    }
+    
     const geoFeatures: any[] = [];
     
     // Trier les zones par CA pour calculer les déciles (10 tranches de 10%)
