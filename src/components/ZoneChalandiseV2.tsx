@@ -60,6 +60,29 @@ export default function ZoneChalandiseV2() {
       
       console.log('✅ Zones à traiter:', zonesToDisplay.length);
       
+      // RECALCULER LES INTENSITÉS PAR MAGASIN (car après déduplication elles sont faussées)
+      const storeMaxValues: Record<string, { maxCA: number; maxClients: number }> = {};
+      
+      // Calculer les max par magasin
+      zonesToDisplay.forEach(zone => {
+        const key = zone.storeCode;
+        if (!storeMaxValues[key]) {
+          storeMaxValues[key] = { maxCA: 0, maxClients: 0 };
+        }
+        storeMaxValues[key].maxCA = Math.max(storeMaxValues[key].maxCA, zone.totalCA || 0);
+        storeMaxValues[key].maxClients = Math.max(storeMaxValues[key].maxClients, zone.nbClients || 0);
+      });
+      
+      // Recalculer les intensités relatives au magasin
+      zonesToDisplay.forEach(zone => {
+        const maxCA = storeMaxValues[zone.storeCode]?.maxCA || 1;
+        const maxClients = storeMaxValues[zone.storeCode]?.maxClients || 1;
+        zone.intensiteCA = zone.totalCA / maxCA;
+        zone.intensiteClients = zone.nbClients / maxClients;
+      });
+      
+      console.log('📊 Intensités recalculées par magasin');
+      
       // ÉTAPE 1: Grouper par magasin ET tranche d'intensité (zone de couleur)
       const colorZonesMap: Record<string, any[]> = {};
       
