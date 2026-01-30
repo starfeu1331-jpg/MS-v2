@@ -41,31 +41,31 @@ export default function ZoneChalandiseSimple() {
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
 
-  // Coordonnées EXACTES des magasins (géocodées depuis vos adresses précises)
+  // Coordonnées EXACTES des 23 magasins (géocodées depuis vos adresses précises)
   const storeCoordinates: Record<string, { lat: number; lon: number }> = {
-    '12': { lat: 44.132500, lon: 4.085100 }, // ALES - 10 Lotissement de Larnac Rocade Est
-    '13': { lat: 43.334800, lon: 3.232600 }, // BEZIERS - 1 Rue Zenobie Gramme Zone de la Giniesse
-    '14': { lat: 43.676900, lon: 4.641300 }, // ARLES - Quartier du Fourchon ZAC Aurelienne
+    '12': { lat: 44.100572, lon: 4.106784 }, // ALES - Lotissement Plaine de Larnac
+    '13': { lat: 43.358272, lon: 3.254277 }, // BEZIERS - La Giniesse
+    '14': { lat: 43.664382, lon: 4.640042 }, // ARLES - Zone commerciale L'Aurélienne
     '16': { lat: 43.572258, lon: 3.847119 }, // SAINT JEAN DE VEDAS - ZAC Deves de la Condamine
-    '17': { lat: 44.940179, lon: 4.863465 }, // SAINT PERAY - 7 rue du Levant Zone Pôle 2000
-    '19': { lat: 45.051845, lon: 5.081296 }, // ROMANS - 7 avenue des Allobroges
-    '22': { lat: 45.702634, lon: 5.000077 }, // ST BONNET DE MURE - 231 Avenue Charles de Gaulle
-    '23': { lat: 46.222808, lon: 5.203020 }, // VIRIAT - 905 Rue des Vareys Parc de la Chambière
-    '24': { lat: 45.943104, lon: 6.074168 }, // SILLINGY - 39 Route des Pres Rollier
-    '25': { lat: 43.215100, lon: 2.351500 }, // CARCASSONNE - 415 av Paul Henri Mouton ZA La Ferraudiere
-    '26': { lat: 45.218836, lon: 5.678330 }, // SAINT EGREVE - 2 Rue des Glairaux
-    '27': { lat: 45.984220, lon: 4.742440 }, // VILLEFRANCHE - 1605 Route de Frans
-    '28': { lat: 45.184090, lon: 5.774699 }, // ST MARTIN D'HERES - 25 Rue du Champ Roman
-    '29': { lat: 43.677654, lon: 1.408238 }, // FENOUILLET - 54 Route de Paris
-    '31': { lat: 44.558000, lon: 4.750200 }, // MONTELIMAR - 22 Avenue du Meyrol
+    '17': { lat: 44.940179, lon: 4.863465 }, // SAINT PERAY - Zone Pôle 2000
+    '19': { lat: 45.051845, lon: 5.081296 }, // ROMANS - Avenue des Allobroges
+    '22': { lat: 45.702634, lon: 5.000077 }, // ST BONNET DE MURE - Avenue Charles de Gaulle
+    '23': { lat: 46.222808, lon: 5.203020 }, // VIRIAT - Parc de la Chambière
+    '24': { lat: 45.943104, lon: 6.074168 }, // SILLINGY - Route des Pres Rollier
+    '25': { lat: 43.211340, lon: 2.299221 }, // CARCASSONNE - ZA La Ferraudière
+    '26': { lat: 45.218836, lon: 5.678330 }, // SAINT EGREVE - Rue des Glairaux
+    '27': { lat: 45.984220, lon: 4.742440 }, // VILLEFRANCHE - Route de Frans
+    '28': { lat: 45.184090, lon: 5.774699 }, // ST MARTIN D'HERES - Rue du Champ Roman
+    '29': { lat: 43.677654, lon: 1.408238 }, // FENOUILLET - Route de Paris
+    '31': { lat: 44.575253, lon: 4.747757 }, // MONTELIMAR - Zone industrielle le Meyrol
     '32': { lat: 45.777465, lon: 3.196072 }, // LEMPDES - Rue Pontel
-    '33': { lat: 43.089200, lon: 0.671300 }, // ESTANCARBON - Avenue du Pic du Gar ZAC des Landes
-    '34': { lat: 44.615308, lon: 4.401042 }, // AUBENAS - 2 Avenue de Bellande
+    '33': { lat: 43.115655, lon: 0.763458 }, // ESTANCARBON - ZAC des Landes
+    '34': { lat: 44.615308, lon: 4.401042 }, // AUBENAS - Avenue de Bellande
     '35': { lat: 43.816678, lon: 4.350875 }, // NIMES - Rue des Lauriers Ville Active
-    '36': { lat: 45.616262, lon: 5.886227 }, // VOGLANS - 524 rue de la Françon
-    '37': { lat: 43.984397, lon: 4.886017 }, // SORGUES - 49 Avenue François Mauriac Zone cciale Avignon Nord
-    '38': { lat: 44.393611, lon: 2.601307 }, // ONET LE CHATEAU - Avenue Joel Pilon ZAC de L'Etreniol
-    '39': { lat: 43.185500, lon: 3.008900 }  // NARBONNE - Rue Blaise Pascal ZAC de la Coupe
+    '36': { lat: 45.616262, lon: 5.886227 }, // VOGLANS - Rue de la Françon
+    '37': { lat: 43.984397, lon: 4.886017 }, // SORGUES - Zone commerciale Avignon Nord
+    '38': { lat: 44.393611, lon: 2.601307 }, // ONET LE CHATEAU - ZAC de L'Etreniol
+    '39': { lat: 43.157188, lon: 2.981007 }  // NARBONNE - Rue Blaise Pascal
   };
 
   // Charger la liste des magasins
