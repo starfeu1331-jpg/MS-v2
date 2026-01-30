@@ -47,29 +47,43 @@ export default async function handler(req, res) {
       // Récupérer tous les magasins
       const stores = await prisma.magasin.findMany();
       
-      // Pour chaque magasin, calculer ses zones de chalandise
+      console.log(`🔄 Récupération zones pour ${stores.length} magasins...`);
+      
+      // OPTIMISATION: UNE SEULE requête SQL pour TOUS les magasins
+      const allStoreData = await prisma.$queryRaw`
+        SELECT 
+          t.depot as store_code,
+          c.cp::text,
+          STRING_AGG(DISTINCT c.ville, ', ') as ville,
+          COUNT(DISTINCT t.carte)::int as nb_clients,
+          SUM(t.ca)::numeric as total_ca,
+          COUNT(*)::int as nb_transactions
+        FROM transactions t
+        INNER JOIN clients c ON t.carte = c.carte
+        WHERE t.ca > 0 
+          AND c.cp IS NOT NULL 
+          AND c.cp != '' 
+          AND t.carte != '0'
+        GROUP BY t.depot, c.cp
+        HAVING COUNT(*) >= 10
+        ORDER BY t.depot, SUM(t.ca) DESC
+      `;
+      
+      console.log(`✅ Requête SQL: ${allStoreData.length} lignes récupérées`);
+      
+      // Grouper par magasin
+      const storeDataMap = {};
+      allStoreData.forEach(row => {
+        if (!storeDataMap[row.store_code]) {
+          storeDataMap[row.store_code] = [];
+        }
+        storeDataMap[row.store_code].push(row);
+      });
+      
       const allStoresData = [];
       
       for (const store of stores) {
-        // Données par CP pour ce magasin
-        const storeData = await prisma.$queryRawUnsafe(`
-          SELECT 
-            c.cp::text,
-            STRING_AGG(DISTINCT c.ville, ', ') as ville,
-            COUNT(DISTINCT t.carte)::int as nb_clients,
-            SUM(t.ca)::numeric as total_ca,
-            COUNT(*)::int as nb_transactions
-          FROM transactions t
-          INNER JOIN clients c ON t.carte = c.carte
-          WHERE t.depot = $1
-            AND t.ca > 0 
-            AND c.cp IS NOT NULL 
-            AND c.cp != '' 
-            AND t.carte != '0'
-          GROUP BY c.cp
-          HAVING COUNT(*) >= 10
-          ORDER BY SUM(t.ca) DESC
-        `, store.code);
+        const storeData = storeDataMap[store.code] || [];
         
         if (storeData.length === 0) continue;
         
