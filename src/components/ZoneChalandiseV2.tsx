@@ -297,20 +297,25 @@ export default function ZoneChalandiseV2() {
             </button>
           </div>
 
-          {/* Légende */}
+          {/* Légende 10 couleurs */}
           <div className="text-xs text-zinc-400">
-            <p className="mb-1">Légende:</p>
-            <div className="flex gap-1">
-              {[0, 0.25, 0.5, 0.75, 1].map((intensity) => (
-                <div
-                  key={intensity}
-                  className="w-5 h-5 rounded border border-zinc-600"
-                  style={{ backgroundColor: getColor(intensity) }}
-                  title={`${Math.round(intensity * 100)}%`}
-                />
-              ))}
+            <p className="mb-2 font-medium">Intensité par tranche de 10%:</p>
+            <div className="space-y-1">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((index) => {
+                const intensity = (index + 0.5) / 10; // Milieu de la tranche
+                const minPct = index * 10;
+                const maxPct = (index + 1) * 10;
+                return (
+                  <div key={index} className="flex items-center gap-2">
+                    <div
+                      className="w-8 h-4 rounded border border-zinc-600 flex-shrink-0"
+                      style={{ backgroundColor: getColor(intensity) }}
+                    />
+                    <span className="text-[10px]">{minPct}% - {maxPct}%</span>
+                  </div>
+                );
+              })}
             </div>
-            <p className="mt-1">0% → 100%</p>
           </div>
         </div>
       )}
