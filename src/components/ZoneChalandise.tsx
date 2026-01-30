@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import chroma from 'chroma-js';
@@ -144,14 +144,30 @@ export default function ZoneChalandise() {
   }, [catchmentData, viewMode]);
 
   const getColor = (intensity: number) => {
-    // Créer un gradient: bleu (faible) -> vert -> jaune -> orange -> rouge (fort)
+    // Échelle logarithmique pour mieux différencier les valeurs faibles vs fortes
+    // Transforme l'intensité linéaire (0-1) en échelle log pour plus de contraste
+    const logIntensity = intensity > 0 ? Math.log10(1 + intensity * 9) : 0;
+    
     const colorScale = chroma.scale(['#4B5563', '#2E7D9E', '#FFEB3B', '#FF9800', '#DC3545']).domain([0, 1]);
-    return colorScale(intensity).hex();
+    return colorScale(logIntensity).hex();
   };
 
   const getIntensity = (data: CatchmentData) => {
     return viewMode === 'ca' ? data.intensiteCA : data.intensiteClients;
   };
+
+  // Icône rouge pour le magasin
+  const storeIcon = new L.Icon({
+    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#dc2626" width="32" height="32">
+        <circle cx="12" cy="12" r="8" stroke="white" stroke-width="2"/>
+        <circle cx="12" cy="12" r="4" fill="white"/>
+      </svg>
+    `),
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+  });
 
   if (loading && !catchmentData) {
     return (
@@ -282,6 +298,26 @@ export default function ZoneChalandise() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution="&copy; OpenStreetMap contributors"
               />
+
+              {/* Marqueur du magasin */}
+              {catchmentData && catchmentData.storeCP && selectedStore !== 'ALL' && (
+                <Marker 
+                  position={L.latLng(getPostcodeCoords(catchmentData.storeCP))}
+                  icon={storeIcon}
+                >
+                  <Popup>
+                    <div style={{ fontFamily: 'Inter, sans-serif' }}>
+                      <p style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px' }}>
+                        📍 {catchmentData.storeName}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#666' }}>
+                        {catchmentData.storeCity} ({catchmentData.storeCP})<br/>
+                        Code: {catchmentData.storeCode}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              )}
 
               {/* Afficher les polygones GeoJSON */}
               {geoJsonData.length > 0 && geoJsonData.map((feature, idx) => {
