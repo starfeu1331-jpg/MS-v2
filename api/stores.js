@@ -67,7 +67,7 @@ export default async function handler(req, res) {
             AND c.cp != '' 
             AND t.carte != '0'
           GROUP BY c.cp
-          HAVING COUNT(*) >= 1
+          HAVING COUNT(*) >= 10
           ORDER BY SUM(t.ca) DESC
         `, store.code);
         
@@ -80,6 +80,7 @@ export default async function handler(req, res) {
         
         console.log(`📊 Magasin ${store.code} (${store.nom}):`, {
           nbZones: storeData.length,
+          cpList: storeData.map(r => r.cp).join(', '),
           maxCA: Number(sortedByCA[0].total_ca).toFixed(2),
           minCA: Number(sortedByCA[sortedByCA.length - 1].total_ca).toFixed(2),
           maxClients: Number(sortedByClients[0].nb_clients)
