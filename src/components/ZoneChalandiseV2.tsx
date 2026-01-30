@@ -102,7 +102,9 @@ export default function ZoneChalandiseV2() {
       // ÉTAPE 2: Pour chaque zone de couleur, charger et fusionner les CP
       const colorZones: any[] = [];
       const groups = Object.entries(colorZonesMap);
-      const BATCH_SIZE = 5; // Traiter 5 zones de couleur à la fois
+      const BATCH_SIZE = 3; // Traiter 3 zones de couleur à la fois (plus stable)
+      
+      console.log('📦 Groupes à traiter:', groups.map(([k, zones]) => `${k} (${zones.length} CP)`));
       
       for (let i = 0; i < groups.length; i += BATCH_SIZE) {
         const batch = groups.slice(i, i + BATCH_SIZE);
@@ -111,50 +113,117 @@ export default function ZoneChalandiseV2() {
           const [storeCode, colorIndexStr] = key.split('_');
           const colorIndex = parseInt(colorIndexStr);
           
+          console.log(`🎨 Traitement zone ${key}: ${zones.length} CP, couleur ${colorIndex}`);
+          
           try {
             const features: any[] = [];
+            const failedCP: string[] = [];
             
             // Charger les GeoJSON de tous les CP de cette zone
             for (const zone of zones) {
-              const response = await fetch(
-                `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=contour&format=geojson&geometry=contour`
-              );
-              if (response.ok) {
-                const geojson = await response.json();
-                if (geojson.features && geojson.features.length > 0) {
-                  features.push(geojson.features[0]);
+              try {
+                const response = await fetch(
+                  `https://geo.api.gouv.fr/communes?codePostal=${zone.cp}&fields=contour&format=geojson&geometry=contour`
+                );
+                
+                if (response.ok) {
+                  const geojson = await response.json();
+                  if (geojson.features && geojson.features.length > 0) {
+                    features.push(geojson.features[0]);
+                  } else {
+                    failedCP.push(zone.cp);
+                  }
+                } else {
+                  failedCP.push(zone.cp);
                 }
+              } catch (err) {
+                console.error(`❌ CP ${zone.cp}:`, err);
+                failedCP.push(zone.cp);
               }
               await new Promise(resolve => setTimeout(resolve, 30));
             }
             
+            console.log(`  ✅ ${features.length} géométries chargées, ❌ ${failedCP.length} échecs`);
+            if (failedCP.length > 0) {
+              console.log(`  CP manquants: ${failedCP.join(', ')}`);
+            }
+            
             // Fusionner tous les polygones de cette zone de couleur
             if (features.length > 0) {
-              let combined = features[0];
-              for (let j = 1; j < features.length; j++) {
-                try {
-                  combined = turf.union(turf.featureCollection([combined, features[j]]));
-                } catch (err) {
-                  console.error('Erreur union:', err);
+              // Si peu de features ou zone simple, afficher individuellement
+              if (features.length === 1) {
+                // Zone unique, pas besoin de fusion
+                colorZones.push({
+                  type: 'Feature',
+                  geometry: features[0].geometry,
+                  properties: {
+                    storeCode,
+                    colorIndex,
+                    intensity: (colorIndex + 0.5) / 10,
+                    nbCodes: zones.length,
+                    nbCodesLoaded: features.length,
+                    totalCA: zones.reduce((sum, z) => sum + z.totalCA, 0),
+                    nbClients: zones.reduce((sum, z) => sum + z.nbClients, 0)
+                  }
+                });
+                console.log(`  ✅ Zone simple (1 CP)`);
+              } else if (features.length <= 3) {
+                // Peu de features, ajouter individuellement sans fusion (plus stable)
+                features.forEach((feature, idx) => {
+                  colorZones.push({
+                    type: 'Feature',
+                    geometry: feature.geometry,
+                    properties: {
+                      storeCode,
+                      colorIndex,
+                      intensity: (colorIndex + 0.5) / 10,
+                      nbCodes: 1,
+                      nbCodesLoaded: 1,
+                      totalCA: zones[idx]?.totalCA || 0,
+                      nbClients: zones[idx]?.nbClients || 0
+                    }
+                  });
+                });
+                console.log(`  ✅ ${features.length} zones séparées (pas de fusion)`);
+              } else {
+                // Fusion pour les groupes plus importants
+                let combined = features[0];
+                let unionErrors = 0;
+                
+                for (let j = 1; j < features.length; j++) {
+                  try {
+                    const result = turf.union(turf.featureCollection([combined, features[j]]));
+                    if (result) {
+                      combined = result;
+                    }
+                  } catch (err) {
+                    console.error(`  ⚠️ Erreur union feature ${j}:`, err);
+                    unionErrors++;
+                  }
                 }
+                
+                console.log(`  🔗 Union de ${features.length} features (${unionErrors} erreurs)`);
+                
+                // Ajouter la zone fusionnée avec ses propriétés
+                colorZones.push({
+                  type: 'Feature',
+                  geometry: combined.geometry,
+                  properties: {
+                    storeCode,
+                    colorIndex,
+                    intensity: (colorIndex + 0.5) / 10,
+                    nbCodes: zones.length,
+                    nbCodesLoaded: features.length,
+                    totalCA: zones.reduce((sum, z) => sum + z.totalCA, 0),
+                    nbClients: zones.reduce((sum, z) => sum + z.nbClients, 0)
+                  }
+                });
               }
-              
-              // Ajouter la zone fusionnée avec ses propriétés
-              colorZones.push({
-                type: 'Feature',
-                geometry: combined.geometry,
-                properties: {
-                  storeCode,
-                  colorIndex,
-                  intensity: (colorIndex + 0.5) / 10, // Milieu de la tranche
-                  nbCodes: zones.length,
-                  totalCA: zones.reduce((sum, z) => sum + z.totalCA, 0),
-                  nbClients: zones.reduce((sum, z) => sum + z.nbClients, 0)
-                }
-              });
+            } else {
+              console.warn(`  ⚠️ Aucune géométrie pour ${key}`);
             }
           } catch (err) {
-            console.error(`Erreur zone ${key}:`, err);
+            console.error(`❌ Erreur zone ${key}:`, err);
           }
         }
         
