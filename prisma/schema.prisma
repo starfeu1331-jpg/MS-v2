@@ -9,6 +9,10 @@ datasource db {
 
 model Client {
   carte          String   @id @map("carte")
+  nom            String?  @map("nom")              // ⭐ NOUVEAU
+  prenom         String?  @map("prenom")           // ⭐ NOUVEAU
+  email          String?  @map("email")            // ⭐ NOUVEAU
+  telephone      String?  @map("telephone")        // ⭐ NOUVEAU
   dateCreation   String?  @map("date_creation")
   statut         String?
   dateValidite   String?  @map("date_validite")
@@ -29,6 +33,9 @@ model Client {
 
 model Produit {
   id                    String   @id
+  nom                   String?  @map("nom")                    // ⭐ NOUVEAU (désignation)
+  referenceInterne      String?  @map("reference_interne")      // ⭐ NOUVEAU
+  produitWeb            String?  @map("produit_web")            // ⭐ NOUVEAU (yes/no)
   famille               String
   sousFamille           String?  @map("sous_famille")
   sousSousFamille       String?  @map("sous_sous_famille")
@@ -60,9 +67,11 @@ model Transaction {
   carte       String
   depot       String
   date        DateTime
+  heure       Int?     @map("heure")         // ⭐ NOUVEAU (heure de la transaction)
   produit     String
   quantite    Float
   prix        Float
+  montantTtc  Float?   @map("montant_ttc")   // ⭐ NOUVEAU (montant TTC ligne)
   ca          Float
   isWeb       Boolean  @map("is_web")
   ville       String?
