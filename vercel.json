@@ -12,9 +12,5 @@
       "maxDuration": 30,
       "includeFiles": "node_modules/.prisma/client/**"
     }
-  },
-  "analytics": false,
-  "speedInsights": {
-    "enabled": false
   }
 }

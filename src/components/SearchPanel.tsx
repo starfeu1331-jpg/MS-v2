@@ -39,6 +39,14 @@ interface ClientResult {
   carte: string
   ville: string
   cp: string
+  nom?: string | null
+  prenom?: string | null
+  email?: string | null
+  telephone?: string | null
+  civilite?: string | null
+  sexe?: string | null
+  date_naissance?: string | null
+  date_creation?: string | null
   transactions: Transaction[]
   totalCA: number
   nbAchats: number
