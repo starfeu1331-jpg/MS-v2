@@ -52,7 +52,25 @@ export default async function handler(req, res) {
         LIMIT 100
       `, `%${query}%`)
     } else if (type === 'client') {
-      // Recherche par carte client
+      // Recherche par carte client - avec toutes les infos client
+      const clientInfo = await prisma.$queryRawUnsafe(`
+        SELECT 
+          carte::text,
+          nom::text,
+          prenom::text,
+          email::text,
+          telephone::text,
+          civilite::text,
+          sexe::text,
+          ville::text,
+          cp::text,
+          date_naissance::text,
+          date_creation::text
+        FROM clients
+        WHERE carte = $1
+        LIMIT 1
+      `, query)
+      
       results = await prisma.$queryRawUnsafe(`
         SELECT 
           t.facture::text,
@@ -64,7 +82,9 @@ export default async function handler(req, res) {
           p.famille::text,
           p.sous_famille::text,
           t.ca::numeric,
-          t.quantite::numeric
+          t.quantite::numeric,
+          t.heure::int,
+          t.montant_ttc::numeric
         FROM transactions t
         LEFT JOIN clients c ON t.carte = c.carte
         LEFT JOIN produits p ON t.produit = p.id
@@ -72,6 +92,25 @@ export default async function handler(req, res) {
         ORDER BY t.date DESC
         LIMIT 100
       `, query)
+      
+      // Retourner les infos client avec les transactions
+      return res.status(200).json({
+        clientInfo: clientInfo[0] || null,
+        results: results.map(r => ({
+          facture: r.facture,
+          date: r.date,
+          carte: r.carte,
+          ville: r.ville,
+          depot: r.depot,
+          produit: r.produit,
+          famille: r.famille,
+          sous_famille: r.sous_famille,
+          ca: Number(r.ca),
+          quantite: Number(r.quantite),
+          heure: r.heure,
+          montant_ttc: r.montant_ttc ? Number(r.montant_ttc) : null
+        }))
+      })
     } else if (type === 'produit') {
       // Recherche par produit
       results = await prisma.$queryRawUnsafe(`

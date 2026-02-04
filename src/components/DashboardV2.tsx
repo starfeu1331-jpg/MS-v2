@@ -20,6 +20,21 @@ interface DashboardData {
   panierMoyenMag: number
   panierMoyenWeb: number
   
+  // Stats clients (nouvelles colonnes)
+  statsClients?: {
+    total: number
+    hommes: number
+    femmes: number
+    avecNom: number
+    avecPrenom: number
+    avecEmail: number
+    avecTelephone: number
+    pctHommes: number
+    pctFemmes: number
+    pctEmail: number
+    pctTelephone: number
+  }
+  
   // Top données
   topProduits: any[]
   topMagasins: any[]
@@ -86,6 +101,7 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
         // Les données sont déjà agrégées côté serveur
         const processed: DashboardData = {
           ...apiData.kpis,
+          statsClients: apiData.statsClients,
           topProduits: apiData.topProduits,
           topMagasins: apiData.topMagasins,
           topClients: apiData.topClients,
@@ -255,6 +271,57 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
             <p className="text-3xl font-bold text-white">{formatEuro(currentPanierMoyen)}</p>
           </div>
         </div>
+        
+        {/* Stats Qualité Données Clients */}
+        {data.statsClients && (
+          <div className="mt-6 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-blue-500/20">
+            <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+              <Users className="w-4 h-4 text-blue-400" />
+              📊 Qualité des données clients
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-zinc-900/50 rounded-xl p-4">
+                <p className="text-xs text-zinc-400 mb-1">Hommes / Femmes</p>
+                <p className="text-2xl font-bold text-white">
+                  {data.statsClients.pctHommes.toFixed(0)}% / {data.statsClients.pctFemmes.toFixed(0)}%
+                </p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {formatNumber(data.statsClients.hommes)} H • {formatNumber(data.statsClients.femmes)} F
+                </p>
+              </div>
+              
+              <div className="bg-zinc-900/50 rounded-xl p-4">
+                <p className="text-xs text-zinc-400 mb-1">📧 Emails renseignés</p>
+                <p className="text-2xl font-bold text-green-400">
+                  {data.statsClients.pctEmail.toFixed(1)}%
+                </p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {formatNumber(data.statsClients.avecEmail)} / {formatNumber(data.statsClients.total)}
+                </p>
+              </div>
+              
+              <div className="bg-zinc-900/50 rounded-xl p-4">
+                <p className="text-xs text-zinc-400 mb-1">📱 Téléphones renseignés</p>
+                <p className="text-2xl font-bold text-cyan-400">
+                  {data.statsClients.pctTelephone.toFixed(1)}%
+                </p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {formatNumber(data.statsClients.avecTelephone)} / {formatNumber(data.statsClients.total)}
+                </p>
+              </div>
+              
+              <div className="bg-zinc-900/50 rounded-xl p-4">
+                <p className="text-xs text-zinc-400 mb-1">👤 Identité complète</p>
+                <p className="text-2xl font-bold text-purple-400">
+                  {((data.statsClients.avecNom / data.statsClients.total) * 100).toFixed(1)}%
+                </p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Nom: {formatNumber(data.statsClients.avecNom)} • Prénom: {formatNumber(data.statsClients.avecPrenom)}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Graphique évolution */}

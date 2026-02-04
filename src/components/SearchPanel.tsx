@@ -169,6 +169,14 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
           carte: searchTerm.trim(),
           ville: data.results[0]?.ville || '-',
           cp: '-',
+          nom: data.clientInfo?.nom || null,
+          prenom: data.clientInfo?.prenom || null,
+          email: data.clientInfo?.email || null,
+          telephone: data.clientInfo?.telephone || null,
+          civilite: data.clientInfo?.civilite || null,
+          sexe: data.clientInfo?.sexe || null,
+          date_naissance: data.clientInfo?.date_naissance || null,
+          date_creation: data.clientInfo?.date_creation || null,
           transactions: data.results,
           totalCA,
           nbAchats
@@ -509,12 +517,39 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
               <User className="w-8 h-8 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="text-2xl font-black text-gradient">Carte: {clientResult.carte}</h3>
+              <h3 className="text-2xl font-black text-gradient">
+                {clientResult.nom && clientResult.prenom ? `${clientResult.prenom} ${clientResult.nom}` : `Carte: ${clientResult.carte}`}
+              </h3>
               <p className="text-sm text-zinc-400 font-medium mt-1">
-                📍 {clientResult.ville} - {clientResult.cp}
+                🎴 Carte: {clientResult.carte}
+                {clientResult.civilite && ` • ${clientResult.civilite === 'M' || clientResult.sexe === 'M' ? '👨 Homme' : '👩 Femme'}`}
               </p>
             </div>
           </div>
+
+          {/* Infos client détaillées */}
+          {(clientResult.email || clientResult.telephone || clientResult.ville) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {clientResult.email && (
+                <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/20">
+                  <p className="text-xs text-zinc-400 font-bold uppercase mb-1">📧 Email</p>
+                  <p className="text-white font-medium break-all">{clientResult.email}</p>
+                </div>
+              )}
+              {clientResult.telephone && (
+                <div className="bg-cyan-500/10 rounded-xl p-4 border border-cyan-500/20">
+                  <p className="text-xs text-zinc-400 font-bold uppercase mb-1">📱 Téléphone</p>
+                  <p className="text-white font-medium">{clientResult.telephone}</p>
+                </div>
+              )}
+              {clientResult.ville && (
+                <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                  <p className="text-xs text-zinc-400 font-bold uppercase mb-1">📍 Localisation</p>
+                  <p className="text-white font-medium">{clientResult.ville} - {clientResult.cp}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-blue-500/10 rounded-2xl p-6 border border-blue-500/20">
