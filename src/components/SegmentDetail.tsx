@@ -169,42 +169,49 @@ export default function SegmentDetail({
         color: 'purple',
         icon: '👑💎',
         description: 'Excellence absolue: les meilleurs clients',
+        criteria: 'RFM ≥ 544 (tous très élevés)',
         action: 'VIP absolu ! Chouchouter, privilèges exclusifs, accès prioritaire'
       },
       'Champions': {
         color: 'emerald',
         icon: '👑',
         description: 'Vos meilleurs clients : achètent récemment, fréquemment et dépensent beaucoup',
+        criteria: 'R≥4 ET F≥4 ET M≥4',
         action: 'Récompensez-les ! Offres VIP, programme ambassadeur'
       },
       'Loyaux': {
         color: 'blue',
         icon: '💎',
         description: 'Clients fidèles avec bon potentiel, achètent régulièrement',
+        criteria: 'F≥4 (pas Champions)',
         action: 'Montée en gamme : cross-sell, upsell, offres premium'
       },
       'À Risque': {
         color: 'orange',
         icon: '⚠️',
         description: 'Anciens bons clients qui n\'ont pas acheté récemment',
+        criteria: 'R≤2 ET F≥4',
         action: 'Réactivation urgente ! Offres de reconquête personnalisées'
       },
       'Perdus': {
         color: 'red',
         icon: '💔',
         description: 'Clients inactifs depuis longtemps',
+        criteria: 'R≤2 (pas À Risque)',
         action: 'Dernière chance : offre exceptionnelle ou laisser partir'
       },
       'Nouveaux': {
         color: 'cyan',
         icon: '✨',
         description: 'Nouveaux clients avec un seul achat',
+        criteria: 'F=1',
         action: 'Fidélisation ! Offre de bienvenue, communication régulière'
       },
       'Occasionnels': {
         color: 'zinc',
         icon: '🎯',
         description: 'Clients occasionnels sans profil marqué',
+        criteria: 'Tous les autres cas',
         action: 'Engagement : augmenter la fréquence via campagnes ciblées'
       }
     }
@@ -247,6 +254,54 @@ export default function SegmentDetail({
         <div className={`p-4 rounded-2xl bg-${segmentInfo.color}-500/10 border border-${segmentInfo.color}-500/30`}>
           <p className={`text-${segmentInfo.color}-400 font-medium`}>
             💡 <strong>Action recommandée:</strong> {segmentInfo.action}
+          </p>
+        </div>
+
+        {/* Critères du segment */}
+        <div className="mt-4 p-4 rounded-2xl bg-zinc-900/50 border border-zinc-700">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-zinc-400 font-semibold uppercase mb-1">Critères de sélection</p>
+              <p className={`text-sm font-mono text-${segmentInfo.color}-400 font-bold`}>{segmentInfo.criteria}</p>
+            </div>
+            <div>
+              <p className="text-xs text-zinc-400 font-semibold uppercase mb-1">Type de segment</p>
+              <p className="text-sm text-white">{segmentInfo.description}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Explication RFM - Rappel méthode */}
+      <div className="glass rounded-3xl p-6 border border-zinc-800">
+        <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-purple-400" />
+          Méthode de Calcul RFM
+        </h3>
+        <div className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
+          <p className="text-sm text-zinc-300 mb-3">
+            L'analyse <strong className="text-purple-400">RFM</strong> attribue 3 scores de 1 à 5 à chaque client selon la méthode des <strong className="text-cyan-400">quintiles</strong> :
+          </p>
+          <div className="grid md:grid-cols-3 gap-3 text-xs">
+            <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30">
+              <h4 className="font-bold text-blue-400 mb-1">R - Récence</h4>
+              <p className="text-zinc-400">Depuis combien de jours le dernier achat ?</p>
+              <p className="text-emerald-400 mt-1">Score 5 = 20% plus récents</p>
+            </div>
+            <div className="bg-cyan-500/10 rounded-lg p-3 border border-cyan-500/30">
+              <h4 className="font-bold text-cyan-400 mb-1">F - Fréquence</h4>
+              <p className="text-zinc-400">Combien d'achats au total ?</p>
+              <p className="text-emerald-400 mt-1">Score 5 = 20% plus fréquents</p>
+            </div>
+            <div className="bg-teal-500/10 rounded-lg p-3 border border-teal-500/30">
+              <h4 className="font-bold text-teal-400 mb-1">M - Montant</h4>
+              <p className="text-zinc-400">Chiffre d'affaires total généré ?</p>
+              <p className="text-emerald-400 mt-1">Score 5 = 20% plus gros CA</p>
+            </div>
+          </div>
+          <p className="text-xs text-zinc-500 mt-3">
+            💡 <strong>Score RFM final :</strong> R×100 + F×10 + M 
+            <span className="text-zinc-400 ml-2">(ex: R=5, F=4, M=3 → Score 543)</span>
           </p>
         </div>
       </div>
