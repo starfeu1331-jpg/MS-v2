@@ -1,8 +1,22 @@
 import { useState, useEffect } from 'react'
-import { Instagram, Facebook, TrendingUp, MapPin, Target, Megaphone, ShoppingBag, Store } from 'lucide-react'
+import { Instagram, Facebook, TrendingUp, MapPin, Target, Megaphone, ShoppingBag, Store, Mail, Download, Users } from 'lucide-react'
 
 interface SocialMediaInsightsProps {
   data?: any
+}
+
+interface ClientAvecEmail {
+  carte: string
+  nom?: string | null
+  prenom?: string | null
+  email: string
+  telephone?: string | null
+  sexe?: string | null
+  ville?: string | null
+  cp?: string | null
+  ca_total: number
+  nb_achats: number
+  dernier_achat: string
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://ms-v2.vercel.app'
@@ -242,6 +256,40 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
 
   const recommendations = getSocialMediaRecommendations(currentMonthData)
   const topProduitsStore = getTopProducts(loadedData?.produitsMagasin?.[selectedMonth] || {}, 10)
+  
+  // Export clients avec email pour campagnes
+  const exportClientsEmail = () => {
+    if (!loadedData?.clientsAvecEmail || loadedData.clientsAvecEmail.length === 0) {
+      alert('Aucun client avec email disponible')
+      return
+    }
+    
+    const headers = ['Nom', 'Prénom', 'Email', 'Téléphone', 'Sexe', 'Ville', 'CP', 'Carte', 'CA Total', 'Nb Achats', 'Dernier Achat']
+    const rows = loadedData.clientsAvecEmail.map((client: ClientAvecEmail) => [
+      client.nom || '',
+      client.prenom || '',
+      client.email,
+      client.telephone || '',
+      client.sexe || '',
+      client.ville || '',
+      client.cp || '',
+      client.carte,
+      Math.round(client.ca_total),
+      client.nb_achats,
+      new Date(client.dernier_achat).toLocaleDateString('fr-FR')
+    ])
+    
+    const csvContent = '\uFEFF' + [
+      headers.join(';'),
+      ...rows.map(row => row.join(';'))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `clients_email_marketing_${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+  }
 
   return (
     <div className="space-y-6">
@@ -480,6 +528,112 @@ export default function SocialMediaInsights({ data }: SocialMediaInsightsProps) 
           ))}
         </div>
       </div>
+
+      {/* Campagnes Email */}
+      {loadedData?.clientsAvecEmail && loadedData.clientsAvecEmail.length > 0 && (
+        <div className="glass rounded-3xl p-8 border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-cyan-500/5">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Mail className="w-6 h-6 text-blue-400" />
+              <div>
+                <h3 className="text-xl font-bold text-white">📧 Campagnes Email Marketing</h3>
+                <p className="text-sm text-zinc-400">{loadedData.clientsAvecEmail.length} clients contactables avec email</p>
+              </div>
+            </div>
+            <button
+              onClick={exportClientsEmail}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+          </div>
+
+          {/* Stats clients avec email */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-zinc-900/50 rounded-xl p-4 border border-blue-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-5 h-5 text-blue-400" />
+                <p className="text-xs text-zinc-500 font-semibold uppercase">Clients Email</p>
+              </div>
+              <p className="text-2xl font-bold text-white">{loadedData.clientsAvecEmail.length}</p>
+              <p className="text-xs text-blue-400 mt-1">Base emailing prête</p>
+            </div>
+
+            <div className="bg-zinc-900/50 rounded-xl p-4 border border-green-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-green-400" />
+                <p className="text-xs text-zinc-500 font-semibold uppercase">CA Total</p>
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {formatEuro(loadedData.clientsAvecEmail.reduce((sum: number, c: ClientAvecEmail) => sum + c.ca_total, 0))}
+              </p>
+              <p className="text-xs text-green-400 mt-1">Potentiel emailing</p>
+            </div>
+
+            <div className="bg-zinc-900/50 rounded-xl p-4 border border-pink-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-5 h-5 text-pink-400" />
+                <p className="text-xs text-zinc-500 font-semibold uppercase">Femmes</p>
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {loadedData.clientsAvecEmail.filter((c: ClientAvecEmail) => c.sexe === 'F').length}
+              </p>
+              <p className="text-xs text-pink-400 mt-1">
+                {((loadedData.clientsAvecEmail.filter((c: ClientAvecEmail) => c.sexe === 'F').length / loadedData.clientsAvecEmail.length) * 100).toFixed(1)}% de la base
+              </p>
+            </div>
+
+            <div className="bg-zinc-900/50 rounded-xl p-4 border border-cyan-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-5 h-5 text-cyan-400" />
+                <p className="text-xs text-zinc-500 font-semibold uppercase">Hommes</p>
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {loadedData.clientsAvecEmail.filter((c: ClientAvecEmail) => c.sexe === 'H').length}
+              </p>
+              <p className="text-xs text-cyan-400 mt-1">
+                {((loadedData.clientsAvecEmail.filter((c: ClientAvecEmail) => c.sexe === 'H').length / loadedData.clientsAvecEmail.length) * 100).toFixed(1)}% de la base
+              </p>
+            </div>
+          </div>
+
+          {/* Recommandations campagnes */}
+          <div className="bg-blue-900/20 rounded-xl p-6 border border-blue-500/20">
+            <h4 className="text-lg font-bold text-white mb-4">💡 Suggestions de campagnes</h4>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="text-lg">✅</span>
+                <div>
+                  <p className="text-white font-semibold">Newsletter mensuelle personnalisée</p>
+                  <p className="text-xs text-zinc-400">Segmentez par sexe pour offres ciblées (H/F)</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg">✅</span>
+                <div>
+                  <p className="text-white font-semibold">Relance clients inactifs</p>
+                  <p className="text-xs text-zinc-400">Filtrez sur dernier_achat &gt; 6 mois avec code promo</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg">✅</span>
+                <div>
+                  <p className="text-white font-semibold">Programme VIP exclusif</p>
+                  <p className="text-xs text-zinc-400">Top 100 clients CA avec invitation événement privé</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg">✅</span>
+                <div>
+                  <p className="text-white font-semibold">Campagne saisonnière géolocalisée</p>
+                  <p className="text-xs text-zinc-400">Utilisez CP pour cibler promotions régionales</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

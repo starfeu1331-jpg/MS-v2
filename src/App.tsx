@@ -26,7 +26,7 @@ type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' |
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [currentPeriod, setCurrentPeriod] = useState<{ type: string; value: number | string; label?: string }>({ type: 'year', value: 2025 })
+  const [currentPeriod, setCurrentPeriod] = useState<{ type: string; value: number | string; label?: string }>({ type: 'all', value: 'all', label: 'Toutes périodes' })
   const [showWebData, setShowWebData] = useState(false)
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false)
   const [customStartDate, setCustomStartDate] = useState('')

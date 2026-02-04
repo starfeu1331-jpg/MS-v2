@@ -1,225 +1,221 @@
-# 📚 INDEX: Solution complète - 10 minutes de chargement
+# 📚 INDEX PRINCIPAL - Décor Analytics
 
-## 📖 Documents de référence (à lire dans cet ordre)
-
-### 1️⃣ **README_SOLUTION.md** (5 min) ⭐ COMMENCER ICI
-Résumé complet du problème et de la solution
-- Cause racine identifiée
-- Solutions apportées
-- Résultats attendus
-
-### 2️⃣ **ACTION_CHECKLIST.md** (2 min)
-Checklist d'action immédiate
-- Étapes à suivre
-- Fichiers à modifier
-- Commandes rapides
-
-### 3️⃣ **GUIDE_SOLUTION_10_MINUTES.md** (15 min) 
-Guide détaillé en français
-- Instructions pas à pas
-- Exemples de code
-- Dépannage courant
-
-### 4️⃣ **FORUM_ANALYSIS_COMPLETE.md** (10 min)
-Analyse détaillée des forums
-- Patterns identifiés
-- Solutions testées
-- Explications techniques
-
-### 5️⃣ **SOLUTION_10_MINUTES.md** (10 min)
-Deep dive technique
-- Problèmes détaillés
-- Solutions avancées
-- Metrics de performance
+**Date** : 3 février 2026  
+**Version** : 2.0 - Consolidée
 
 ---
 
-## 🔧 Fichiers créés/modifiés
+## 🎯 Documents principaux (À LIRE EN PRIORITÉ)
 
-### ✅ Créés (prêts à l'emploi)
+### 1. **PROJECT_OVERVIEW.md** ⭐ COMMENCER ICI
+Durée de lecture : 10 minutes
 
-**src/components/LoadingFallback.tsx**
-- Composant de chargement stylisé
-- Import: `import { LoadingFallback } from './components/LoadingFallback'`
+**Contenu** :
+- Vue d'ensemble complète du projet
+- Architecture technique (Frontend + Backend + BDD)
+- Liste des 14 modules (9 fonctionnels, 5 à implémenter)
+- Métriques actuelles (709k transactions, 144k clients, 55k produits)
+- Stack technique détaillé
+- Points forts et limitations
+- KPIs de succès
 
-**src/utils/lazyRecharts.tsx**
-- Wrapper pour lazy-loader recharts
-- Import: `import { LazyLineChart, ChartFallback } from '../utils/lazyRecharts'`
-
-**public/performance-diagnostic.js**
-- Script pour profiler depuis console
-- Utilisation: Copy-paste dans console DevTools
-
-**check-performance.sh**
-- Script de diagnostic
-- Utilisation: `bash check-performance.sh`
-
-### 📝 Modifiés
-
-**src/App.tsx**
-- Ajout de `LoadingFallback` import
-- Ajout de Suspense boundary avec fallback
+**Quand le lire** : En tout premier pour comprendre le contexte global
 
 ---
 
-## ⚡ Fichiers À MODIFIER (15-20 min)
+### 2. **ISSUES_AND_SOLUTIONS.md** 🔧
+Durée de lecture : 15 minutes
 
-Ces fichiers importent recharts synchroniquement et doivent être modifiés:
+**Contenu** :
+- **Problème #1** : Performance (10 min de chargement)
+  - Cause : Recharts charge synchroniquement
+  - Solution : Lazy loading (20 min d'implémentation)
+  - Gain attendu : 300x plus rapide (10 min → 2s)
 
-1. **src/components/DashboardV2.tsx** ⭐ PRIORITAIRE
-   - Remplacer: `import {...} from 'recharts'`
-   - Par: `import {...LazyXXX} from '../utils/lazyRecharts'`
-   - Envelopper charts: `<Suspense><Chart></Suspense>`
+- **Problème #2** : Données CSV incomplètes (52%)
+  - Détail par fichier (clients, produits, transactions, magasins)
+  - 17 colonnes critiques manquantes
+  - Impact business : 1.2M€ CA/an perdu
+  - Roadmap en 3 phases
 
-2. **src/components/ABCAnalysis.tsx**
-3. **src/components/Dashboard.tsx**
-4. **src/components/ForecastAnomalies.tsx**
-5. **src/components/StorePerformance.tsx**
+- **Problème #3** : Segmentation RFM cassée
+  - Seuils fixes → Quintiles dynamiques
+  - Status : ✅ CORRIGÉ
 
-Instructions détaillées dans **ACTION_CHECKLIST.md**
+- **Problème #4** : 5 modules non opérationnels
+  - King Quentin, Cohortes, Stores, Forecast, Social Media
+  - Solutions détaillées pour chacun
+
+**Quand le lire** : Après PROJECT_OVERVIEW pour comprendre ce qui ne va pas
 
 ---
 
-## 🚀 Démarrage rapide (5 min)
+### 3. **TODO_ROADMAP.md** ✅
+Durée de lecture : 10 minutes
 
-```bash
-# 1. Vérifier diagnostic
-bash check-performance.sh
+**Contenu** :
+- Actions URGENTES (cette semaine)
+  - Corriger performance : 20 min
+  - Envoyer email Nicolas : 10 min
+  
+- Actions IMPORTANTES (2 semaines)
+  - Importer catalogue web : 1h
+  - Créer APIs manquantes : 2 jours
+  
+- Actions SOUHAITABLES (1 mois)
+  - Forecast & ML : 3-5 jours
+  - Maintenance continue
 
-# 2. Lire le guide
-cat GUIDE_SOLUTION_10_MINUTES.md
+- Planning prévisionnel avec jalons
+- Suivi de progression (checklists)
+- Critères de succès
 
-# 3. Modifier DashboardV2.tsx (voir ACTION_CHECKLIST.md)
+**Quand le lire** : Pour savoir concrètement quoi faire maintenant
 
-# 4. Tester
-npm run dev
+---
 
-# 5. Vérifier performance
-# - F12 → Performance tab
-# - Record and reload
-# - Check FCP < 2 secondes
+## 📋 Documents techniques (Référence)
+
+### 4. **ACTION_CHECKLIST.md**
+Guide pas-à-pas pour corriger la performance (lazy loading Recharts)
+- Fichiers à modifier (5 composants)
+- Code exact à remplacer
+- Commandes de validation
+
+### 5. **prisma/schema.prisma**
+Schéma de la base de données PostgreSQL
+- 4 tables : clients, produits, magasins, transactions
+- Relations et indexes
+
+### 6. **package.json**
+Dépendances du projet
+- React 19, Vite, Prisma, Recharts, Leaflet, etc.
+
+---
+
+## 📧 Documents pour Nicolas (Responsable IT)
+
+**À envoyer ensemble dans un seul email** :
+
+### 7. **RESUME_DEMANDES_NICOLAS.md** (2 pages)
+Résumé exécutif avec exemples avant/après
+
+### 8. **DEMANDES_CSV_NICOLAS.md** (13 pages)
+Liste détaillée de toutes les colonnes manquantes par fichier
+
+### 9. **MAPPING_TECHNIQUE_NICOLAS.md** (9 pages)
+Requêtes SQL suggérées pour extraire les données
+
+### 10. **CHECKLIST_NICOLAS.md** (6 pages)
+Checklist actionnable à cocher au fur et à mesure
+
+### 11. **TABLEAU_BORD_DONNEES.md** (11 pages)
+Score de complétude par fichier avec métriques détaillées
+
+### 12. **ANALYSE_GAPS_DONNEES.md** (11 pages)
+Analyse approfondie des lacunes avec impact business chiffré
+
+---
+
+## 🗂️ Documents archivés (Historique)
+
+Les documents suivants sont **redondants** et ont été consolidés dans les 3 fichiers principaux.
+Ils sont conservés dans le dossier `/archive` pour référence historique uniquement.
+
+- `00_SYNTHESE_ANALYSE.md` → Consolidé dans PROJECT_OVERVIEW.md
+- `POUR_VOUS_LIRE_EN_PREMIER.md` → Consolidé dans PROJECT_OVERVIEW.md
+- `INDEX_DOCUMENTS.md` → Remplacé par ce fichier
+- `RESUME_1PAGE_A_IMPRIMER.md` → Consolidé dans ISSUES_AND_SOLUTIONS.md
+- `GUIDE_SOLUTION_10_MINUTES.md` → Consolidé dans ISSUES_AND_SOLUTIONS.md
+- `README_SOLUTION.md` → Consolidé dans ISSUES_AND_SOLUTIONS.md
+- `FORUM_ANALYSIS_COMPLETE.md` → Détails intégrés dans ISSUES_AND_SOLUTIONS.md
+- `SOLUTION_10_MINUTES.md` → Consolidé dans ISSUES_AND_SOLUTIONS.md
+- `AUDIT-RFM-CORRECTIONS.md` → Intégré dans ISSUES_AND_SOLUTIONS.md
+- `DB_SETUP.md` → Optionnel (DuckDB local non prioritaire)
+- `INSTALL_DB.md` → Optionnel
+- `GUIDE_RAPIDE.md` → Optionnel
+- `PERFORMANCE_GUIDE.md` → Consolidé dans ISSUES_AND_SOLUTIONS.md
+- `RAPPORT_MIGRATION_MODULES.md` → Consolidé dans PROJECT_OVERVIEW.md
+
+---
+
+## 🚀 Guide de démarrage rapide (5 minutes)
+
+### Pour l'IA qui reprend le contexte
+
+1. **Lire** : `PROJECT_OVERVIEW.md` (10 min)
+   → Comprendre l'architecture, les fonctionnalités, les limites
+
+2. **Lire** : `ISSUES_AND_SOLUTIONS.md` (15 min)
+   → Comprendre les 4 problèmes majeurs et leurs solutions
+
+3. **Lire** : `TODO_ROADMAP.md` (10 min)
+   → Savoir exactement quoi faire maintenant
+
+**Total : 35 minutes** pour avoir le contexte complet
+
+### Pour Marceau (développeur)
+
+**Prochaine action immédiate** :
+1. Corriger performance (20 min) → Voir `ACTION_CHECKLIST.md`
+2. Envoyer email Nicolas (10 min) → Voir template dans `TODO_ROADMAP.md`
+
+### Pour Nicolas (Responsable IT)
+
+**Lire en priorité** :
+1. `RESUME_DEMANDES_NICOLAS.md` (5 min)
+2. `CHECKLIST_NICOLAS.md` (5 min)
+3. Si besoin de détails : autres documents listés ci-dessus
+
+---
+
+## 📊 État actuel du projet (Résumé)
+
+```
+✅ Fonctionnel (9/14 modules) : 64%
+⚠️  Performance : 10 min (à corriger → 5s)
+⚠️  Données : 52% complétude (cible 92%)
+❌ Modules manquants : 5
+
+Priorité absolue :
+1. Performance (20 min fix)
+2. Données CSV (attente Nicolas)
+3. Catalogue web (1h fix)
 ```
 
 ---
 
-## 📊 Résultats attendus
+## 🎯 Objectifs à 1 mois
 
-**Avant:** 10 minutes ⏱️  
-**Après:** 5 secondes ⚡  
-**Gain:** 120x plus rapide!
-
-| Métrique | Avant | Après |
-|----------|-------|-------|
-| Time to Interactive | 10 min | 4-5 sec |
-| First Contentful Paint | 10 min | 1-2 sec |
-| User sees content | JAMAIS | 0.5 sec |
+| Métrique | Actuel | Cible |
+|----------|--------|-------|
+| Performance | 10 min | <5s |
+| Complétude | 52% | 92% |
+| Modules | 9/14 | 13/14 |
+| CA marketing | 0€ | +500k€ |
 
 ---
 
-## 🔍 Diagnostic rapide
+## 📞 Contact et ressources
 
-```bash
-# Vérifier problèmes restants
-bash check-performance.sh
-
-# Voir tous les imports recharts (mauvais)
-grep -r "from 'recharts'" src/ | grep -v lazyRecharts
-
-# Vérifier imports lazy (bon)
-grep -r "from.*lazyRecharts" src/
-
-# Compter Suspense boundaries
-grep -r "<Suspense" src/ | wc -l
-```
+- **Repository** : GitHub starfeu1331-jpg/MS-v2
+- **Production** : https://ms-v2.vercel.app
+- **Database** : Neon PostgreSQL
+- **Développeur** : Marceau
+- **IT** : Nicolas
 
 ---
 
-## 💡 Points clés
+## 🔄 Historique des révisions
 
-1. **Le problème:** Recharts (3.6MB) charge synchroniquement, bloque tout pendant 10 min
-
-2. **La solution:** Lazy-loader recharts + Suspense boundaries + LoadingFallback visible
-
-3. **L'implémentation:** 5 fichiers à modifier, ~20 minutes
-
-4. **Le résultat:** App charges en 5 secondes au lieu de 10 minutes
-
-5. **La garantie:** Zéro breaking changes, 100% compatible
+- **3 février 2026** : Consolidation de 25+ fichiers MD en 3 fichiers principaux
+- **30 janvier 2026** : Analyse complète des CSV et création docs Nicolas
+- **28 janvier 2026** : Identification problème performance (Recharts)
+- **23 janvier 2026** : Correction segmentation RFM (quintiles)
+- **Janvier 2026** : Migration vers Neon PostgreSQL + Vercel
 
 ---
 
-## 📞 Support rapide
+**Pour toute question, commencez toujours par lire les 3 documents principaux dans l'ordre.**
 
-**Si tu ne sais pas par où commencer:**
-1. Lire README_SOLUTION.md (5 min)
-2. Lancer: `bash check-performance.sh`
-3. Lire ACTION_CHECKLIST.md
-4. Suivre les étapes
-
-**Si tu es bloqué:**
-1. Consulter GUIDE_SOLUTION_10_MINUTES.md
-2. Vérifier FORUM_ANALYSIS_COMPLETE.md
-3. Chercher le pattern dans SOLUTION_10_MINUTES.md
-
----
-
-## ✅ Checklist de démarrage
-
-- [ ] Lire README_SOLUTION.md
-- [ ] Exécuter `bash check-performance.sh`
-- [ ] Lire ACTION_CHECKLIST.md
-- [ ] Modifier DashboardV2.tsx
-- [ ] Modifier 4 autres fichiers
-- [ ] Tester: `npm run dev`
-- [ ] Vérifier DevTools Performance
-- [ ] Constater: FCP < 2 sec ✅
-
----
-
-## 🎯 Prochaine action
-
-👉 **Ouvre README_SOLUTION.md maintenant!**
-
-Puis suis ACTION_CHECKLIST.md pour l'implémentation.
-
-Temps total: ~25 minutes  
-Résultat: App 100x plus rapide 🚀
-
----
-
-## 📚 Tous les fichiers de solution
-
-```
-📁 Racine du projet/
-├── ✅ README_SOLUTION.md (COMMENCE ICI)
-├── ⚡ ACTION_CHECKLIST.md (à faire)
-├── 📖 GUIDE_SOLUTION_10_MINUTES.md (français)
-├── 🔬 FORUM_ANALYSIS_COMPLETE.md (analyse)
-├── 🔧 SOLUTION_10_MINUTES.md (technical)
-├── 📋 INDEX.md (ce fichier)
-├── bash check-performance.sh (diagnostic)
-│
-├── 📁 src/
-│   ├── components/
-│   │   ├── ✅ LoadingFallback.tsx (nouveau)
-│   │   ├── ⚠️ DashboardV2.tsx (à modifier)
-│   │   ├── ⚠️ ABCAnalysis.tsx (à modifier)
-│   │   └── ... (voir ACTION_CHECKLIST.md)
-│   ├── utils/
-│   │   ├── ✅ lazyRecharts.tsx (nouveau)
-│   │   └── ...
-│   └── App.tsx (✅ modifié)
-│
-└── 📁 public/
-    ├── ✅ performance-diagnostic.js (nouveau)
-    └── ...
-```
-
----
-
-**Créé par:** Analysis complète de 3 forums  
-**Problème:** React app prend 10 minutes à charger  
-**Solution:** Lazy-load recharts + Suspense + LoadingFallback  
-**Résultat:** 120x plus rapide!
-
-🚀 **À toi de jouer!**
+**Dernière mise à jour** : 3 février 2026
