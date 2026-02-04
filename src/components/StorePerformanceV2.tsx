@@ -296,7 +296,7 @@ export default function StorePerformanceV2() {
                 : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
             }`}
           >
-            🎯 Panier > Moyenne
+            🎯 Panier {'>'} Moyenne
           </button>
           <button
             onClick={() => setFilterMode('alerts')}
