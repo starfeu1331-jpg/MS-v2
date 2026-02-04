@@ -282,7 +282,7 @@ export default async function handler(req, res) {
           COUNT(*)::int as volume,
           ROW_NUMBER() OVER (PARTITION BY t.depot ORDER BY SUM(t.ca) DESC) as rang
         FROM transactions t
-        INNER JOIN produits p ON t.article = p.code
+        INNER JOIN produits p ON t.produit = p.id
         WHERE t.ca > 0 
           AND t.depot IS NOT NULL 
           AND t.depot NOT LIKE 'D%'
