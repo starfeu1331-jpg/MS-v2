@@ -41,6 +41,7 @@ export default function ZoneChalandiseSimple() {
   const [geoData, setGeoData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [sortCriterion, setSortCriterion] = useState<'ca' | 'clients' | 'transactions'>('ca');
 
   // Fonction d'export Excel
   const exportToExcel = () => {
@@ -243,6 +244,13 @@ export default function ZoneChalandiseSimple() {
       });
   }, [selectedStore]);
 
+  // Recharger les géométries quand le critère change
+  useEffect(() => {
+    if (zones.length > 0) {
+      loadGeometries(zones);
+    }
+  }, [sortCriterion]);
+
   const loadGeometries = async (zonesToLoad: Zone[]) => {
     console.log(`🗺️ Chargement géométries pour ${zonesToLoad.length} zones...`);
     
@@ -256,9 +264,21 @@ export default function ZoneChalandiseSimple() {
     
     const geoFeatures: any[] = [];
     
-    // Trier les zones par CA pour calculer les déciles (10 tranches de 10%)
-    const sortedZones = [...zonesToLoad].sort((a, b) => a.totalCA - b.totalCA);
-    console.log(`💰 CA min: ${sortedZones[0].totalCA.toFixed(0)}€ → max: ${sortedZones[sortedZones.length - 1].totalCA.toFixed(0)}€`);
+    // Trier les zones selon le critère choisi pour calculer les déciles (10 tranches de 10%)
+    const sortedZones = [...zonesToLoad].sort((a, b) => {
+      if (sortCriterion === 'ca') return a.totalCA - b.totalCA;
+      if (sortCriterion === 'clients') return a.nbClients - b.nbClients;
+      return a.nbTransactions - b.nbTransactions;
+    });
+    
+    const minValue = sortCriterion === 'ca' ? sortedZones[0].totalCA : 
+                     sortCriterion === 'clients' ? sortedZones[0].nbClients : 
+                     sortedZones[0].nbTransactions;
+    const maxValue = sortCriterion === 'ca' ? sortedZones[sortedZones.length - 1].totalCA : 
+                     sortCriterion === 'clients' ? sortedZones[sortedZones.length - 1].nbClients : 
+                     sortedZones[sortedZones.length - 1].nbTransactions;
+    
+    console.log(`📊 ${sortCriterion === 'ca' ? 'CA' : sortCriterion === 'clients' ? 'Clients' : 'Transactions'} min: ${minValue.toFixed(0)} → max: ${maxValue.toFixed(0)}`);
 
     for (let i = 0; i < zonesToLoad.length; i++) {
       const zone = zonesToLoad[i];
@@ -471,6 +491,72 @@ export default function ZoneChalandiseSimple() {
         {/* Contenu */}
         {panelOpen && (
           <div style={{ padding: '16px' }}>
+            {/* Critère de tri */}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: '#d1d5db', 
+                marginBottom: '8px' 
+              }}>
+                Critère de coloration:
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  onClick={() => setSortCriterion('ca')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: sortCriterion === 'ca' ? '2px solid #3b82f6' : '1px solid rgba(75, 85, 99, 0.6)',
+                    backgroundColor: sortCriterion === 'ca' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.9)',
+                    color: sortCriterion === 'ca' ? '#60a5fa' : '#9ca3af',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  💰 CA
+                </button>
+                <button
+                  onClick={() => setSortCriterion('clients')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: sortCriterion === 'clients' ? '2px solid #3b82f6' : '1px solid rgba(75, 85, 99, 0.6)',
+                    backgroundColor: sortCriterion === 'clients' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.9)',
+                    color: sortCriterion === 'clients' ? '#60a5fa' : '#9ca3af',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  👥 Clients
+                </button>
+                <button
+                  onClick={() => setSortCriterion('transactions')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: sortCriterion === 'transactions' ? '2px solid #3b82f6' : '1px solid rgba(75, 85, 99, 0.6)',
+                    backgroundColor: sortCriterion === 'transactions' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.9)',
+                    color: sortCriterion === 'transactions' ? '#60a5fa' : '#9ca3af',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  🛒 Tx
+                </button>
+              </div>
+            </div>
+
             {/* Sélection magasin + Bouton Export */}
             <div style={{ marginBottom: '14px' }}>
               <label style={{ 
