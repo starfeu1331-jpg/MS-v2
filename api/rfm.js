@@ -47,7 +47,13 @@ export default async function handler(req, res) {
         WITH client_metrics AS (
           SELECT 
             c.carte::text,
+            c.nom::text,
+            c.prenom::text,
+            c.email::text,
+            c.telephone::text,
+            c.sexe::text,
             c.ville::text,
+            c.cp::text,
             COUNT(t.id)::int as frequency,
             SUM(t.ca)::numeric as monetary,
             EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
@@ -57,13 +63,19 @@ export default async function handler(req, res) {
           FROM clients c
           INNER JOIN transactions t ON c.carte = t.carte
           WHERE t.depot = 'WEB' AND c.carte != '0'
-          GROUP BY c.carte, c.ville
+          GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp
           HAVING SUM(t.ca) > 0
         ),
         rfm_scores AS (
           SELECT 
             carte,
+            nom,
+            prenom,
+            email,
+            telephone,
+            sexe,
             ville,
+            cp,
             frequency,
             monetary,
             recency,
@@ -82,7 +94,13 @@ export default async function handler(req, res) {
         WITH client_metrics AS (
           SELECT 
             c.carte::text,
+            c.nom::text,
+            c.prenom::text,
+            c.email::text,
+            c.telephone::text,
+            c.sexe::text,
             c.ville::text,
+            c.cp::text,
             COUNT(t.id)::int as frequency,
             SUM(t.ca)::numeric as monetary,
             EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
@@ -92,13 +110,19 @@ export default async function handler(req, res) {
           FROM clients c
           INNER JOIN transactions t ON c.carte = t.carte
           WHERE t.depot != 'WEB' AND c.carte != '0'
-          GROUP BY c.carte, c.ville
+          GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp
           HAVING SUM(t.ca) > 0
         ),
         rfm_scores AS (
           SELECT 
             carte,
+            nom,
+            prenom,
+            email,
+            telephone,
+            sexe,
             ville,
+            cp,
             frequency,
             monetary,
             recency,
@@ -117,7 +141,13 @@ export default async function handler(req, res) {
         WITH client_metrics AS (
           SELECT 
             c.carte::text,
+            c.nom::text,
+            c.prenom::text,
+            c.email::text,
+            c.telephone::text,
+            c.sexe::text,
             c.ville::text,
+            c.cp::text,
             COUNT(t.id)::int as frequency,
             SUM(t.ca)::numeric as monetary,
             EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
@@ -127,13 +157,19 @@ export default async function handler(req, res) {
           FROM clients c
           INNER JOIN transactions t ON c.carte = t.carte
           WHERE c.carte != '0'
-          GROUP BY c.carte, c.ville
+          GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp
           HAVING SUM(t.ca) > 0
         ),
         rfm_scores AS (
           SELECT 
             carte,
+            nom,
+            prenom,
+            email,
+            telephone,
+            sexe,
             ville,
+            cp,
             frequency,
             monetary,
             recency,
@@ -192,7 +228,13 @@ export default async function handler(req, res) {
 
       return {
         carte: client.carte,
+        nom: client.nom || null,
+        prenom: client.prenom || null,
+        email: client.email || null,
+        telephone: client.telephone || null,
+        sexe: client.sexe || null,
         ville: client.ville || '-',
+        cp: client.cp || '-',
         recency: client.recency,
         frequency: client.frequency,
         monetary: parseFloat(client.monetary),

@@ -131,18 +131,24 @@ export default function SegmentDetail({
   })
 
   const exportToCSV = () => {
-    const headers = ['Rang', 'Carte', 'Score RFM', 'R', 'F', 'M', 'CA Total', 'Récence (jours)', 'Fréquence', 'Ville']
+    const headers = ['Rang', 'Carte', 'Nom', 'Prénom', 'Email', 'Téléphone', 'Sexe', 'Ville', 'CP', 'Score RFM', 'R', 'F', 'M', 'CA Total', 'Récence (jours)', 'Fréquence']
     const rows = sortedClients.map((client, idx) => [
       idx + 1,
       client.carte,
+      client.nom || '',
+      client.prenom || '',
+      client.email || '',
+      client.telephone || '',
+      client.sexe || '',
+      client.ville || '',
+      client.cp || '',
       client.RFM,
       client.R,
       client.F,
       client.M,
       Math.round(client.monetary),
       client.recency,
-      client.frequency,
-      client.ville
+      client.frequency
     ])
     
     const csvContent = '\uFEFF' + [
@@ -517,7 +523,8 @@ export default function SegmentDetail({
             <thead className="bg-zinc-800 text-white sticky top-0">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Rang</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Carte</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Identité</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Contact</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Score</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase">R</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase">F</th>
@@ -525,7 +532,6 @@ export default function SegmentDetail({
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase">CA Total</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Fréquence</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Récence (j)</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Ville</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Action</th>
               </tr>
             </thead>
@@ -533,7 +539,25 @@ export default function SegmentDetail({
               {sortedClients.map((client, idx) => (
                 <tr key={client.carte} className="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
                   <td className="px-4 py-4 text-sm font-bold text-zinc-400">#{idx + 1}</td>
-                  <td className="px-4 py-4 text-sm font-medium text-white">{client.carte}</td>
+                  <td className="px-4 py-4">
+                    <div>
+                      {client.nom && client.prenom ? (
+                        <p className="text-sm font-bold text-white">{client.prenom} {client.nom}</p>
+                      ) : (
+                        <p className="text-sm font-medium text-white">Carte {client.carte}</p>
+                      )}
+                      <p className="text-xs text-zinc-500">
+                        {client.sexe === 'H' && '👨'} {client.sexe === 'F' && '👩'} {client.ville} {client.cp && `(${client.cp})`}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="text-xs">
+                      {client.email && <p className="text-green-400">📧 {client.email}</p>}
+                      {client.telephone && <p className="text-cyan-400">📱 {client.telephone}</p>}
+                      {!client.email && !client.telephone && <p className="text-zinc-600">-</p>}
+                    </div>
+                  </td>
                   <td className="px-4 py-4 text-center">
                     <span className="inline-flex px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 font-bold text-sm">
                       {client.RFM}
@@ -545,7 +569,6 @@ export default function SegmentDetail({
                   <td className="px-4 py-4 text-right text-white font-bold">{formatEuro(client.monetary)}</td>
                   <td className="px-4 py-4 text-right text-zinc-400">{client.frequency}</td>
                   <td className="px-4 py-4 text-right text-orange-400">{client.recency}</td>
-                  <td className="px-4 py-4 text-sm text-zinc-400">{client.ville}</td>
                   <td className="px-4 py-4 text-center">
                     {onSearchClient && (
                       <button

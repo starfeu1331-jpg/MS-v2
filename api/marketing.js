@@ -100,7 +100,32 @@ export default async function handler(req, res) {
       ORDER BY month DESC
     `;
 
+    // 6. Clients avec email pour campagnes marketing
+    const clientsAvecEmail = await prisma.$queryRaw`
+      SELECT 
+        c.carte::text,
+        c.nom::text,
+        c.prenom::text,
+        c.email::text,
+        c.telephone::text,
+        c.sexe::text,
+        c.ville::text,
+        c.cp::text,
+        SUM(t.ca)::float as ca_total,
+        COUNT(DISTINCT t.facture)::int as nb_achats,
+        MAX(t.date)::text as dernier_achat
+      FROM clients c
+      INNER JOIN transactions t ON c.carte = t.carte
+      WHERE c.email IS NOT NULL 
+        AND c.email != '' 
+        AND c.carte != '0'
+      GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp
+      ORDER BY ca_total DESC
+      LIMIT 1000
+    `;
+
     console.log('✅ Step 5: nouveauxClients OK', nouveauxClients.length);
+    console.log('✅ Step 6: clientsAvecEmail OK', clientsAvecEmail.length);
 
     const produitsWebObj = {};
     produitsWeb.forEach(p => {
@@ -152,7 +177,20 @@ export default async function handler(req, res) {
       },
       produitsWeb: produitsWebObj,
       produitsMagasin: produitsMagasinObj,
-      zones: zonesObj
+      zones: zonesObj,
+      clientsAvecEmail: clientsAvecEmail.map(c => ({
+        carte: c.carte,
+        nom: c.nom || null,
+        prenom: c.prenom || null,
+        email: c.email,
+        telephone: c.telephone || null,
+        sexe: c.sexe || null,
+        ville: c.ville || null,
+        cp: c.cp || null,
+        caTotal: c.ca_total,
+        nbAchats: c.nb_achats,
+        dernierAchat: c.dernier_achat
+      }))
     };
 
     res.status(200).json(serializeJSON(result));

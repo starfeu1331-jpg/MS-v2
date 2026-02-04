@@ -53,15 +53,21 @@ export default async function handler(req, res) {
     const clientsData = await prisma.$queryRaw`
       SELECT 
         c.carte,
+        c.nom,
+        c.prenom,
+        c.email,
+        c.telephone,
+        c.sexe,
         c.ville,
         c.cp,
         SUM(t.ca)::float as ca_total,
         COUNT(DISTINCT t.facture)::int as nb_achats,
-        (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as panier_moyen
+        (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as panier_moyen,
+        MAX(t.date)::text as dernier_achat
       FROM transactions t
       JOIN clients c ON t.carte = c.carte
       WHERE t.carte != '0'
-      GROUP BY c.carte, c.ville, c.cp
+      GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp
       ORDER BY ca_total DESC
       LIMIT 100
     `;

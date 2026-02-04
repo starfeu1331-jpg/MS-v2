@@ -10,7 +10,13 @@ interface RFMAnalysisProps {
 
 interface RFMClient {
   carte: string
+  nom?: string | null
+  prenom?: string | null
+  email?: string | null
+  telephone?: string | null
+  sexe?: string | null
   ville: string
+  cp: string
   recency: number
   frequency: number
   monetary: number
