@@ -230,51 +230,235 @@ export default async function handler(req, res) {
     }
   }
 
-  // Route par défaut: liste magasins
+  // Route par défaut: Module Performance Magasins - Refonte complète
   try {
-    console.log('🔄 API Stores: Calcul en cours...')
+    console.log('🔄 API Stores: Calcul performances magasins...')
 
-    // Stats par magasin (depot)
-    const magasinsData = await prisma.$queryRawUnsafe(`
-      SELECT 
-        depot::text,
-        SUM(ca)::numeric as ca,
-        COUNT(*)::int as volume
-      FROM transactions
-      WHERE ca > 0 AND depot IS NOT NULL AND depot != 'WEB'
-      GROUP BY depot
-      ORDER BY SUM(ca) DESC
-    `)
+    // 1. Récupérer tous les magasins physiques (pas dépôts logistiques)
+    const magasinsTable = await prisma.magasin.findMany({
+      where: {
+        code: {
+          not: {
+            startsWith: 'D' // Exclure D10, D11 (dépôts logistiques)
+          }
+        }
+      },
+      orderBy: { nom: 'asc' }
+    })
 
-    // Stats par ville client
-    const villesData = await prisma.$queryRawUnsafe(`
+    console.log(`📊 ${magasinsTable.length} magasins physiques trouvés`)
+
+    // 2. Stats détaillées par magasin
+    const magasinsStats = await prisma.$queryRaw`
       SELECT 
-        c.ville::text,
-        SUM(t.ca)::numeric as ca,
-        COUNT(*)::int as volume,
-        COUNT(DISTINCT t.carte)::int as clients
+        t.depot::text as code,
+        SUM(t.ca)::numeric as ca_total,
+        COUNT(DISTINCT t.carte)::int as nb_clients,
+        COUNT(DISTINCT CASE WHEN client_achats.nb_achats > 1 THEN t.carte END)::int as nb_clients_actifs,
+        COUNT(DISTINCT CASE WHEN client_achats.nb_achats >= 3 THEN t.carte END)::int as nb_clients_fideles,
+        COUNT(*)::int as nb_transactions,
+        AVG(t.ca)::numeric as panier_moyen
       FROM transactions t
-      INNER JOIN clients c ON t.carte = c.carte
-      WHERE t.ca > 0 AND c.ville IS NOT NULL AND t.carte != '0'
-      GROUP BY c.ville
-      ORDER BY SUM(t.ca) DESC
-    `)
+      LEFT JOIN (
+        SELECT carte, COUNT(*) as nb_achats
+        FROM transactions
+        WHERE ca > 0 AND carte != '0'
+        GROUP BY carte
+      ) client_achats ON t.carte = client_achats.carte
+      WHERE t.ca > 0 
+        AND t.depot IS NOT NULL 
+        AND t.depot NOT LIKE 'D%'
+        AND t.carte != '0'
+      GROUP BY t.depot
+    `
 
-    // Formater en objet comme attendu
-    const magasins = {}
-    magasinsData.forEach(row => {
-      magasins[row.depot] = {
-        ca: Number(row.ca),
-        volume: Number(row.volume)
+    // 3. Top 10 produits par magasin (familles)
+    const topProduitsParMagasin = await prisma.$queryRaw`
+      WITH ranked_products AS (
+        SELECT 
+          t.depot::text as code,
+          p.famille::text,
+          SUM(t.ca)::numeric as ca,
+          COUNT(*)::int as volume,
+          ROW_NUMBER() OVER (PARTITION BY t.depot ORDER BY SUM(t.ca) DESC) as rang
+        FROM transactions t
+        INNER JOIN produits p ON t.article = p.code
+        WHERE t.ca > 0 
+          AND t.depot IS NOT NULL 
+          AND t.depot NOT LIKE 'D%'
+          AND p.famille IS NOT NULL
+        GROUP BY t.depot, p.famille
+      )
+      SELECT code, famille, ca, volume, rang
+      FROM ranked_products
+      WHERE rang <= 10
+      ORDER BY code, rang
+    `
+
+    // 4. Top 10 clients VIP par magasin
+    const topClientsParMagasin = await prisma.$queryRaw`
+      WITH ranked_clients AS (
+        SELECT 
+          t.depot::text as code_magasin,
+          t.carte::text,
+          c.nom,
+          c.prenom,
+          c.email,
+          c.telephone,
+          c.sexe,
+          c.ville,
+          c.cp,
+          SUM(t.ca)::numeric as ca_client,
+          COUNT(*)::int as nb_achats_magasin,
+          MAX(t.date) as dernier_achat,
+          ROW_NUMBER() OVER (PARTITION BY t.depot ORDER BY SUM(t.ca) DESC) as rang
+        FROM transactions t
+        INNER JOIN clients c ON t.carte = c.carte
+        WHERE t.ca > 0 
+          AND t.depot IS NOT NULL 
+          AND t.depot NOT LIKE 'D%'
+          AND t.carte != '0'
+        GROUP BY t.depot, t.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp
+      )
+      SELECT *
+      FROM ranked_clients
+      WHERE rang <= 10
+      ORDER BY code_magasin, rang
+    `
+
+    // 5. Top 10 zones chalandise par magasin (CP)
+    const zonesParMagasin = await prisma.$queryRaw`
+      WITH ranked_zones AS (
+        SELECT 
+          t.depot::text as code_magasin,
+          c.cp::text,
+          STRING_AGG(DISTINCT c.ville, ', ') as ville,
+          COUNT(DISTINCT t.carte)::int as nb_clients,
+          SUM(t.ca)::numeric as ca_zone,
+          COUNT(*)::int as nb_transactions,
+          ROW_NUMBER() OVER (PARTITION BY t.depot ORDER BY SUM(t.ca) DESC) as rang
+        FROM transactions t
+        INNER JOIN clients c ON t.carte = c.carte
+        WHERE t.ca > 0 
+          AND t.depot IS NOT NULL 
+          AND t.depot NOT LIKE 'D%'
+          AND t.carte != '0'
+          AND c.cp IS NOT NULL
+          AND c.cp != ''
+        GROUP BY t.depot, c.cp
+      )
+      SELECT *
+      FROM ranked_zones
+      WHERE rang <= 10
+      ORDER BY code_magasin, rang
+    `
+
+    // 6. Construire le résultat final
+    const statsMap = {}
+    magasinsStats.forEach(row => {
+      const taux_fidelite = row.nb_clients > 0 ? (Number(row.nb_clients_fideles) / Number(row.nb_clients)) * 100 : 0
+      statsMap[row.code] = {
+        ca_total: Number(row.ca_total),
+        nb_clients: Number(row.nb_clients),
+        nb_clients_actifs: Number(row.nb_clients_actifs),
+        nb_clients_fideles: Number(row.nb_clients_fideles),
+        nb_transactions: Number(row.nb_transactions),
+        panier_moyen: Number(row.panier_moyen),
+        taux_fidelite: taux_fidelite
       }
     })
 
-    const villes = {}
-    villesData.forEach(row => {
-      villes[row.ville] = {
+    // Grouper top produits
+    const produitsMap = {}
+    topProduitsParMagasin.forEach(row => {
+      if (!produitsMap[row.code]) produitsMap[row.code] = []
+      produitsMap[row.code].push({
+        famille: row.famille,
         ca: Number(row.ca),
         volume: Number(row.volume),
-        clients: Number(row.clients)
+        rang: Number(row.rang)
+      })
+    })
+
+    // Grouper top clients
+    const clientsMap = {}
+    topClientsParMagasin.forEach(row => {
+      if (!clientsMap[row.code_magasin]) clientsMap[row.code_magasin] = []
+      clientsMap[row.code_magasin].push({
+        carte: row.carte,
+        nom: row.nom,
+        prenom: row.prenom,
+        email: row.email,
+        telephone: row.telephone,
+        sexe: row.sexe,
+        ville: row.ville,
+        cp: row.cp,
+        ca_client: Number(row.ca_client),
+        nb_achats: Number(row.nb_achats_magasin),
+        dernier_achat: row.dernier_achat
+      })
+    })
+
+    // Grouper zones
+    const zonesMap = {}
+    zonesParMagasin.forEach(row => {
+      if (!zonesMap[row.code_magasin]) zonesMap[row.code_magasin] = []
+      zonesMap[row.code_magasin].push({
+        cp: row.cp,
+        ville: row.ville,
+        nb_clients: Number(row.nb_clients),
+        ca_zone: Number(row.ca_zone),
+        nb_transactions: Number(row.nb_transactions)
+      })
+    })
+
+    // Construire tableau final magasins
+    const magasins = magasinsTable.map(mag => {
+      const stats = statsMap[mag.code] || {
+        ca_total: 0,
+        nb_clients: 0,
+        nb_clients_actifs: 0,
+        nb_clients_fideles: 0,
+        nb_transactions: 0,
+        panier_moyen: 0,
+        taux_fidelite: 0
+      }
+
+      const topProduits = produitsMap[mag.code] || []
+      const topClients = clientsMap[mag.code] || []
+      const zones = zonesMap[mag.code] || []
+
+      return {
+        code: mag.code,
+        nom: mag.nom,
+        ville: mag.ville || 'Non renseignée',
+        cp: mag.cp,
+        lat: mag.lat,
+        lon: mag.lon,
+        stats,
+        top_produits: topProduits,
+        top_clients: topClients,
+        zones_chalandise: zones,
+        top_famille: topProduits[0]?.famille || 'N/A'
+      }
+    }).filter(mag => mag.stats.ca_total > 0) // Garder seulement magasins avec CA
+
+    // Stats réseau
+    const ca_total_reseau = magasins.reduce((sum, m) => sum + m.stats.ca_total, 0)
+    const nb_clients_total = magasins.reduce((sum, m) => sum + m.stats.nb_clients, 0)
+    const nb_transactions_total = magasins.reduce((sum, m) => sum + m.stats.nb_transactions, 0)
+    const panier_moyen_reseau = ca_total_reseau / nb_transactions_total
+
+    console.log(`✅ API Stores: ${magasins.length} magasins avec données`)
+
+    res.status(200).json({
+      magasins,
+      stats_reseau: {
+        ca_total: ca_total_reseau,
+        nb_magasins: magasins.length,
+        nb_clients_total,
+        nb_transactions_total,
+        panier_moyen_reseau
       }
     })
 

@@ -15,7 +15,7 @@ const CohortAnalysis = lazy(() => import('./components/CohortAnalysis'))
 const ABCAnalysis = lazy(() => import('./components/ABCAnalysis'))
 const KingQuentin = lazy(() => import('./components/KingQuentin'))
 const ZoneChalandise = lazy(() => import('./components/ZoneChalandiseSimple'));
-const StorePerformance = lazy(() => import('./components/StorePerformance'))
+const StorePerformance = lazy(() => import('./components/StorePerformanceV2'))
 const ForecastAnomalies = lazy(() => import('./components/ForecastAnomalies'))
 const SocialMediaInsights = lazy(() => import('./components/SocialMediaInsights'))
 const ExportData = lazy(() => import('./components/ExportData'))
