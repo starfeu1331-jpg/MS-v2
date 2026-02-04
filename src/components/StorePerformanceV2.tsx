@@ -51,6 +51,17 @@ export default function StorePerformanceV2() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
 
+  // Fermer modal avec Échap
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedMagasin) {
+        setSelectedMagasin(null)
+      }
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [selectedMagasin])
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -452,15 +463,24 @@ export default function StorePerformanceV2() {
       {/* Modal détails magasin */}
       {selectedMagasin && (
         <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto"
           onClick={() => setSelectedMagasin(null)}
         >
           <div 
-            className="glass rounded-3xl p-8 border border-zinc-800 max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+            className="glass rounded-3xl p-8 border border-zinc-800 max-w-6xl w-full my-8 relative"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Bouton fermer - Plus visible et toujours en haut */}
+            <button
+              onClick={() => setSelectedMagasin(null)}
+              className="absolute -top-3 -right-3 p-3 bg-red-600 hover:bg-red-500 rounded-full transition-all shadow-lg z-10 group"
+              title="Fermer (Échap)"
+            >
+              <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform" />
+            </button>
+
             {/* Header modal */}
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex items-start justify-between mb-6 pr-8">
               <div className="flex items-center gap-4">
                 <div className="p-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl">
                   <Store className="w-8 h-8 text-white" />
@@ -470,12 +490,6 @@ export default function StorePerformanceV2() {
                   <p className="text-zinc-400">{selectedMagasin.code} • {selectedMagasin.ville}</p>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedMagasin(null)}
-                className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-all"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
             </div>
 
             {/* Stats générales */}
