@@ -474,7 +474,7 @@ function App() {
             {activeTab === 'crossSelling' && <div className="p-6"><CrossSellingAnalysis data={null} /></div>}
             {activeTab === 'cohortes' && <div className="p-6"><CohortAnalysis /></div>}
             {activeTab === 'abc' && <div className="p-6"><ABCAnalysis /></div>}
-            {activeTab === 'kingquentin' && <div className="p-6"><KingQuentin /></div>}
+            {activeTab === 'kingquentin' && <div className="p-6"><KingQuentin data={null} /></div>}
             {activeTab === 'zones' && <ZoneChalandise />}
             {activeTab === 'stores' && <div className="p-6"><StorePerformance /></div>}
             {activeTab === 'forecast' && <div className="p-6"><ForecastAnomalies /></div>}
