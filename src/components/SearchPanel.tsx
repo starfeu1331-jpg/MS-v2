@@ -530,7 +530,7 @@ export default function SearchPanel({ initialSearch }: SearchPanelProps) {
               </h3>
               <p className="text-sm text-zinc-400 font-medium mt-1">
                 🎴 Carte: {clientResult.carte}
-                {clientResult.civilite && ` • ${clientResult.civilite === 'M' || clientResult.sexe === 'M' ? '👨 Homme' : '👩 Femme'}`}
+                {clientResult.sexe && (clientResult.sexe === 'H' ? ' • 👨 Homme' : clientResult.sexe === 'F' ? ' • 👩 Femme' : '')}
               </p>
             </div>
           </div>

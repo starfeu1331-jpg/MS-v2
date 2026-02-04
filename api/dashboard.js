@@ -35,8 +35,8 @@ export default async function handler(req, res) {
       const statsClients = await prisma.$queryRaw`
         SELECT 
           COUNT(*)::int as total,
-          COUNT(CASE WHEN civilite = 'M' OR sexe = 'M' THEN 1 END)::int as hommes,
-          COUNT(CASE WHEN civilite = 'F' OR sexe = 'F' THEN 1 END)::int as femmes,
+          COUNT(CASE WHEN sexe = 'H' THEN 1 END)::int as hommes,
+          COUNT(CASE WHEN sexe = 'F' THEN 1 END)::int as femmes,
           COUNT(CASE WHEN nom IS NOT NULL AND nom != '' THEN 1 END)::int as avec_nom,
           COUNT(CASE WHEN prenom IS NOT NULL AND prenom != '' THEN 1 END)::int as avec_prenom,
           COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END)::int as avec_email,
@@ -174,8 +174,8 @@ export default async function handler(req, res) {
     const statsClients = await prisma.$queryRaw`
       SELECT 
         COUNT(*)::int as total,
-        COUNT(CASE WHEN civilite = 'M' OR sexe = 'M' THEN 1 END)::int as hommes,
-        COUNT(CASE WHEN civilite = 'F' OR sexe = 'F' THEN 1 END)::int as femmes,
+        COUNT(CASE WHEN sexe = 'H' THEN 1 END)::int as hommes,
+        COUNT(CASE WHEN sexe = 'F' THEN 1 END)::int as femmes,
         COUNT(CASE WHEN nom IS NOT NULL AND nom != '' THEN 1 END)::int as avec_nom,
         COUNT(CASE WHEN prenom IS NOT NULL AND prenom != '' THEN 1 END)::int as avec_prenom,
         COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END)::int as avec_email,
