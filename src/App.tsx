@@ -513,15 +513,15 @@ function App() {
       <nav className="mobile-bottom-nav">
         <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
           <motion.div 
-            className="flex items-center gap-12 absolute"
+            className="flex items-center gap-16 absolute"
             animate={{ 
-              x: `calc(50% - ${getActiveIndex() * 72}px)` 
+              x: `calc(50% - ${getActiveIndex() * 96}px)` 
             }}
             transition={{ 
               type: "spring", 
-              stiffness: 300, 
-              damping: 30,
-              mass: 0.8
+              stiffness: 260, 
+              damping: 28,
+              mass: 0.7
             }}
           >
             {ALL_TABS.map((tab, index) => {
@@ -536,19 +536,19 @@ function App() {
                   className={`flex items-center justify-center flex-shrink-0 ${
                     isActive ? tab.color : 'text-zinc-500'
                   }`}
-                  whileTap={{ scale: 0.9 }}
+                  whileTap={{ scale: 0.85 }}
                   animate={{
-                    scale: isActive ? 1.5 : distance > 2 ? 0.7 : 0.85,
-                    opacity: isActive ? 1 : distance > 2 ? 0.3 : 0.5,
-                    filter: isActive ? 'grayscale(0%)' : 'grayscale(50%)'
+                    scale: isActive ? 1.6 : distance > 2 ? 0.65 : 0.8,
+                    opacity: isActive ? 1 : distance > 2 ? 0.25 : 0.45,
+                    filter: isActive ? 'grayscale(0%)' : 'grayscale(60%)'
                   }}
                   transition={{ 
                     type: "spring", 
-                    stiffness: 400, 
-                    damping: 25 
+                    stiffness: 350, 
+                    damping: 22 
                   }}
                 >
-                  <Icon className="w-7 h-7" strokeWidth={isActive ? 3 : 2} />
+                  <Icon className="w-7 h-7" strokeWidth={isActive ? 3.5 : 2} />
                 </motion.button>
               )
             })}
