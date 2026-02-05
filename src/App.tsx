@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense, useEffect, useRef } from 'react'
-import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone, Calendar, ChevronDown, Map } from 'lucide-react'
+import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone, Calendar, ChevronDown, Map, MoreHorizontal } from 'lucide-react'
 import { LoadingFallback } from './components/LoadingFallback'
+import './mobile.css'
 
 // Lazy loading des composants - 100% PostgreSQL
 // Composants principaux
@@ -32,6 +33,7 @@ function App() {
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
   const [showPeriodMenu, setShowPeriodMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const periodMenuRef = useRef<HTMLDivElement>(null)
 
   // Fermer le menu au clic extérieur
@@ -53,8 +55,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-zinc-950 flex">
-      {/* Sidebar */}
-      <aside className={`fixed lg:sticky top-0 left-0 h-screen bg-zinc-900 border-r border-zinc-800 transition-all duration-300 z-50 ${sidebarOpen ? 'w-64' : 'w-0 lg:w-20'}`}>
+      {/* Sidebar Desktop */}
+      <aside className={`desktop-sidebar fixed lg:sticky top-0 left-0 h-screen bg-zinc-900 border-r border-zinc-800 transition-all duration-300 z-50 ${sidebarOpen ? 'w-64' : 'w-0 lg:w-20'}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-zinc-800 flex items-center justify-center">
@@ -246,7 +248,7 @@ function App() {
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+              className="desktop-toggle-btn p-2 hover:bg-zinc-800 rounded-lg transition-colors"
             >
               {sidebarOpen ? <X className="w-5 h-5 text-zinc-400" /> : <Menu className="w-5 h-5 text-zinc-400" />}
             </button>
@@ -465,7 +467,7 @@ function App() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto bg-zinc-950">
+        <main className="mobile-content flex-1 overflow-y-auto bg-zinc-950">
           <Suspense fallback={<LoadingFallback />}>
             {activeTab === 'dashboard' && <div className="p-6"><DashboardV2 period={currentPeriod} onNavigate={setActiveTab} /></div>}
             {activeTab === 'search' && <div className="p-6"><SearchPanel data={null} /></div>}
@@ -484,6 +486,168 @@ function App() {
           </Suspense>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-800 z-40">
+        <div className="grid grid-cols-5 h-16">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              activeTab === 'dashboard' ? 'text-blue-500' : 'text-zinc-500'
+            }`}
+          >
+            <Home className="w-6 h-6" />
+            <span className="text-xs font-medium">Accueil</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('search')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              activeTab === 'search' ? 'text-blue-500' : 'text-zinc-500'
+            }`}
+          >
+            <Search className="w-6 h-6" />
+            <span className="text-xs font-medium">Recherche</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('rfm')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              activeTab === 'rfm' ? 'text-purple-500' : 'text-zinc-500'
+            }`}
+          >
+            <Users className="w-6 h-6" />
+            <span className="text-xs font-medium">RFM</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('stores')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              activeTab === 'stores' ? 'text-teal-500' : 'text-zinc-500'
+            }`}
+          >
+            <Store className="w-6 h-6" />
+            <span className="text-xs font-medium">Magasins</span>
+          </button>
+          
+          <button
+            onClick={() => setShowMobileMenu(true)}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              showMobileMenu ? 'text-blue-500' : 'text-zinc-500'
+            }`}
+          >
+            <MoreHorizontal className="w-6 h-6" />
+            <span className="text-xs font-medium">Plus</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Drawer Menu */}
+      {showMobileMenu && (
+        <div 
+          className="mobile-menu-drawer fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+          onClick={() => setShowMobileMenu(false)}
+        >
+          <div 
+            className="absolute bottom-0 left-0 right-0 bg-zinc-900 rounded-t-3xl max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between rounded-t-3xl">
+              <h3 className="text-xl font-bold text-white">Toutes les analyses</h3>
+              <button
+                onClick={() => setShowMobileMenu(false)}
+                className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-2">
+              <button
+                onClick={() => { setActiveTab('subFamilies'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Layers className="w-6 h-6 text-indigo-400" />
+                <span className="font-medium">Sous-familles</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('crossSelling'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <ShoppingBag className="w-6 h-6 text-pink-400" />
+                <span className="font-medium">Cross-Selling</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('cohortes'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Target className="w-6 h-6 text-indigo-400" />
+                <span className="font-medium">Cohortes</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('abc'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Package className="w-6 h-6 text-cyan-400" />
+                <span className="font-medium">ABC Analysis</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('kingquentin'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Crown className="w-6 h-6 text-yellow-400" />
+                <span className="font-medium">King Quentin</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('zones'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Map className="w-6 h-6 text-green-400" />
+                <span className="font-medium">Zone de Chalandise</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('forecast'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Activity className="w-6 h-6 text-orange-400" />
+                <span className="font-medium">Prévisions</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('social'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Megaphone className="w-6 h-6 text-pink-400" />
+                <span className="font-medium">Réseaux Sociaux</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('exports'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Download className="w-6 h-6 text-green-400" />
+                <span className="font-medium">Exports</span>
+              </button>
+              
+              <button
+                onClick={() => { setActiveTab('settings'); setShowMobileMenu(false) }}
+                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                <Settings className="w-6 h-6 text-zinc-400" />
+                <span className="font-medium">Paramètres</span>
+              </button>
+
+              <div className="h-4"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

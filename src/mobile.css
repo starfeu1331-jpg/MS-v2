@@ -1,0 +1,28 @@
+/* Mobile-specific styles using media queries */
+
+/* Hide desktop sidebar on mobile */
+@media (max-width: 1023px) {
+  .desktop-sidebar {
+    display: none !important;
+  }
+  
+  .desktop-toggle-btn {
+    display: none !important;
+  }
+  
+  /* Add padding bottom for mobile nav */
+  .mobile-content {
+    padding-bottom: 5rem;
+  }
+}
+
+/* Hide mobile bottom nav on desktop */
+@media (min-width: 1024px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+  
+  .mobile-menu-drawer {
+    display: none !important;
+  }
+}
