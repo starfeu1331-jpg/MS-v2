@@ -520,29 +520,33 @@ function App() {
 
       {/* Mobile Bottom Navigation - Carousel Infini */}
       <nav className="mobile-bottom-nav">
-        <div className="w-full h-full flex items-center justify-center gap-2 px-4">
-          {getVisibleTabs().map((tab, index) => {
-            const Icon = tab.icon
-            const isCenter = tab.position === 0
-            
-            return (
-              <button
-                key={`${tab.id}-${index}`}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center transition-all duration-300 ease-out active:scale-95 ${
-                  isCenter 
-                    ? `${tab.color} scale-125` 
-                    : 'text-zinc-500 hover:text-zinc-400 scale-90 opacity-60'
-                }`}
-                style={{
-                  transform: `translateX(${tab.position * 4}px) scale(${isCenter ? 1.25 : 0.9})`,
-                  transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                }}
-              >
-                <Icon className={isCenter ? 'w-8 h-8' : 'w-6 h-6'} strokeWidth={isCenter ? 2.5 : 2} />
-              </button>
-            )
-          })}
+        <div className="w-full h-full flex items-center justify-center overflow-hidden">
+          <div className="flex items-center justify-center gap-8" style={{ transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+            {getVisibleTabs().map((tab, index) => {
+              const Icon = tab.icon
+              const isCenter = tab.position === 0
+              
+              return (
+                <button
+                  key={`${tab.id}-${tab.position}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center justify-center flex-shrink-0 transition-all duration-500 ease-out active:scale-90 ${
+                    isCenter 
+                      ? tab.color 
+                      : 'text-zinc-500 hover:text-zinc-400'
+                  }`}
+                  style={{
+                    transform: `scale(${isCenter ? 1.4 : 0.85})`,
+                    opacity: isCenter ? 1 : 0.5,
+                    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                    filter: isCenter ? 'none' : 'grayscale(40%)'
+                  }}
+                >
+                  <Icon className="w-7 h-7" strokeWidth={isCenter ? 3 : 2} />
+                </button>
+              )
+            })}
+          </div>
         </div>
       </nav>
 
