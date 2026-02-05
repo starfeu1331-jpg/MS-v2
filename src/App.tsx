@@ -53,7 +53,17 @@ function App() {
   const [customEndDate, setCustomEndDate] = useState('')
   const [showPeriodMenu, setShowPeriodMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 375)
   const periodMenuRef = useRef<HTMLDivElement>(null)
+
+  // Track window width for carousel calculation
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Créer une liste circulaire infinie (3 copies pour l'effet infini)
   const getInfiniteTabsList = () => {
@@ -63,10 +73,10 @@ function App() {
   // Calculer l'offset pour centrer l'onglet actif
   const getCarouselTranslate = () => {
     const activeIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
-    // On part du milieu de la 2ème copie (ALL_TABS.length + activeIndex)
     const centerIndex = ALL_TABS.length + activeIndex
-    // Largeur d'un élément = 80px (icône) + 80px (gap) = 160px
-    return -(centerIndex * 160) + (window.innerWidth / 2) - 40
+    // gap-20 = 80px, icône w-8 = 32px, total = 112px par élément
+    const itemWidth = 112
+    return -(centerIndex * itemWidth) + (windowWidth / 2) - 16
   }
 
   // Fermer le menu au clic extérieur
@@ -537,7 +547,12 @@ function App() {
           >
             {getInfiniteTabsList().map((tab, index) => {
               const Icon = tab.icon
-              const isActive = tab.id === activeTab && index >= ALL_TABS.length && index < ALL_TABS.length * 2
+              // Un logo est actif si c'est le bon id, peu importe la copie
+              const isActive = tab.id === activeTab
+              // Distance du centre pour effet de proximité
+              const activeGlobalIndex = ALL_TABS.findIndex(t => t.id === activeTab) + ALL_TABS.length
+              const distance = Math.abs(index - activeGlobalIndex)
+              const isNearCenter = distance <= 2
               
               return (
                 <motion.button
@@ -547,8 +562,8 @@ function App() {
                     isActive ? tab.color : 'text-zinc-500'
                   }`}
                   animate={{
-                    scale: isActive ? 1.8 : 0.75,
-                    opacity: isActive ? 1 : 0.4,
+                    scale: isActive ? 1.8 : isNearCenter ? 0.8 : 0.6,
+                    opacity: isActive ? 1 : isNearCenter ? 0.5 : 0.2,
                     filter: isActive ? 'grayscale(0%)' : 'grayscale(70%)'
                   }}
                   whileTap={{ scale: 0.85 }}
