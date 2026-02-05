@@ -1,4 +1,4 @@
-import { Download, FileSpreadsheet, FileText, Check } from 'lucide-react'
+import { Download, FileSpreadsheet, FileText, Check, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 interface ExportDataProps {
@@ -209,6 +209,34 @@ export default function ExportData({ data }: ExportDataProps) {
     setExportSuccess(true)
     setTimeout(() => setExportSuccess(false), 3000)
   }
+
+  // Export RFM pour IA - Document texte riche
+  const exportRFMForAI = async () => {
+    setExporting(true)
+    try {
+      const response = await fetch(`${API_URL}/api/export-rfm-ai`)
+      if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
+      
+      const result = await response.json()
+      
+      if (result.success && result.document) {
+        // Télécharger le document texte
+        const blob = new Blob([result.document], { type: 'text/plain;charset=utf-8' })
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.download = `Analyse_RFM_IA_${new Date().toISOString().split('T')[0]}.txt`
+        link.click()
+        
+        setExportSuccess(true)
+        setTimeout(() => setExportSuccess(false), 3000)
+      }
+    } catch (error) {
+      console.error('Erreur export RFM IA:', error)
+      alert('Erreur lors de l\'export. Vérifiez la console.')
+    } finally {
+      setExporting(false)
+    }
+  }
   
   return (
     <div className="space-y-6">
@@ -237,6 +265,45 @@ export default function ExportData({ data }: ExportDataProps) {
       
       {/* Export Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Export RFM pour IA - EN PREMIER */}
+        <div className="glass rounded-2xl p-6 border border-purple-500/50 card-hover col-span-full">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white">📊 Analyse RFM Complète pour IA</h3>
+              <p className="text-sm text-purple-300">Document formaté pour analyse qualitative par intelligence artificielle</p>
+            </div>
+          </div>
+          <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-4">
+            <p className="text-sm text-zinc-300 mb-2">
+              <strong className="text-purple-400">✨ Nouveau :</strong> Export spécial contenant toutes les données RFM formatées 
+              en texte naturel avec analyses détaillées par segment, répartition H/F, interprétations et recommandations.
+            </p>
+            <p className="text-xs text-zinc-400">
+              Parfait pour copier-coller dans ChatGPT, Claude ou toute autre IA pour obtenir des insights qualitatifs approfondis.
+            </p>
+          </div>
+          <button
+            onClick={exportRFMForAI}
+            disabled={exporting}
+            className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all disabled:opacity-50 flex items-center justify-center gap-3 text-lg"
+          >
+            {exporting ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Génération en cours...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-6 h-6" />
+                Télécharger Document IA (TXT)
+              </>
+            )}
+          </button>
+        </div>
+
         {/* Export KPIs */}
         <div className="glass rounded-2xl p-6 border border-zinc-800 card-hover">
           <div className="flex items-center gap-3 mb-4">
