@@ -488,56 +488,56 @@ function App() {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-800 z-40">
-        <div className="grid grid-cols-5 h-16">
+      <nav className="mobile-bottom-nav">
+        <div className="w-full h-full grid grid-cols-5">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-              activeTab === 'dashboard' ? 'text-blue-500' : 'text-zinc-500'
+            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+              activeTab === 'dashboard' ? 'text-blue-400' : 'text-zinc-400 hover:text-zinc-300'
             }`}
           >
             <Home className="w-6 h-6" />
-            <span className="text-xs font-medium">Accueil</span>
+            <span className="text-[10px] font-semibold">Accueil</span>
           </button>
           
           <button
             onClick={() => setActiveTab('search')}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-              activeTab === 'search' ? 'text-blue-500' : 'text-zinc-500'
+            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+              activeTab === 'search' ? 'text-blue-400' : 'text-zinc-400 hover:text-zinc-300'
             }`}
           >
             <Search className="w-6 h-6" />
-            <span className="text-xs font-medium">Recherche</span>
+            <span className="text-[10px] font-semibold">Recherche</span>
           </button>
           
           <button
             onClick={() => setActiveTab('rfm')}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-              activeTab === 'rfm' ? 'text-purple-500' : 'text-zinc-500'
+            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+              activeTab === 'rfm' ? 'text-purple-400' : 'text-zinc-400 hover:text-zinc-300'
             }`}
           >
             <Users className="w-6 h-6" />
-            <span className="text-xs font-medium">RFM</span>
+            <span className="text-[10px] font-semibold">RFM</span>
           </button>
           
           <button
             onClick={() => setActiveTab('stores')}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-              activeTab === 'stores' ? 'text-teal-500' : 'text-zinc-500'
+            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+              activeTab === 'stores' ? 'text-teal-400' : 'text-zinc-400 hover:text-zinc-300'
             }`}
           >
             <Store className="w-6 h-6" />
-            <span className="text-xs font-medium">Magasins</span>
+            <span className="text-[10px] font-semibold">Magasins</span>
           </button>
           
           <button
             onClick={() => setShowMobileMenu(true)}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-              showMobileMenu ? 'text-blue-500' : 'text-zinc-500'
+            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+              showMobileMenu ? 'text-blue-400' : 'text-zinc-400 hover:text-zinc-300'
             }`}
           >
             <MoreHorizontal className="w-6 h-6" />
-            <span className="text-xs font-medium">Plus</span>
+            <span className="text-[10px] font-semibold">Plus</span>
           </button>
         </div>
       </nav>
