@@ -214,7 +214,7 @@ export default function ExportData({ data }: ExportDataProps) {
   const exportRFMForAI = async () => {
     setExporting(true)
     try {
-      const response = await fetch(`${API_URL}/api/export-rfm-ai`)
+      const response = await fetch(`${API_URL}/api/export?type=rfm-ai`)
       if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
       
       const result = await response.json()
