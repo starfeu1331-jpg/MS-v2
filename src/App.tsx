@@ -85,7 +85,8 @@ function App() {
       ? Math.min(diff, diff - ALL_TABS.length)
       : Math.max(diff, diff + ALL_TABS.length)
     
-    setSlideDirection(circularDiff > 0 ? 'right' : 'left')
+    // Inverser la logique : si on va vers l'index supérieur, glisser vers la gauche
+    setSlideDirection(circularDiff > 0 ? 'left' : 'right')
     setActiveTab(newTab)
   }
 
