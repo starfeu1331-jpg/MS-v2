@@ -54,12 +54,12 @@ function App() {
   const [showPeriodMenu, setShowPeriodMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 375)
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
+  const [[page, direction], setPage] = useState<[TabType, 'left' | 'right']>(['dashboard', 'right'])
   const periodMenuRef = useRef<HTMLDivElement>(null)
 
   // Obtenir les 5 icônes visibles : 2 avant, 1 actif, 2 après (circulaire)
   const getVisibleTabs = () => {
-    const activeIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
+    const activeIndex = ALL_TABS.findIndex(tab => tab.id === page)
     const visible = []
     
     // 2 à gauche, 1 au centre, 2 à droite = 5 total
@@ -78,12 +78,12 @@ function App() {
   const handleTabChange = (newTab: TabType, visiblePosition?: number) => {
     // Si le clic vient des 5 icônes visibles, utiliser leur position réelle à l'écran
     if (visiblePosition !== undefined && visiblePosition !== 0) {
-      setSlideDirection(visiblePosition > 0 ? 'right' : 'left')
-      setActiveTab(newTab)
+      const newDirection = visiblePosition > 0 ? 'right' : 'left'
+      setPage([newTab, newDirection])
       return
     }
 
-    const currentIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
+    const currentIndex = ALL_TABS.findIndex(tab => tab.id === page)
     const newIndex = ALL_TABS.findIndex(tab => tab.id === newTab)
     
     // Calculer la direction la plus courte en mode circulaire
@@ -93,8 +93,8 @@ function App() {
       : Math.max(diff, diff + ALL_TABS.length)
     
     // Inverser la logique : si on va vers l'index supérieur, glisser vers la gauche
-    setSlideDirection(circularDiff > 0 ? 'left' : 'right')
-    setActiveTab(newTab)
+    const newDirection = circularDiff > 0 ? 'left' : 'right'
+    setPage([newTab, newDirection])
   }
 
   const slideVariants = {
@@ -155,7 +155,7 @@ function App() {
             <button
                 onClick={() => handleTabChange('dashboard')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'dashboard'
+                  page === 'dashboard'
                     ? 'bg-blue-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -166,7 +166,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('search')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'search'
+                  page === 'search'
                     ? 'bg-blue-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -180,7 +180,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('rfm')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'rfm'
+                  page === 'rfm'
                     ? 'bg-purple-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -191,7 +191,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('subFamilies')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'subFamilies'
+                  page === 'subFamilies'
                     ? 'bg-indigo-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -202,7 +202,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('crossSelling')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'crossSelling'
+                  page === 'crossSelling'
                     ? 'bg-pink-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -213,7 +213,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('cohortes')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'cohortes'
+                  page === 'cohortes'
                     ? 'bg-indigo-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -224,7 +224,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('abc')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'abc'
+                  page === 'abc'
                     ? 'bg-cyan-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -235,7 +235,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('kingquentin')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'kingquentin'
+                  page === 'kingquentin'
                     ? 'bg-yellow-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -246,7 +246,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('zones')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'zones'
+                  page === 'zones'
                     ? 'bg-green-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -257,7 +257,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('stores')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'stores'
+                  page === 'stores'
                     ? 'bg-teal-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -268,7 +268,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('forecast')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'forecast'
+                  page === 'forecast'
                     ? 'bg-orange-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -279,7 +279,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('social')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'social'
+                  page === 'social'
                     ? 'bg-pink-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -290,7 +290,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('exports')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'exports'
+                  page === 'exports'
                     ? 'bg-green-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -304,7 +304,7 @@ function App() {
               <button
                 onClick={() => handleTabChange('settings')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === 'settings'
+                  page === 'settings'
                     ? 'bg-zinc-500 text-white'
                     : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                 }`}
@@ -329,26 +329,26 @@ function App() {
               {sidebarOpen ? <X className="w-5 h-5 text-zinc-400" /> : <Menu className="w-5 h-5 text-zinc-400" />}
             </button>
             <h1 className="text-2xl font-bold text-white">
-              {activeTab === 'dashboard' && 'Vue d\'ensemble'}
-              {activeTab === 'search' && 'Recherche'}
-              {activeTab === 'rfm' && 'Segmentation RFM'}
-              {activeTab === 'subFamilies' && 'Sous-familles'}
-              {activeTab === 'crossSelling' && 'Analyse Cross-Selling'}
-              {activeTab === 'cohortes' && 'Analyse de Cohortes'}
-              {activeTab === 'abc' && 'ABC Analysis'}
-              {activeTab === 'kingquentin' && 'King Quentin 👑'}
-              {activeTab === 'zones' && 'Zone de Chalandise 🗺️'}
-              {activeTab === 'stores' && 'Performance Magasins'}
-              {activeTab === 'forecast' && 'Prévisions & Anomalies'}
-              {activeTab === 'social' && 'Réseaux Sociaux'}
-              {activeTab === 'exports' && 'Exports de données'}
-              {activeTab === 'settings' && 'Paramètres'}
+              {page === 'dashboard' && 'Vue d\'ensemble'}
+              {page === 'search' && 'Recherche'}
+              {page === 'rfm' && 'Segmentation RFM'}
+              {page === 'subFamilies' && 'Sous-familles'}
+              {page === 'crossSelling' && 'Analyse Cross-Selling'}
+              {page === 'cohortes' && 'Analyse de Cohortes'}
+              {page === 'abc' && 'ABC Analysis'}
+              {page === 'kingquentin' && 'King Quentin 👑'}
+              {page === 'zones' && 'Zone de Chalandise 🗺️'}
+              {page === 'stores' && 'Performance Magasins'}
+              {page === 'forecast' && 'Prévisions & Anomalies'}
+              {page === 'social' && 'Réseaux Sociaux'}
+              {page === 'exports' && 'Exports de données'}
+              {page === 'settings' && 'Paramètres'}
             </h1>
           </div>
           
           <div className="flex items-center gap-4">
             {/* Sélecteur de période - Dropdown */}
-          {activeTab === 'dashboard' && (
+          {page === 'dashboard' && (
             <div className="relative" ref={periodMenuRef}>
               <button 
                 onClick={() => setShowPeriodMenu(!showPeriodMenu)}
@@ -545,20 +545,20 @@ function App() {
         {/* Content Area */}
         <main className="mobile-content flex-1 overflow-y-auto bg-zinc-950">
           <Suspense fallback={<LoadingFallback />}>
-            {activeTab === 'dashboard' && <div className="p-6"><DashboardV2 period={currentPeriod} onNavigate={handleTabChange} /></div>}
-            {activeTab === 'search' && <div className="p-6"><SearchPanel data={null} /></div>}
-            {activeTab === 'rfm' && <div className="p-6"><RFMAnalysis data={null} showWebData={showWebData} /></div>}
-            {activeTab === 'subFamilies' && <div className="p-6"><SubFamilyAnalysis data={null} showWebData={showWebData} /></div>}
-            {activeTab === 'crossSelling' && <div className="p-6"><CrossSellingAnalysis data={null} /></div>}
-            {activeTab === 'cohortes' && <div className="p-6"><CohortAnalysis /></div>}
-            {activeTab === 'abc' && <div className="p-6"><ABCAnalysis /></div>}
-            {activeTab === 'kingquentin' && <div className="p-6"><KingQuentin data={null} /></div>}
-            {activeTab === 'zones' && <ZoneChalandise />}
-            {activeTab === 'stores' && <div className="p-6"><StorePerformance /></div>}
-            {activeTab === 'forecast' && <div className="p-6"><ForecastAnomalies /></div>}
-            {activeTab === 'social' && <div className="p-6"><SocialMediaInsights data={null} /></div>}
-            {activeTab === 'exports' && <div className="p-6"><ExportData data={null} /></div>}
-            {activeTab === 'settings' && <div className="p-6"><SettingsView /></div>}
+            {page === 'dashboard' && <div className="p-6"><DashboardV2 period={currentPeriod} onNavigate={handleTabChange} /></div>}
+            {page === 'search' && <div className="p-6"><SearchPanel data={null} /></div>}
+            {page === 'rfm' && <div className="p-6"><RFMAnalysis data={null} showWebData={showWebData} /></div>}
+            {page === 'subFamilies' && <div className="p-6"><SubFamilyAnalysis data={null} showWebData={showWebData} /></div>}
+            {page === 'crossSelling' && <div className="p-6"><CrossSellingAnalysis data={null} /></div>}
+            {page === 'cohortes' && <div className="p-6"><CohortAnalysis /></div>}
+            {page === 'abc' && <div className="p-6"><ABCAnalysis /></div>}
+            {page === 'kingquentin' && <div className="p-6"><KingQuentin data={null} /></div>}
+            {page === 'zones' && <ZoneChalandise />}
+            {page === 'stores' && <div className="p-6"><StorePerformance /></div>}
+            {page === 'forecast' && <div className="p-6"><ForecastAnomalies /></div>}
+            {page === 'social' && <div className="p-6"><SocialMediaInsights data={null} /></div>}
+            {page === 'exports' && <div className="p-6"><ExportData data={null} /></div>}
+            {page === 'settings' && <div className="p-6"><SettingsView /></div>}
           </Suspense>
         </main>
       </div>
@@ -567,10 +567,10 @@ function App() {
       <nav className="mobile-bottom-nav">
         <AnimatePresence mode="popLayout">
           <motion.div 
-            key={activeTab}
+            key={page}
             className="w-full h-full flex items-center justify-between px-6"
             variants={slideVariants}
-            custom={slideDirection}
+            custom={direction}
             initial="enter"
             animate="center"
             exit="exit"
