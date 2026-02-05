@@ -19,6 +19,7 @@
     "@turf/turf": "^7.3.3",
     "chroma-js": "^3.2.0",
     "csv-parse": "^6.1.0",
+    "framer-motion": "^12.31.1",
     "leaflet": "^1.9.4",
     "leaflet.heat": "^0.2.0",
     "lucide-react": "^0.562.0",

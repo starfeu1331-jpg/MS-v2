@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense, useEffect, useRef } from 'react'
 import { BarChart3, Search, Home, Users, Settings, Menu, X, Package, ShoppingBag, Store, Activity, Download, Target, Layers, Globe, Crown, Megaphone, Calendar, ChevronDown, Map, MoreHorizontal } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { LoadingFallback } from './components/LoadingFallback'
 import './mobile.css'
 
@@ -54,18 +55,8 @@ function App() {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const periodMenuRef = useRef<HTMLDivElement>(null)
 
-  // Obtenir les 5 onglets visibles dans le carousel (2 avant, actif au centre, 2 après)
-  const getVisibleTabs = () => {
-    const currentIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
-    const visibleTabs = []
-    
-    for (let i = -2; i <= 2; i++) {
-      let index = (currentIndex + i + ALL_TABS.length) % ALL_TABS.length
-      visibleTabs.push({ ...ALL_TABS[index], position: i })
-    }
-    
-    return visibleTabs
-  }
+  // Obtenir l'index de l'onglet actif
+  const getActiveIndex = () => ALL_TABS.findIndex(tab => tab.id === activeTab)
 
   // Fermer le menu au clic extérieur
   useEffect(() => {
@@ -518,35 +509,50 @@ function App() {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation - Carousel Infini */}
+      {/* Mobile Bottom Navigation - Carousel Infini avec Framer Motion */}
       <nav className="mobile-bottom-nav">
-        <div className="w-full h-full flex items-center justify-center overflow-hidden">
-          <div className="flex items-center justify-center gap-8" style={{ transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-            {getVisibleTabs().map((tab, index) => {
+        <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+          <motion.div 
+            className="flex items-center gap-12 absolute"
+            animate={{ 
+              x: `calc(50% - ${getActiveIndex() * 72}px)` 
+            }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 300, 
+              damping: 30,
+              mass: 0.8
+            }}
+          >
+            {ALL_TABS.map((tab, index) => {
               const Icon = tab.icon
-              const isCenter = tab.position === 0
+              const isActive = activeTab === tab.id
+              const distance = Math.abs(getActiveIndex() - index)
               
               return (
-                <button
-                  key={`${tab.id}-${tab.position}`}
+                <motion.button
+                  key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center justify-center flex-shrink-0 transition-all duration-500 ease-out active:scale-90 ${
-                    isCenter 
-                      ? tab.color 
-                      : 'text-zinc-500 hover:text-zinc-400'
+                  className={`flex items-center justify-center flex-shrink-0 ${
+                    isActive ? tab.color : 'text-zinc-500'
                   }`}
-                  style={{
-                    transform: `scale(${isCenter ? 1.4 : 0.85})`,
-                    opacity: isCenter ? 1 : 0.5,
-                    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                    filter: isCenter ? 'none' : 'grayscale(40%)'
+                  whileTap={{ scale: 0.9 }}
+                  animate={{
+                    scale: isActive ? 1.5 : distance > 2 ? 0.7 : 0.85,
+                    opacity: isActive ? 1 : distance > 2 ? 0.3 : 0.5,
+                    filter: isActive ? 'grayscale(0%)' : 'grayscale(50%)'
+                  }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 400, 
+                    damping: 25 
                   }}
                 >
-                  <Icon className="w-7 h-7" strokeWidth={isCenter ? 3 : 2} />
-                </button>
+                  <Icon className="w-7 h-7" strokeWidth={isActive ? 3 : 2} />
+                </motion.button>
               )
             })}
-          </div>
+          </motion.div>
         </div>
       </nav>
 
