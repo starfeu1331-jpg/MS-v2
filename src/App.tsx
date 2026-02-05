@@ -78,7 +78,7 @@ function App() {
   const handleTabChange = (newTab: TabType, visiblePosition?: number) => {
     // Si le clic vient des 5 icônes visibles, utiliser leur position réelle à l'écran
     if (visiblePosition !== undefined && visiblePosition !== 0) {
-      setSlideDirection(visiblePosition > 0 ? 'left' : 'right')
+      setSlideDirection(visiblePosition > 0 ? 'right' : 'left')
       setActiveTab(newTab)
       return
     }
