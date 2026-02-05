@@ -54,6 +54,7 @@ function App() {
   const [showPeriodMenu, setShowPeriodMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 375)
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
   const periodMenuRef = useRef<HTMLDivElement>(null)
 
   // Obtenir les 5 icônes visibles : 2 avant, 1 actif, 2 après (circulaire)
@@ -71,6 +72,21 @@ function App() {
     }
     
     return visible
+  }
+
+  // Gérer le changement d'onglet avec direction
+  const handleTabChange = (newTab: TabType) => {
+    const currentIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
+    const newIndex = ALL_TABS.findIndex(tab => tab.id === newTab)
+    
+    // Calculer la direction la plus courte en mode circulaire
+    const diff = newIndex - currentIndex
+    const circularDiff = diff > 0 
+      ? Math.min(diff, diff - ALL_TABS.length)
+      : Math.max(diff, diff + ALL_TABS.length)
+    
+    setSlideDirection(circularDiff > 0 ? 'right' : 'left')
+    setActiveTab(newTab)
   }
 
   // Fermer le menu au clic extérieur
@@ -114,7 +130,7 @@ function App() {
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             <button
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => handleTabChange('dashboard')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'dashboard'
                     ? 'bg-blue-500 text-white'
@@ -125,7 +141,7 @@ function App() {
                 {sidebarOpen && <span>Vue d'ensemble</span>}
               </button>
               <button
-                onClick={() => setActiveTab('search')}
+                onClick={() => handleTabChange('search')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'search'
                     ? 'bg-blue-500 text-white'
@@ -139,7 +155,7 @@ function App() {
               {sidebarOpen && <div className="px-4 py-2"><p className="text-xs text-zinc-600 font-semibold uppercase">Analyses Avancées</p></div>}
               
               <button
-                onClick={() => setActiveTab('rfm')}
+                onClick={() => handleTabChange('rfm')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'rfm'
                     ? 'bg-purple-500 text-white'
@@ -150,7 +166,7 @@ function App() {
                 {sidebarOpen && <span>Segmentation RFM</span>}
               </button>
               <button
-                onClick={() => setActiveTab('subFamilies')}
+                onClick={() => handleTabChange('subFamilies')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'subFamilies'
                     ? 'bg-indigo-500 text-white'
@@ -161,7 +177,7 @@ function App() {
                 {sidebarOpen && <span>Sous-familles</span>}
               </button>
               <button
-                onClick={() => setActiveTab('crossSelling')}
+                onClick={() => handleTabChange('crossSelling')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'crossSelling'
                     ? 'bg-pink-500 text-white'
@@ -172,7 +188,7 @@ function App() {
                 {sidebarOpen && <span>Cross-Selling</span>}
               </button>
               <button
-                onClick={() => setActiveTab('cohortes')}
+                onClick={() => handleTabChange('cohortes')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'cohortes'
                     ? 'bg-indigo-500 text-white'
@@ -183,7 +199,7 @@ function App() {
                 {sidebarOpen && <span>Cohortes</span>}
               </button>
               <button
-                onClick={() => setActiveTab('abc')}
+                onClick={() => handleTabChange('abc')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'abc'
                     ? 'bg-cyan-500 text-white'
@@ -194,7 +210,7 @@ function App() {
                 {sidebarOpen && <span>ABC Analysis</span>}
               </button>
               <button
-                onClick={() => setActiveTab('kingquentin')}
+                onClick={() => handleTabChange('kingquentin')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'kingquentin'
                     ? 'bg-yellow-500 text-white'
@@ -205,7 +221,7 @@ function App() {
                 {sidebarOpen && <span>King Quentin</span>}
               </button>
               <button
-                onClick={() => setActiveTab('zones')}
+                onClick={() => handleTabChange('zones')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'zones'
                     ? 'bg-green-500 text-white'
@@ -216,7 +232,7 @@ function App() {
                 {sidebarOpen && <span>Zone de Chalandise</span>}
               </button>
               <button
-                onClick={() => setActiveTab('stores')}
+                onClick={() => handleTabChange('stores')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'stores'
                     ? 'bg-teal-500 text-white'
@@ -227,7 +243,7 @@ function App() {
                 {sidebarOpen && <span>Magasins</span>}
               </button>
               <button
-                onClick={() => setActiveTab('forecast')}
+                onClick={() => handleTabChange('forecast')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'forecast'
                     ? 'bg-orange-500 text-white'
@@ -238,7 +254,7 @@ function App() {
                 {sidebarOpen && <span>Prévisions</span>}
               </button>
               <button
-                onClick={() => setActiveTab('social')}
+                onClick={() => handleTabChange('social')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'social'
                     ? 'bg-pink-500 text-white'
@@ -249,7 +265,7 @@ function App() {
                 {sidebarOpen && <span>Réseaux Sociaux</span>}
               </button>
               <button
-                onClick={() => setActiveTab('exports')}
+                onClick={() => handleTabChange('exports')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'exports'
                     ? 'bg-green-500 text-white'
@@ -263,7 +279,7 @@ function App() {
               {sidebarOpen && <div className="px-4 py-2 mt-4"><p className="text-xs text-zinc-600 font-semibold uppercase">Paramètres</p></div>}
               
               <button
-                onClick={() => setActiveTab('settings')}
+                onClick={() => handleTabChange('settings')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
                   activeTab === 'settings'
                     ? 'bg-zinc-500 text-white'
@@ -506,7 +522,7 @@ function App() {
         {/* Content Area */}
         <main className="mobile-content flex-1 overflow-y-auto bg-zinc-950">
           <Suspense fallback={<LoadingFallback />}>
-            {activeTab === 'dashboard' && <div className="p-6"><DashboardV2 period={currentPeriod} onNavigate={setActiveTab} /></div>}
+            {activeTab === 'dashboard' && <div className="p-6"><DashboardV2 period={currentPeriod} onNavigate={handleTabChange} /></div>}
             {activeTab === 'search' && <div className="p-6"><SearchPanel data={null} /></div>}
             {activeTab === 'rfm' && <div className="p-6"><RFMAnalysis data={null} showWebData={showWebData} /></div>}
             {activeTab === 'subFamilies' && <div className="p-6"><SubFamilyAnalysis data={null} showWebData={showWebData} /></div>}
@@ -529,10 +545,10 @@ function App() {
         <AnimatePresence mode="popLayout">
           <motion.div 
             key={activeTab}
-            className="w-full h-full flex items-center justify-center gap-6 px-4"
-            initial={{ x: 100, opacity: 0 }}
+            className="w-full h-full flex items-center justify-between px-6"
+            initial={{ x: slideDirection === 'right' ? 100 : -100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -100, opacity: 0 }}
+            exit={{ x: slideDirection === 'right' ? -100 : 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             {getVisibleTabs().map((tab) => {
@@ -543,7 +559,7 @@ function App() {
               return (
                 <motion.button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`flex-shrink-0 flex items-center justify-center ${
                     isActive ? tab.color : 'text-zinc-600'
                   }`}
@@ -584,7 +600,7 @@ function App() {
             
             <div className="p-4 space-y-2">
               <button
-                onClick={() => { setActiveTab('subFamilies'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('subFamilies'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Layers className="w-6 h-6 text-indigo-400" />
@@ -592,7 +608,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('crossSelling'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('crossSelling'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <ShoppingBag className="w-6 h-6 text-pink-400" />
@@ -600,7 +616,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('cohortes'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('cohortes'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Target className="w-6 h-6 text-indigo-400" />
@@ -608,7 +624,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('abc'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('abc'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Package className="w-6 h-6 text-cyan-400" />
@@ -616,7 +632,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('kingquentin'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('kingquentin'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Crown className="w-6 h-6 text-yellow-400" />
@@ -624,7 +640,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('zones'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('zones'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Map className="w-6 h-6 text-green-400" />
@@ -632,7 +648,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('forecast'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('forecast'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Activity className="w-6 h-6 text-orange-400" />
@@ -640,7 +656,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('social'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('social'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Megaphone className="w-6 h-6 text-pink-400" />
@@ -648,7 +664,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('exports'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('exports'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Download className="w-6 h-6 text-green-400" />
@@ -656,7 +672,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => { setActiveTab('settings'); setShowMobileMenu(false) }}
+                onClick={() => { handleTabChange('settings'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Settings className="w-6 h-6 text-zinc-400" />
