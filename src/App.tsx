@@ -79,14 +79,24 @@ function App() {
     const currentIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
     const newIndex = ALL_TABS.findIndex(tab => tab.id === newTab)
     
-    // Calculer la direction la plus courte en mode circulaire
-    const diff = newIndex - currentIndex
-    const circularDiff = diff > 0 
-      ? Math.min(diff, diff - ALL_TABS.length)
-      : Math.max(diff, diff + ALL_TABS.length)
+    // Vérifier si le nouvel onglet est dans les 5 visibles actuels
+    const visibleTabs = getVisibleTabs()
+    const newTabInVisible = visibleTabs.find(t => t.id === newTab)
     
-    // Inverser la logique : si on va vers l'index supérieur, glisser vers la gauche
-    setSlideDirection(circularDiff > 0 ? 'left' : 'right')
+    if (newTabInVisible) {
+      // Le nouvel onglet est visible, utiliser sa position relative
+      // Position négative = à gauche, positive = à droite
+      setSlideDirection(newTabInVisible.position > 0 ? 'left' : 'right')
+    } else {
+      // Le nouvel onglet n'est pas visible, calculer la direction circulaire
+      const diff = newIndex - currentIndex
+      const circularDiff = diff > 0 
+        ? Math.min(diff, diff - ALL_TABS.length)
+        : Math.max(diff, diff + ALL_TABS.length)
+      
+      setSlideDirection(circularDiff > 0 ? 'left' : 'right')
+    }
+    
     setActiveTab(newTab)
   }
 
