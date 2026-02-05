@@ -61,6 +61,7 @@ function App() {
     if (typeof window === 'undefined') return
     
     const handleResize = () => setWindowWidth(window.innerWidth)
+    handleResize() // Set initial width
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -73,10 +74,9 @@ function App() {
   // Calculer l'offset pour centrer l'onglet actif
   const getCarouselTranslate = () => {
     const activeIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
-    const centerIndex = ALL_TABS.length + activeIndex
-    // gap-20 = 80px, icône w-8 = 32px, total = 112px par élément
-    const itemWidth = 112
-    return -(centerIndex * itemWidth) + (windowWidth / 2) - 16
+    const centerIndex = ALL_TABS.length + activeIndex // Index dans la copie du milieu
+    // gap-20 = 80px, donc on décale de 80px * index
+    return -(centerIndex * 80)
   }
 
   // Fermer le menu au clic extérieur
@@ -532,9 +532,12 @@ function App() {
 
       {/* Mobile Bottom Navigation - Carousel Infini avec Framer Motion */}
       <nav className="mobile-bottom-nav">
-        <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+        <div className="w-full h-full flex items-center justify-center overflow-hidden">
           <motion.div 
-            className="flex items-center gap-20 absolute"
+            className="flex items-center gap-20"
+            style={{
+              paddingLeft: '50%', // Start avec padding pour que le premier élément puisse être centré
+            }}
             animate={{ 
               x: getCarouselTranslate()
             }}
@@ -562,9 +565,9 @@ function App() {
                     isActive ? tab.color : 'text-zinc-500'
                   }`}
                   animate={{
-                    scale: isActive ? 1.8 : isNearCenter ? 0.8 : 0.6,
-                    opacity: isActive ? 1 : isNearCenter ? 0.5 : 0.2,
-                    filter: isActive ? 'grayscale(0%)' : 'grayscale(70%)'
+                    scale: isActive ? 1.8 : isNearCenter ? 0.85 : 0.6,
+                    opacity: isActive ? 1 : isNearCenter ? 0.6 : 0.3,
+                    filter: isActive ? 'grayscale(0%)' : 'grayscale(60%)'
                   }}
                   whileTap={{ scale: 0.85 }}
                   transition={{ 
