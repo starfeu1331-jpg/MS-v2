@@ -526,29 +526,40 @@ function App() {
 
       {/* Mobile Bottom Navigation - 5 icônes visibles max */}
       <nav className="mobile-bottom-nav">
-        <div className="w-full h-full flex items-center justify-center gap-6 px-4">
-          {getVisibleTabs().map((tab) => {
-            const Icon = tab.icon
-            const isActive = tab.position === 0
-            const distance = Math.abs(tab.position)
-            
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-shrink-0 flex items-center justify-center transition-all duration-300 ${
-                  isActive ? tab.color : 'text-zinc-600'
-                }`}
-                style={{
-                  transform: isActive ? 'scale(1.5)' : distance === 1 ? 'scale(0.9)' : 'scale(0.7)',
-                  opacity: isActive ? 1 : distance === 1 ? 0.6 : 0.3,
-                }}
-              >
-                <Icon className="w-8 h-8" strokeWidth={isActive ? 3 : 2} />
-              </button>
-            )
-          })}
-        </div>
+        <AnimatePresence mode="popLayout">
+          <motion.div 
+            key={activeTab}
+            className="w-full h-full flex items-center justify-center gap-6 px-4"
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            {getVisibleTabs().map((tab) => {
+              const Icon = tab.icon
+              const isActive = tab.position === 0
+              const distance = Math.abs(tab.position)
+              
+              return (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-shrink-0 flex items-center justify-center ${
+                    isActive ? tab.color : 'text-zinc-600'
+                  }`}
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{
+                    scale: isActive ? 1.5 : distance === 1 ? 0.9 : 0.7,
+                    opacity: isActive ? 1 : distance === 1 ? 0.6 : 0.3,
+                  }}
+                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                >
+                  <Icon className="w-8 h-8" strokeWidth={isActive ? 3 : 2} />
+                </motion.button>
+              )
+            })}
+          </motion.div>
+        </AnimatePresence>
       </nav>
 
       {/* Mobile Drawer Menu */}
