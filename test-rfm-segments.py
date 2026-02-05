@@ -128,25 +128,25 @@ print(rfm['M'].value_counts().sort_index())
 def segment_client(row):
     R, F, M = row['R'], row['F'], row['M']
     
-    # 0. ULTRA CHAMPIONS
+    # 0. ULTRA CHAMPIONS - Les meilleurs partout
     if R == 5 and F == 5 and M == 5:
         return 'Ultra Champions'
-    # 1. CHAMPIONS
+    # 1. CHAMPIONS - Excellents partout (R,F,M >= 4)
     elif R >= 4 and F >= 4 and M >= 4:
         return 'Champions'
-    # 2. NOUVEAUX
-    elif R >= 4 and F == 3:
-        return 'Nouveaux'
-    # 3. OCCASIONNELS
-    elif R == 3 and F == 3:
-        return 'Occasionnels'
-    # 4. LOYAUX
+    # 2. LOYAUX - Bons partout (R,F,M >= 3) - AVANT Nouveaux/Occasionnels
     elif R >= 3 and F >= 3 and M >= 3:
         return 'Loyaux'
-    # 5. À RISQUE
+    # 3. NOUVEAUX - Récence excellente (R>=4), fréquence moyenne (F=3)
+    elif R >= 4 and F == 3:
+        return 'Nouveaux'
+    # 4. OCCASIONNELS - Récence et fréquence moyennes (R=3, F=3)
+    elif R == 3 and F == 3:
+        return 'Occasionnels'
+    # 5. À RISQUE - Bonne fréquence (F>=3) MAIS mauvaise récence (R<=2)
     elif F >= 3 and R <= 2:
         return 'À Risque'
-    # 6. PERDUS
+    # 6. PERDUS - Tous les autres cas (récence/fréquence faibles)
     else:
         return 'Perdus'
 

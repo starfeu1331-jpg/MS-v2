@@ -104,7 +104,7 @@ export function calculateClientRFM(clientData: any, allClientsData: any[] | Map<
   const M = getQuintile(monetary, monetaryThresholds)
   const RFM = R * 100 + F * 10 + M
   
-  // Déterminer le segment
+  // Déterminer le segment (ordre important: du plus spécifique au plus général)
   let segment = ''
   let color = ''
   let icon = ''
@@ -121,18 +121,18 @@ export function calculateClientRFM(clientData: any, allClientsData: any[] | Map<
     segment = 'Loyaux'
     color = 'blue'
     icon = '💎'
+  } else if (R >= 4 && F === 3) {
+    segment = 'Nouveaux'
+    color = 'cyan'
+    icon = '✨'
+  } else if (R === 3 && F === 3) {
+    segment = 'Occasionnels'
+    color = 'zinc'
+    icon = '🎯'
   } else if (F >= 3 && R <= 2) {
     segment = 'À Risque'
     color = 'orange'
     icon = '⚠️'
-  } else if (R >= 4 && F <= 2) {
-    segment = 'Nouveaux'
-    color = 'cyan'
-    icon = '✨'
-  } else if (R >= 3 && F <= 2) {
-    segment = 'Occasionnels'
-    color = 'zinc'
-    icon = '🎯'
   } else {
     segment = 'Perdus'
     color = 'red'

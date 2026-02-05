@@ -214,12 +214,12 @@ export default async function handler(req, res) {
         segment = 'Ultra Champions'
       } else if (R >= 4 && F >= 4 && M >= 4) {
         segment = 'Champions'
+      } else if (R >= 3 && F >= 3 && M >= 3) {
+        segment = 'Loyaux'
       } else if (R >= 4 && F === 3) {
         segment = 'Nouveaux'
       } else if (R === 3 && F === 3) {
         segment = 'Occasionnels'
-      } else if (R >= 3 && F >= 3 && M >= 3) {
-        segment = 'Loyaux'
       } else if (F >= 3 && R <= 2) {
         segment = 'À Risque'
       } else {
