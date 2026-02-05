@@ -55,18 +55,18 @@ function App() {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const periodMenuRef = useRef<HTMLDivElement>(null)
 
-  // Obtenir les 5 onglets visibles (2 avant, actif au centre, 2 après) avec logique circulaire
-  const getVisibleTabs = () => {
-    const currentIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
-    const visibleTabs = []
-    
-    // -2, -1, 0 (centre), +1, +2
-    for (let i = -2; i <= 2; i++) {
-      let index = (currentIndex + i + ALL_TABS.length) % ALL_TABS.length
-      visibleTabs.push({ ...ALL_TABS[index], relativePosition: i })
-    }
-    
-    return visibleTabs
+  // Créer une liste circulaire infinie (3 copies pour l'effet infini)
+  const getInfiniteTabsList = () => {
+    return [...ALL_TABS, ...ALL_TABS, ...ALL_TABS]
+  }
+
+  // Calculer l'offset pour centrer l'onglet actif
+  const getCarouselTranslate = () => {
+    const activeIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
+    // On part du milieu de la 2ème copie (ALL_TABS.length + activeIndex)
+    const centerIndex = ALL_TABS.length + activeIndex
+    // Largeur d'un élément = 80px (icône) + 80px (gap) = 160px
+    return -(centerIndex * 160) + (window.innerWidth / 2) - 40
   }
 
   // Fermer le menu au clic extérieur
@@ -522,41 +522,47 @@ function App() {
 
       {/* Mobile Bottom Navigation - Carousel Infini avec Framer Motion */}
       <nav className="mobile-bottom-nav">
-        <div className="w-full h-full flex items-center justify-center overflow-hidden px-4">
-          <div className="flex items-center justify-center gap-12">
-            <AnimatePresence mode="popLayout">
-              {getVisibleTabs().map((tab) => {
-                const Icon = tab.icon
-                const isCenter = tab.relativePosition === 0
-                
-                return (
-                  <motion.button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center justify-center flex-shrink-0 ${
-                      isCenter ? tab.color : 'text-zinc-500'
-                    }`}
-                    initial={{ scale: 0.7, opacity: 0 }}
-                    animate={{
-                      scale: isCenter ? 1.6 : 0.75,
-                      opacity: isCenter ? 1 : 0.4,
-                      filter: isCenter ? 'grayscale(0%)' : 'grayscale(70%)'
-                    }}
-                    exit={{ scale: 0.5, opacity: 0 }}
-                    whileTap={{ scale: isCenter ? 1.5 : 0.7 }}
-                    transition={{ 
-                      type: "spring", 
-                      stiffness: 300, 
-                      damping: 25,
-                      mass: 0.6
-                    }}
-                  >
-                    <Icon className="w-7 h-7" strokeWidth={isCenter ? 3.5 : 2} />
-                  </motion.button>
-                )
-              })}
-            </AnimatePresence>
-          </div>
+        <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+          <motion.div 
+            className="flex items-center gap-20 absolute"
+            animate={{ 
+              x: getCarouselTranslate()
+            }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 280, 
+              damping: 28,
+              mass: 0.8
+            }}
+          >
+            {getInfiniteTabsList().map((tab, index) => {
+              const Icon = tab.icon
+              const isActive = tab.id === activeTab && index >= ALL_TABS.length && index < ALL_TABS.length * 2
+              
+              return (
+                <motion.button
+                  key={`${tab.id}-${index}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center justify-center flex-shrink-0 ${
+                    isActive ? tab.color : 'text-zinc-500'
+                  }`}
+                  animate={{
+                    scale: isActive ? 1.8 : 0.75,
+                    opacity: isActive ? 1 : 0.4,
+                    filter: isActive ? 'grayscale(0%)' : 'grayscale(70%)'
+                  }}
+                  whileTap={{ scale: 0.85 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 350, 
+                    damping: 22
+                  }}
+                >
+                  <Icon className="w-8 h-8" strokeWidth={isActive ? 4 : 2} />
+                </motion.button>
+              )
+            })}
+          </motion.div>
         </div>
       </nav>
 
