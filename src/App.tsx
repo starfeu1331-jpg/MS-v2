@@ -74,9 +74,11 @@ function App() {
   // Calculer l'offset pour centrer l'onglet actif
   const getCarouselTranslate = () => {
     const activeIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
-    const centerIndex = ALL_TABS.length + activeIndex // Index dans la copie du milieu
-    // gap-20 = 80px, donc on décale de 80px * index
-    return -(centerIndex * 80)
+    // On utilise la copie du milieu pour l'effet infini
+    const centerIndex = ALL_TABS.length + activeIndex
+    // Chaque élément = icône (32px) + gap (80px) = 112px
+    // On centre en décalant de: nombre d'éléments * largeur
+    return centerIndex * -112
   }
 
   // Fermer le menu au clic extérieur
@@ -532,19 +534,20 @@ function App() {
 
       {/* Mobile Bottom Navigation - Carousel Infini avec Framer Motion */}
       <nav className="mobile-bottom-nav">
-        <div className="w-full h-full flex items-center justify-center overflow-hidden">
+        <div className="w-full h-full flex items-center overflow-hidden">
           <motion.div 
             className="flex items-center gap-20"
             style={{
-              paddingLeft: '50%', // Start avec padding pour que le premier élément puisse être centré
+              paddingLeft: '50vw',
+              paddingRight: '50vw',
             }}
             animate={{ 
               x: getCarouselTranslate()
             }}
             transition={{ 
               type: "spring", 
-              stiffness: 280, 
-              damping: 28,
+              stiffness: 260, 
+              damping: 30,
               mass: 0.8
             }}
           >
