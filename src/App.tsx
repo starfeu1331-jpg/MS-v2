@@ -56,36 +56,24 @@ function App() {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 375)
   const periodMenuRef = useRef<HTMLDivElement>(null)
 
-  // Track window width for carousel calculation
+  // Navigation carousel mobile - scroll horizontal simple
+  const carouselRef = useRef<HTMLDivElement>(null)
+  
+  // Scroll vers l'onglet actif quand il change
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    
-    const handleResize = () => setWindowWidth(window.innerWidth)
-    handleResize() // Set initial width
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  // Créer une liste circulaire infinie (3 copies pour l'effet infini)
-  const getInfiniteTabsList = () => {
-    return [...ALL_TABS, ...ALL_TABS, ...ALL_TABS]
-  }
-
-  // Calculer l'offset pour centrer l'onglet actif
-  const getCarouselTranslate = () => {
+    if (!carouselRef.current) return
     const activeIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
-    if (activeIndex === -1) return 0
+    if (activeIndex === -1) return
     
-    // On utilise la copie du milieu pour l'effet infini
-    const centerIndex = ALL_TABS.length + activeIndex
+    const container = carouselRef.current
+    const itemWidth = 80 // largeur approximative d'un item
+    const scrollPosition = (activeIndex * itemWidth) - (container.offsetWidth / 2) + (itemWidth / 2)
     
-    // Formule correcte pour centrer un élément dans un carousel :
-    // -(index × itemWidth) + (viewportWidth / 2) - (iconWidth / 2)
-    const itemWidth = 112 // icône 32px + gap 80px
-    const iconWidth = 32
-    
-    return -(centerIndex * itemWidth) + (windowWidth / 2) - (iconWidth / 2)
-  }
+    container.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth'
+    })
+  }, [activeTab])
 
   // Fermer le menu au clic extérieur
   useEffect(() => {
@@ -538,54 +526,38 @@ function App() {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation - Carousel Infini avec Framer Motion */}
+      {/* Mobile Bottom Navigation - Scroll horizontal simple */}
       <nav className="mobile-bottom-nav">
-        <div className="w-full h-full flex items-center overflow-hidden">
-          <motion.div 
-            className="flex items-center gap-20"
-            animate={{ 
-              x: getCarouselTranslate()
-            }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 260, 
-              damping: 30,
-              mass: 0.8
-            }}
-          >
-            {getInfiniteTabsList().map((tab, index) => {
-              const Icon = tab.icon
-              // Un logo est actif si c'est le bon id, peu importe la copie
-              const isActive = tab.id === activeTab
-              // Distance du centre pour effet de proximité
-              const activeGlobalIndex = ALL_TABS.findIndex(t => t.id === activeTab) + ALL_TABS.length
-              const distance = Math.abs(index - activeGlobalIndex)
-              const isNearCenter = distance <= 2
-              
-              return (
-                <motion.button
-                  key={`${tab.id}-${index}`}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center justify-center flex-shrink-0 ${
-                    isActive ? tab.color : 'text-zinc-500'
-                  }`}
-                  animate={{
-                    scale: isActive ? 1.8 : isNearCenter ? 0.85 : 0.6,
-                    opacity: isActive ? 1 : isNearCenter ? 0.6 : 0.3,
-                    filter: isActive ? 'grayscale(0%)' : 'grayscale(60%)'
-                  }}
-                  whileTap={{ scale: 0.85 }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 350, 
-                    damping: 22
-                  }}
-                >
-                  <Icon className="w-8 h-8" strokeWidth={isActive ? 4 : 2} />
-                </motion.button>
-              )
-            })}
-          </motion.div>
+        <div 
+          ref={carouselRef}
+          className="w-full h-full flex items-center gap-4 overflow-x-auto px-4 scrollbar-hide"
+          style={{
+            scrollSnapType: 'x mandatory',
+            scrollPaddingLeft: '50%',
+            scrollPaddingRight: '50%',
+          }}
+        >
+          {ALL_TABS.map((tab) => {
+            const Icon = tab.icon
+            const isActive = tab.id === activeTab
+            
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-shrink-0 flex items-center justify-center transition-all duration-300 ${
+                  isActive ? tab.color : 'text-zinc-600'
+                }`}
+                style={{
+                  scrollSnapAlign: 'center',
+                  transform: isActive ? 'scale(1.5)' : 'scale(0.8)',
+                  opacity: isActive ? 1 : 0.4,
+                }}
+              >
+                <Icon className="w-8 h-8" strokeWidth={isActive ? 3 : 2} />
+              </button>
+            )
+          })}
         </div>
       </nav>
 
