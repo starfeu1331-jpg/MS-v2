@@ -56,24 +56,22 @@ function App() {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 375)
   const periodMenuRef = useRef<HTMLDivElement>(null)
 
-  // Navigation carousel mobile - scroll horizontal simple
-  const carouselRef = useRef<HTMLDivElement>(null)
-  
-  // Scroll vers l'onglet actif quand il change
-  useEffect(() => {
-    if (!carouselRef.current) return
+  // Obtenir les 5 icônes visibles : 2 avant, 1 actif, 2 après (circulaire)
+  const getVisibleTabs = () => {
     const activeIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
-    if (activeIndex === -1) return
+    const visible = []
     
-    const container = carouselRef.current
-    const itemWidth = 80 // largeur approximative d'un item
-    const scrollPosition = (activeIndex * itemWidth) - (container.offsetWidth / 2) + (itemWidth / 2)
+    // 2 à gauche, 1 au centre, 2 à droite = 5 total
+    for (let i = -2; i <= 2; i++) {
+      const index = (activeIndex + i + ALL_TABS.length) % ALL_TABS.length
+      visible.push({
+        ...ALL_TABS[index],
+        position: i // -2, -1, 0, 1, 2
+      })
+    }
     
-    container.scrollTo({
-      left: scrollPosition,
-      behavior: 'smooth'
-    })
-  }, [activeTab])
+    return visible
+  }
 
   // Fermer le menu au clic extérieur
   useEffect(() => {
@@ -526,20 +524,13 @@ function App() {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation - Scroll horizontal simple */}
+      {/* Mobile Bottom Navigation - 5 icônes visibles max */}
       <nav className="mobile-bottom-nav">
-        <div 
-          ref={carouselRef}
-          className="w-full h-full flex items-center gap-4 overflow-x-auto px-4 scrollbar-hide"
-          style={{
-            scrollSnapType: 'x mandatory',
-            scrollPaddingLeft: '50%',
-            scrollPaddingRight: '50%',
-          }}
-        >
-          {ALL_TABS.map((tab) => {
+        <div className="w-full h-full flex items-center justify-center gap-6 px-4">
+          {getVisibleTabs().map((tab) => {
             const Icon = tab.icon
-            const isActive = tab.id === activeTab
+            const isActive = tab.position === 0
+            const distance = Math.abs(tab.position)
             
             return (
               <button
@@ -549,9 +540,8 @@ function App() {
                   isActive ? tab.color : 'text-zinc-600'
                 }`}
                 style={{
-                  scrollSnapAlign: 'center',
-                  transform: isActive ? 'scale(1.5)' : 'scale(0.8)',
-                  opacity: isActive ? 1 : 0.4,
+                  transform: isActive ? 'scale(1.5)' : distance === 1 ? 'scale(0.9)' : 'scale(0.7)',
+                  opacity: isActive ? 1 : distance === 1 ? 0.6 : 0.3,
                 }}
               >
                 <Icon className="w-8 h-8" strokeWidth={isActive ? 3 : 2} />
