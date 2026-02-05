@@ -24,6 +24,24 @@ const SettingsView = lazy(() => import('./components/Settings'))
 
 type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'zones' | 'stores' | 'forecast' | 'social' | 'exports' | 'settings'
 
+// Définition de tous les onglets pour le carousel mobile
+const ALL_TABS = [
+  { id: 'dashboard' as TabType, icon: Home, color: 'text-blue-400' },
+  { id: 'search' as TabType, icon: Search, color: 'text-blue-400' },
+  { id: 'rfm' as TabType, icon: Users, color: 'text-purple-400' },
+  { id: 'subFamilies' as TabType, icon: Layers, color: 'text-indigo-400' },
+  { id: 'crossSelling' as TabType, icon: ShoppingBag, color: 'text-pink-400' },
+  { id: 'cohortes' as TabType, icon: Target, color: 'text-indigo-400' },
+  { id: 'abc' as TabType, icon: Package, color: 'text-cyan-400' },
+  { id: 'kingquentin' as TabType, icon: Crown, color: 'text-yellow-400' },
+  { id: 'zones' as TabType, icon: Map, color: 'text-green-400' },
+  { id: 'stores' as TabType, icon: Store, color: 'text-teal-400' },
+  { id: 'forecast' as TabType, icon: Activity, color: 'text-orange-400' },
+  { id: 'social' as TabType, icon: Megaphone, color: 'text-pink-400' },
+  { id: 'exports' as TabType, icon: Download, color: 'text-green-400' },
+  { id: 'settings' as TabType, icon: Settings, color: 'text-zinc-400' },
+]
+
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -35,6 +53,19 @@ function App() {
   const [showPeriodMenu, setShowPeriodMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const periodMenuRef = useRef<HTMLDivElement>(null)
+
+  // Obtenir les 5 onglets visibles dans le carousel (2 avant, actif au centre, 2 après)
+  const getVisibleTabs = () => {
+    const currentIndex = ALL_TABS.findIndex(tab => tab.id === activeTab)
+    const visibleTabs = []
+    
+    for (let i = -2; i <= 2; i++) {
+      let index = (currentIndex + i + ALL_TABS.length) % ALL_TABS.length
+      visibleTabs.push({ ...ALL_TABS[index], position: i })
+    }
+    
+    return visibleTabs
+  }
 
   // Fermer le menu au clic extérieur
   useEffect(() => {
@@ -487,58 +518,31 @@ function App() {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - Carousel Infini */}
       <nav className="mobile-bottom-nav">
-        <div className="w-full h-full grid grid-cols-5">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-              activeTab === 'dashboard' ? 'text-blue-400' : 'text-zinc-400 hover:text-zinc-300'
-            }`}
-          >
-            <Home className="w-6 h-6" />
-            <span className="text-[10px] font-semibold">Accueil</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('search')}
-            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-              activeTab === 'search' ? 'text-blue-400' : 'text-zinc-400 hover:text-zinc-300'
-            }`}
-          >
-            <Search className="w-6 h-6" />
-            <span className="text-[10px] font-semibold">Recherche</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('rfm')}
-            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-              activeTab === 'rfm' ? 'text-purple-400' : 'text-zinc-400 hover:text-zinc-300'
-            }`}
-          >
-            <Users className="w-6 h-6" />
-            <span className="text-[10px] font-semibold">RFM</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('stores')}
-            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-              activeTab === 'stores' ? 'text-teal-400' : 'text-zinc-400 hover:text-zinc-300'
-            }`}
-          >
-            <Store className="w-6 h-6" />
-            <span className="text-[10px] font-semibold">Magasins</span>
-          </button>
-          
-          <button
-            onClick={() => setShowMobileMenu(true)}
-            className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-              showMobileMenu ? 'text-blue-400' : 'text-zinc-400 hover:text-zinc-300'
-            }`}
-          >
-            <MoreHorizontal className="w-6 h-6" />
-            <span className="text-[10px] font-semibold">Plus</span>
-          </button>
+        <div className="w-full h-full flex items-center justify-center gap-2 px-4">
+          {getVisibleTabs().map((tab, index) => {
+            const Icon = tab.icon
+            const isCenter = tab.position === 0
+            
+            return (
+              <button
+                key={`${tab.id}-${index}`}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center justify-center transition-all duration-300 ease-out active:scale-95 ${
+                  isCenter 
+                    ? `${tab.color} scale-125` 
+                    : 'text-zinc-500 hover:text-zinc-400 scale-90 opacity-60'
+                }`}
+                style={{
+                  transform: `translateX(${tab.position * 4}px) scale(${isCenter ? 1.25 : 0.9})`,
+                  transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                }}
+              >
+                <Icon className={isCenter ? 'w-8 h-8' : 'w-6 h-6'} strokeWidth={isCenter ? 2.5 : 2} />
+              </button>
+            )
+          })}
         </div>
       </nav>
 
