@@ -565,7 +565,7 @@ function App() {
 
       {/* Mobile Bottom Navigation - 5 icônes visibles max */}
       <nav className="mobile-bottom-nav">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="popLayout">
           <motion.div 
             key={activeTab}
             className="w-full h-full flex items-center justify-between px-6"
