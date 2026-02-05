@@ -97,6 +97,21 @@ function App() {
     setActiveTab(newTab)
   }
 
+  const slideVariants = {
+    enter: (direction: 'left' | 'right') => ({
+      x: direction === 'right' ? 100 : -100,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: 'left' | 'right') => ({
+      x: direction === 'right' ? -100 : 100,
+      opacity: 0,
+    }),
+  }
+
   // Fermer le menu au clic extérieur
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -550,13 +565,15 @@ function App() {
 
       {/* Mobile Bottom Navigation - 5 icônes visibles max */}
       <nav className="mobile-bottom-nav">
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div 
             key={activeTab}
             className="w-full h-full flex items-center justify-between px-6"
-            initial={{ x: slideDirection === 'right' ? 100 : -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: slideDirection === 'right' ? -100 : 100, opacity: 0 }}
+            variants={slideVariants}
+            custom={slideDirection}
+            initial="enter"
+            animate="center"
+            exit="exit"
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             {getVisibleTabs().map((tab) => {
