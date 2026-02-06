@@ -552,9 +552,7 @@ Stratégie : Campagnes de reconquête à faible coût (email), offres de "derni�
 // ═══════════════════════════════════════════════════════════════════════
 // EXPORT RFM AUDIT EXCEL - Handler séparé
 // ═══════════════════════════════════════════════════════════════════════
-    return res.status(200).end()
-  }
-
+async function handleRFMAuditExcel(req, res) {
   try {
     console.log('🔬 Génération Excel Audit RFM TECHNIQUE - Début')
     const today = new Date()
