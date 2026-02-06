@@ -428,7 +428,20 @@ export default function ZoneChalandiseSimple() {
                 >
                   <Popup>
                     <div style={{ textAlign: 'center', minWidth: '120px' }}>
-                      <strong style={{ fontSize: '14px', color: '#dc2626' }}>{store.nom}</strong>
+                      <strong 
+                        style={{ 
+                          fontSize: '14px', 
+                          color: '#dc2626',
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                        onClick={() => {
+                          console.log(`🎯 Clic sur nom du magasin ${store.nom} (${store.code})`);
+                          setSelectedStore(store.code);
+                        }}
+                      >
+                        {store.nom}
+                      </strong>
                       <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
                         {store.ville}
                       </div>
