@@ -566,13 +566,13 @@ async function handleRFMAuditExcel(req, res) {
           c.prenom,
           c.ville,
           c.cp,
-          MAX(t.date_vente)::date as derniere_visite,
-          MIN(t.date_vente)::date as premiere_visite,
-          COUNT(DISTINCT t.date_vente::date)::int as frequence,
+          MAX(t.date)::date as derniere_visite,
+          MIN(t.date)::date as premiere_visite,
+          COUNT(DISTINCT t.date::date)::int as frequence,
           ROUND(SUM(t.ca)::numeric, 2)::float as montant_total
         FROM transactions t
         LEFT JOIN clients c ON t.carte = c.carte
-        WHERE t.carte IS NOT NULL
+        WHERE t.carte IS NOT NULL AND t.carte != '0'
         GROUP BY t.carte, c.email, c.nom, c.prenom, c.ville, c.cp
         HAVING COUNT(*) >= 2
       )
@@ -587,13 +587,13 @@ async function handleRFMAuditExcel(req, res) {
       WITH client_metrics AS (
         SELECT 
           t.carte,
-          CURRENT_DATE - MAX(t.date_vente)::date as recency,
-          COUNT(DISTINCT t.date_vente::date)::int as frequency,
+          EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
+          COUNT(*)::int as frequency,
           SUM(t.ca)::float as monetary
         FROM transactions t
-        WHERE t.carte IS NOT NULL
+        WHERE t.carte IS NOT NULL AND t.carte != '0'
         GROUP BY t.carte
-        HAVING COUNT(*) >= 2
+        HAVING SUM(t.ca) > 0
       )
       SELECT 
         carte,
@@ -612,11 +612,11 @@ async function handleRFMAuditExcel(req, res) {
     const quintileThresholds = await prisma.$queryRaw`
       WITH client_metrics AS (
         SELECT 
-          CURRENT_DATE - MAX(t.date_vente)::date as recency,
-          COUNT(DISTINCT t.date_vente::date)::int as frequency,
+          EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
+          COUNT(*)::int as frequency,
           SUM(t.ca)::float as monetary
         FROM transactions t
-        WHERE t.carte IS NOT NULL
+        WHERE t.carte IS NOT NULL AND t.carte != '0'
         GROUP BY t.carte
         HAVING COUNT(*) >= 2
       )
