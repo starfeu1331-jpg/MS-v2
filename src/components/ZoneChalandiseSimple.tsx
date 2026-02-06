@@ -419,6 +419,12 @@ export default function ZoneChalandiseSimple() {
                   position={[store.lat!, store.lon!]}
                   icon={storeIconBig}
                   zIndexOffset={9999}
+                  eventHandlers={{
+                    dblclick: () => {
+                      console.log(`🎯 Double-clic sur magasin ${store.nom} (${store.code})`);
+                      setSelectedStore(store.code);
+                    }
+                  }}
                 >
                   <Popup>
                     <div style={{ textAlign: 'center', minWidth: '120px' }}>
