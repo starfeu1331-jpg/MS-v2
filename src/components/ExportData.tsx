@@ -237,6 +237,29 @@ export default function ExportData({ data }: ExportDataProps) {
       setExporting(false)
     }
   }
+
+  // Export RFM Audit Excel - Avec toutes les formules visibles
+  const exportRFMAuditExcel = async () => {
+    setExporting(true)
+    try {
+      const response = await fetch(`${API_URL}/api/rfm-audit-excel`)
+      if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
+      
+      const blob = await response.blob()
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `RFM_Audit_Complet_${new Date().toISOString().split('T')[0]}.xlsx`
+      link.click()
+      
+      setExportSuccess(true)
+      setTimeout(() => setExportSuccess(false), 3000)
+    } catch (error) {
+      console.error('Erreur export RFM Audit Excel:', error)
+      alert('Erreur lors de l\'export Excel. Vérifiez la console.')
+    } finally {
+      setExporting(false)
+    }
+  }
   
   return (
     <div className="space-y-6">
@@ -299,6 +322,53 @@ export default function ExportData({ data }: ExportDataProps) {
               <>
                 <Sparkles className="w-6 h-6" />
                 Télécharger Document IA (TXT)
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Export RFM Audit Excel - AVEC FORMULES */}
+        <div className="glass rounded-2xl p-6 border border-emerald-500/50 card-hover col-span-full">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl">
+              <FileSpreadsheet className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white">🔬 RFM Audit Complet (Excel)</h3>
+              <p className="text-sm text-emerald-300">Toutes les étapes de calcul avec formules visibles pour audit transparent</p>
+            </div>
+          </div>
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-4">
+            <p className="text-sm text-zinc-300 mb-3">
+              <strong className="text-emerald-400">🧪 Audit Trail Complet :</strong> Fichier Excel avec 6 onglets montrant 
+              TOUTES les étapes de calcul RFM. Les formules sont VISIBLES dans les cellules pour vérification manuelle.
+            </p>
+            <ul className="text-xs text-zinc-400 space-y-1 ml-4">
+              <li>• <strong>Onglet 1:</strong> Données brutes transactions (100 meilleurs clients)</li>
+              <li>• <strong>Onglet 2:</strong> Métriques RFM calculées (recency, frequency, monetary)</li>
+              <li>• <strong>Onglet 3:</strong> Seuils des quintiles (percentiles 20%, 40%, 60%, 80%)</li>
+              <li>• <strong>Onglet 4:</strong> Scores RFM avec <strong>FORMULES</strong> (Score Total = R+F+M)</li>
+              <li>• <strong>Onglet 5:</strong> Segmentation finale colorée (Champions, Fidèles, Potentiels...)</li>
+              <li>• <strong>Onglet 6:</strong> Documentation complète de l'algorithme</li>
+            </ul>
+            <p className="text-xs text-emerald-300 mt-3 font-semibold">
+              ✅ Double-cliquez sur une cellule de l'onglet 4 pour voir la formule. Tout est vérifiable !
+            </p>
+          </div>
+          <button
+            onClick={exportRFMAuditExcel}
+            disabled={exporting}
+            className="w-full px-6 py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-emerald-500/50 transition-all disabled:opacity-50 flex items-center justify-center gap-3 text-lg"
+          >
+            {exporting ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Génération Excel...
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet className="w-6 h-6" />
+                Télécharger Excel Audit RFM
               </>
             )}
           </button>
