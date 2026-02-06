@@ -634,7 +634,7 @@ async function handleRFMAuditExcel(req, res) {
     // ============================================================================
     // ONGLET 2: AGRÉGATION PAR CLIENT (Avec formules Excel)
     // ============================================================================
-    const sheet2 = workbook.addWorksheet('2-Clients_Agrégés', {
+    const sheet2 = workbook.addWorksheet('2-Clients_Agreges', {
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
     })
     
@@ -680,22 +680,22 @@ async function handleRFMAuditExcel(req, res) {
       })
       
       // FORMULES EXCEL qui pointent vers l'onglet 1
-      // Dernière visite = MAX des dates pour cette carte
+      // Dernière visite = MAX avec SI (formule matricielle, plage définie)
       sheet2.getCell(`D${rowNum}`).value = {
-        formula: `MAX.SI.ENS('1-Transactions'!$H:$H;'1-Transactions'!$A:$A;A${rowNum})`
+        formula: `MAX(SI('1-Transactions'!$A$2:$A$5001=A${rowNum};'1-Transactions'!$H$2:$H$5001))`
       }
       
-      // Première visite = MIN des dates pour cette carte
+      // Première visite = MIN avec SI (formule matricielle)
       sheet2.getCell(`E${rowNum}`).value = {
-        formula: `MIN.SI.ENS('1-Transactions'!$H:$H;'1-Transactions'!$A:$A;A${rowNum})`
+        formula: `MIN(SI('1-Transactions'!$A$2:$A$5001=A${rowNum};'1-Transactions'!$H$2:$H$5001))`
       }
       
-      // CA Total = SOMME des montants pour cette carte
+      // CA Total = SOMME conditionnelle
       sheet2.getCell(`F${rowNum}`).value = {
         formula: `SOMME.SI('1-Transactions'!$A:$A;A${rowNum};'1-Transactions'!$I:$I)`
       }
       
-      // Nb transactions = COMPTE pour cette carte
+      // Nb transactions = COMPTE conditionnel
       sheet2.getCell(`G${rowNum}`).value = {
         formula: `NB.SI('1-Transactions'!$A:$A;A${rowNum})`
       }
@@ -706,7 +706,7 @@ async function handleRFMAuditExcel(req, res) {
     // ============================================================================
     // ONGLET 3: MÉTRIQUES RFM (Calculs avec formules)
     // ============================================================================
-    const sheet3 = workbook.addWorksheet('3-Métriques_RFM', {
+    const sheet3 = workbook.addWorksheet('3-Metriques_RFM', {
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
     })
     
@@ -734,7 +734,7 @@ async function handleRFMAuditExcel(req, res) {
       
       // RECENCY = Aujourd'hui - Date dernière visite (référence à l'onglet 2)
       sheet3.getCell(`B${rowNum}`).value = {
-        formula: `AUJOURDHUI()-'2-Clients_Agrégés'!D${sheet2RowNum}`
+        formula: `AUJOURDHUI()-'2-Clients_Agreges'!D${sheet2RowNum}`
       }
       
       // FREQUENCY = Nombre de transactions (référence à l'onglet 2)
@@ -774,27 +774,27 @@ async function handleRFMAuditExcel(req, res) {
     
     // Ligne Recency
     sheet4.addRow({ metric: 'Recency (jours)' })
-    sheet4.getCell('B2').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!B2:B${lastRow};0,2)` }
-    sheet4.getCell('C2').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!B2:B${lastRow};0,4)` }
-    sheet4.getCell('D2').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!B2:B${lastRow};0,6)` }
-    sheet4.getCell('E2').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!B2:B${lastRow};0,8)` }
-    sheet4.getCell('F2').value = '=CENTILE.INCLURE(colonne_recency; 0,2 à 0,8)'
+    sheet4.getCell('B2').value = { formula: `CENTILE('3-Metriques_RFM'!B2:B${lastRow};0,2)` }
+    sheet4.getCell('C2').value = { formula: `CENTILE('3-Metriques_RFM'!B2:B${lastRow};0,4)` }
+    sheet4.getCell('D2').value = { formula: `CENTILE('3-Metriques_RFM'!B2:B${lastRow};0,6)` }
+    sheet4.getCell('E2').value = { formula: `CENTILE('3-Metriques_RFM'!B2:B${lastRow};0,8)` }
+    sheet4.getCell('F2').value = '=CENTILE(colonne_recency; 0,2 à 0,8)'
     
     // Ligne Frequency
     sheet4.addRow({ metric: 'Frequency (nb)' })
-    sheet4.getCell('B3').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!C2:C${lastRow};0,2)` }
-    sheet4.getCell('C3').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!C2:C${lastRow};0,4)` }
-    sheet4.getCell('D3').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!C2:C${lastRow};0,6)` }
-    sheet4.getCell('E3').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!C2:C${lastRow};0,8)` }
-    sheet4.getCell('F3').value = '=CENTILE.INCLURE(colonne_frequency; 0,2 à 0,8)'
+    sheet4.getCell('B3').value = { formula: `CENTILE('3-Metriques_RFM'!C2:C${lastRow};0,2)` }
+    sheet4.getCell('C3').value = { formula: `CENTILE('3-Metriques_RFM'!C2:C${lastRow};0,4)` }
+    sheet4.getCell('D3').value = { formula: `CENTILE('3-Metriques_RFM'!C2:C${lastRow};0,6)` }
+    sheet4.getCell('E3').value = { formula: `CENTILE('3-Metriques_RFM'!C2:C${lastRow};0,8)` }
+    sheet4.getCell('F3').value = '=CENTILE(colonne_frequency; 0,2 à 0,8)'
     
     // Ligne Monetary
     sheet4.addRow({ metric: 'Monetary (€)' })
-    sheet4.getCell('B4').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!D2:D${lastRow};0,2)` }
-    sheet4.getCell('C4').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!D2:D${lastRow};0,4)` }
-    sheet4.getCell('D4').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!D2:D${lastRow};0,6)` }
-    sheet4.getCell('E4').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!D2:D${lastRow};0,8)` }
-    sheet4.getCell('F4').value = '=CENTILE.INCLURE(colonne_monetary; 0,2 à 0,8)'
+    sheet4.getCell('B4').value = { formula: `CENTILE('3-Metriques_RFM'!D2:D${lastRow};0,2)` }
+    sheet4.getCell('C4').value = { formula: `CENTILE('3-Metriques_RFM'!D2:D${lastRow};0,4)` }
+    sheet4.getCell('D4').value = { formula: `CENTILE('3-Metriques_RFM'!D2:D${lastRow};0,6)` }
+    sheet4.getCell('E4').value = { formula: `CENTILE('3-Metriques_RFM'!D2:D${lastRow};0,8)` }
+    sheet4.getCell('F4').value = '=CENTILE(colonne_monetary; 0,2 à 0,8)'
 
     console.log('✅ Onglet 4 créé avec FORMULES PERCENTILE')
 
@@ -824,20 +824,19 @@ async function handleRFMAuditExcel(req, res) {
       
       sheet5.addRow({ carte: client.carte })
       
-      // SCORE R (inversé car moins de jours = meilleur)
-      // SI.MULTIPLE: si <= Q1 alors 5, si <= Q2 alors 4, si <= Q3 alors 3, si <= Q4 alors 2, sinon 1
+      // SCORE R (inversé car moins de jours = meilleur) avec SI imbriqués
       sheet5.getCell(`B${rowNum}`).value = {
-        formula: `SI.MULTIPLE('3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$B$2;5;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$C$2;4;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$D$2;3;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$E$2;2;VRAI;1)`
+        formula: `SI('3-Metriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$B$2;5;SI('3-Metriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$C$2;4;SI('3-Metriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$D$2;3;SI('3-Metriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$E$2;2;1))))`
       }
       
-      // SCORE F (normal: plus = meilleur)
+      // SCORE F (normal: plus = meilleur) avec SI imbriqués
       sheet5.getCell(`C${rowNum}`).value = {
-        formula: `SI.MULTIPLE('3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$B$3;1;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$C$3;2;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$D$3;3;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$E$3;4;VRAI;5)`
+        formula: `SI('3-Metriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$B$3;1;SI('3-Metriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$C$3;2;SI('3-Metriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$D$3;3;SI('3-Metriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$E$3;4;5))))`
       }
       
-      // SCORE M (normal: plus = meilleur)
+      // SCORE M (normal: plus = meilleur) avec SI imbriqués
       sheet5.getCell(`D${rowNum}`).value = {
-        formula: `SI.MULTIPLE('3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$B$4;1;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$C$4;2;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$D$4;3;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$E$4;4;VRAI;5)`
+        formula: `SI('3-Metriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$B$4;1;SI('3-Metriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$C$4;2;SI('3-Metriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$D$4;3;SI('3-Metriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$E$4;4;5))))`
       }
       
       // SCORE TOTAL = R + F + M
@@ -902,14 +901,14 @@ async function handleRFMAuditExcel(req, res) {
         formula: `'5-Scores_RFM'!E${sheet5RowNum}`
       }
       
-      // SEGMENT basé sur score avec SI.MULTIPLE
+      // SEGMENT basé sur score avec SI imbriqués (compatible Excel 2007+)
       sheet6.getCell(`E${rowNum}`).value = {
-        formula: `SI.MULTIPLE(D${rowNum}>=13;"👑 Champions";D${rowNum}>=11;"⭐ Fidèles";D${rowNum}>=9;"💎 Potentiels";D${rowNum}>=7;"⚠️ Risque";VRAI;"😴 Endormis")`
+        formula: `SI(D${rowNum}>=13;"👑 Champions";SI(D${rowNum}>=11;"⭐ Fidèles";SI(D${rowNum}>=9;"💎 Potentiels";SI(D${rowNum}>=7;"⚠️ Risque";"😴 Endormis"))))`
       }
       
-      // PRIORITÉ basée sur score
+      // PRIORITÉ basée sur score avec SI imbriqués
       sheet6.getCell(`F${rowNum}`).value = {
-        formula: `SI.MULTIPLE(D${rowNum}>=13;"P1";D${rowNum}>=11;"P2";D${rowNum}>=9;"P3";D${rowNum}>=7;"P4";VRAI;"P5")`
+        formula: `SI(D${rowNum}>=13;"P1";SI(D${rowNum}>=11;"P2";SI(D${rowNum}>=9;"P3";SI(D${rowNum}>=7;"P4";"P5"))))`
       }
       
       // Colorer selon segment (formule conditionnelle dans le style)
