@@ -774,27 +774,27 @@ async function handleRFMAuditExcel(req, res) {
     
     // Ligne Recency
     sheet4.addRow({ metric: 'Recency (jours)' })
-    sheet4.getCell('B2').value = { formula: `CENTILE('3-Métriques_RFM'!B2:B${lastRow};0,2)` }
-    sheet4.getCell('C2').value = { formula: `CENTILE('3-Métriques_RFM'!B2:B${lastRow};0,4)` }
-    sheet4.getCell('D2').value = { formula: `CENTILE('3-Métriques_RFM'!B2:B${lastRow};0,6)` }
-    sheet4.getCell('E2').value = { formula: `CENTILE('3-Métriques_RFM'!B2:B${lastRow};0,8)` }
-    sheet4.getCell('F2').value = '=CENTILE(colonne_recency; 0,2 à 0,8)'
+    sheet4.getCell('B2').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!B2:B${lastRow};0,2)` }
+    sheet4.getCell('C2').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!B2:B${lastRow};0,4)` }
+    sheet4.getCell('D2').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!B2:B${lastRow};0,6)` }
+    sheet4.getCell('E2').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!B2:B${lastRow};0,8)` }
+    sheet4.getCell('F2').value = '=CENTILE.INCLURE(colonne_recency; 0,2 à 0,8)'
     
     // Ligne Frequency
     sheet4.addRow({ metric: 'Frequency (nb)' })
-    sheet4.getCell('B3').value = { formula: `CENTILE('3-Métriques_RFM'!C2:C${lastRow};0,2)` }
-    sheet4.getCell('C3').value = { formula: `CENTILE('3-Métriques_RFM'!C2:C${lastRow};0,4)` }
-    sheet4.getCell('D3').value = { formula: `CENTILE('3-Métriques_RFM'!C2:C${lastRow};0,6)` }
-    sheet4.getCell('E3').value = { formula: `CENTILE('3-Métriques_RFM'!C2:C${lastRow};0,8)` }
-    sheet4.getCell('F3').value = '=CENTILE(colonne_frequency; 0,2 à 0,8)'
+    sheet4.getCell('B3').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!C2:C${lastRow};0,2)` }
+    sheet4.getCell('C3').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!C2:C${lastRow};0,4)` }
+    sheet4.getCell('D3').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!C2:C${lastRow};0,6)` }
+    sheet4.getCell('E3').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!C2:C${lastRow};0,8)` }
+    sheet4.getCell('F3').value = '=CENTILE.INCLURE(colonne_frequency; 0,2 à 0,8)'
     
     // Ligne Monetary
     sheet4.addRow({ metric: 'Monetary (€)' })
-    sheet4.getCell('B4').value = { formula: `CENTILE('3-Métriques_RFM'!D2:D${lastRow};0,2)` }
-    sheet4.getCell('C4').value = { formula: `CENTILE('3-Métriques_RFM'!D2:D${lastRow};0,4)` }
-    sheet4.getCell('D4').value = { formula: `CENTILE('3-Métriques_RFM'!D2:D${lastRow};0,6)` }
-    sheet4.getCell('E4').value = { formula: `CENTILE('3-Métriques_RFM'!D2:D${lastRow};0,8)` }
-    sheet4.getCell('F4').value = '=CENTILE(colonne_monetary; 0,2 à 0,8)'
+    sheet4.getCell('B4').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!D2:D${lastRow};0,2)` }
+    sheet4.getCell('C4').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!D2:D${lastRow};0,4)` }
+    sheet4.getCell('D4').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!D2:D${lastRow};0,6)` }
+    sheet4.getCell('E4').value = { formula: `CENTILE.INCLURE('3-Métriques_RFM'!D2:D${lastRow};0,8)` }
+    sheet4.getCell('F4').value = '=CENTILE.INCLURE(colonne_monetary; 0,2 à 0,8)'
 
     console.log('✅ Onglet 4 créé avec FORMULES PERCENTILE')
 
@@ -825,19 +825,19 @@ async function handleRFMAuditExcel(req, res) {
       sheet5.addRow({ carte: client.carte })
       
       // SCORE R (inversé car moins de jours = meilleur)
-      // SI.CONDITIONS: si <= Q1 alors 5, si <= Q2 alors 4, si <= Q3 alors 3, si <= Q4 alors 2, sinon 1
+      // SI.MULTIPLE: si <= Q1 alors 5, si <= Q2 alors 4, si <= Q3 alors 3, si <= Q4 alors 2, sinon 1
       sheet5.getCell(`B${rowNum}`).value = {
-        formula: `SI.CONDITIONS('3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$B$2;5;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$C$2;4;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$D$2;3;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$E$2;2;VRAI;1)`
+        formula: `SI.MULTIPLE('3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$B$2;5;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$C$2;4;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$D$2;3;'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$E$2;2;VRAI;1)`
       }
       
       // SCORE F (normal: plus = meilleur)
       sheet5.getCell(`C${rowNum}`).value = {
-        formula: `SI.CONDITIONS('3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$B$3;1;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$C$3;2;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$D$3;3;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$E$3;4;VRAI;5)`
+        formula: `SI.MULTIPLE('3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$B$3;1;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$C$3;2;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$D$3;3;'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$E$3;4;VRAI;5)`
       }
       
       // SCORE M (normal: plus = meilleur)
       sheet5.getCell(`D${rowNum}`).value = {
-        formula: `SI.CONDITIONS('3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$B$4;1;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$C$4;2;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$D$4;3;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$E$4;4;VRAI;5)`
+        formula: `SI.MULTIPLE('3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$B$4;1;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$C$4;2;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$D$4;3;'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$E$4;4;VRAI;5)`
       }
       
       // SCORE TOTAL = R + F + M
@@ -902,14 +902,14 @@ async function handleRFMAuditExcel(req, res) {
         formula: `'5-Scores_RFM'!E${sheet5RowNum}`
       }
       
-      // SEGMENT basé sur score avec SI.CONDITIONS
+      // SEGMENT basé sur score avec SI.MULTIPLE
       sheet6.getCell(`E${rowNum}`).value = {
-        formula: `SI.CONDITIONS(D${rowNum}>=13;"👑 Champions";D${rowNum}>=11;"⭐ Fidèles";D${rowNum}>=9;"💎 Potentiels";D${rowNum}>=7;"⚠️ Risque";VRAI;"😴 Endormis")`
+        formula: `SI.MULTIPLE(D${rowNum}>=13;"👑 Champions";D${rowNum}>=11;"⭐ Fidèles";D${rowNum}>=9;"💎 Potentiels";D${rowNum}>=7;"⚠️ Risque";VRAI;"😴 Endormis")`
       }
       
       // PRIORITÉ basée sur score
       sheet6.getCell(`F${rowNum}`).value = {
-        formula: `SI.CONDITIONS(D${rowNum}>=13;"P1";D${rowNum}>=11;"P2";D${rowNum}>=9;"P3";D${rowNum}>=7;"P4";VRAI;"P5")`
+        formula: `SI.MULTIPLE(D${rowNum}>=13;"P1";D${rowNum}>=11;"P2";D${rowNum}>=9;"P3";D${rowNum}>=7;"P4";VRAI;"P5")`
       }
       
       // Colorer selon segment (formule conditionnelle dans le style)
