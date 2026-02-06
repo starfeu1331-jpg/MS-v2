@@ -242,7 +242,7 @@ export default function ExportData({ data }: ExportDataProps) {
   const exportRFMAuditExcel = async () => {
     setExporting(true)
     try {
-      const response = await fetch(`${API_URL}/api/rfm-audit-excel`)
+      const response = await fetch(`${API_URL}/api/export?type=rfm-audit-excel`)
       if (!response.ok) throw new Error(`Erreur API: ${response.status}`)
       
       const blob = await response.blob()
