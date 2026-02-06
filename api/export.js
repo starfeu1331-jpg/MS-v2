@@ -552,398 +552,457 @@ Stratégie : Campagnes de reconquête à faible coût (email), offres de "derni�
 // ═══════════════════════════════════════════════════════════════════════
 // EXPORT RFM AUDIT EXCEL - Handler séparé
 // ═══════════════════════════════════════════════════════════════════════
-async function handleRFMAuditExcel(req, res) {
+    return res.status(200).end()
+  }
+
   try {
-    console.log('🔬 Génération Excel Audit RFM - Début')
+    console.log('🔬 Génération Excel Audit RFM TECHNIQUE - Début')
+    const today = new Date()
 
-    // 1. RÉCUPÉRER LES DONNÉES BRUTES (échantillon de 100 clients pour lisibilité)
-    const rawData = await prisma.$queryRaw`
-      WITH client_transactions AS (
-        SELECT 
-          t.carte,
-          c.email,
-          c.nom,
-          c.prenom,
-          c.ville,
-          c.cp,
-          MAX(t.date)::date as derniere_visite,
-          MIN(t.date)::date as premiere_visite,
-          COUNT(DISTINCT t.date::date)::int as frequence,
-          ROUND(SUM(t.ca)::numeric, 2)::float as montant_total
-        FROM transactions t
-        LEFT JOIN clients c ON t.carte = c.carte
-        WHERE t.carte IS NOT NULL AND t.carte != '0'
-        GROUP BY t.carte, c.email, c.nom, c.prenom, c.ville, c.cp
-        HAVING COUNT(*) >= 2
-      )
-      SELECT *
-      FROM client_transactions
-      ORDER BY montant_total DESC
-      LIMIT 100
-    `
-
-    // 2. CALCULER LES MÉTRIQUES RFM (avec toute la base pour les percentiles)
-    const rfmMetrics = await prisma.$queryRaw`
-      WITH client_metrics AS (
-        SELECT 
-          t.carte,
-          EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
-          COUNT(*)::int as frequency,
-          SUM(t.ca)::float as monetary
-        FROM transactions t
-        WHERE t.carte IS NOT NULL AND t.carte != '0'
-        GROUP BY t.carte
-        HAVING SUM(t.ca) > 0
-      )
+    // ============================================================================
+    // ÉTAPE 1: Charger TOUTES les transactions brutes (limité à 5000 pour Excel)
+    // ============================================================================
+    const rawTransactions = await prisma.$queryRaw`
       SELECT 
-        carte,
-        recency,
-        frequency,
-        monetary,
-        (6 - NTILE(5) OVER (ORDER BY recency ASC))::int as r_score,
-        NTILE(5) OVER (ORDER BY frequency ASC)::int as f_score,
-        NTILE(5) OVER (ORDER BY monetary ASC)::int as m_score
-      FROM client_metrics
-      ORDER BY monetary DESC
-      LIMIT 100
+        t.carte,
+        c.nom,
+        c.prenom,
+        c.email,
+        c.ville,
+        c.cp,
+        c.sexe,
+        t.date::date as date_achat,
+        t.ca::float as montant,
+        t.facture
+      FROM transactions t
+      LEFT JOIN clients c ON t.carte = c.carte
+      WHERE t.carte IS NOT NULL 
+        AND t.carte != '0'
+        AND t.ca > 0
+      ORDER BY t.ca DESC, t.date DESC
+      LIMIT 5000
     `
+    
+    console.log(`✅ ${rawTransactions.length} transactions chargées`)
 
-    // 3. CALCULER LES SEUILS DE QUINTILES
-    const quintileThresholds = await prisma.$queryRaw`
-      WITH client_metrics AS (
-        SELECT 
-          EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
-          COUNT(*)::int as frequency,
-          SUM(t.ca)::float as monetary
-        FROM transactions t
-        WHERE t.carte IS NOT NULL AND t.carte != '0'
-        GROUP BY t.carte
-        HAVING COUNT(*) >= 2
-      )
-      SELECT 
-        PERCENTILE_CONT(0.2) WITHIN GROUP (ORDER BY recency) as r_q1,
-        PERCENTILE_CONT(0.4) WITHIN GROUP (ORDER BY recency) as r_q2,
-        PERCENTILE_CONT(0.6) WITHIN GROUP (ORDER BY recency) as r_q3,
-        PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY recency) as r_q4,
-        PERCENTILE_CONT(0.2) WITHIN GROUP (ORDER BY frequency) as f_q1,
-        PERCENTILE_CONT(0.4) WITHIN GROUP (ORDER BY frequency) as f_q2,
-        PERCENTILE_CONT(0.6) WITHIN GROUP (ORDER BY frequency) as f_q3,
-        PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY frequency) as f_q4,
-        PERCENTILE_CONT(0.2) WITHIN GROUP (ORDER BY monetary) as m_q1,
-        PERCENTILE_CONT(0.4) WITHIN GROUP (ORDER BY monetary) as m_q2,
-        PERCENTILE_CONT(0.6) WITHIN GROUP (ORDER BY monetary) as m_q3,
-        PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY monetary) as m_q4
-      FROM client_metrics
-    `
-
-    const thresholds = quintileThresholds[0]
-
-    // 4. CRÉER LE WORKBOOK EXCEL
+    // Créer le workbook
     const workbook = new ExcelJS.Workbook()
-    workbook.creator = 'Magic Système'
-    workbook.created = new Date()
-    
-    // ===============================
-    // ONGLET 1: DONNÉES BRUTES
-    // ===============================
-    const sheetRaw = workbook.addWorksheet('1. Données Brutes', {
+    workbook.creator = 'Magic Système - Audit RFM'
+    workbook.created = today
+
+    // ============================================================================
+    // ONGLET 1: TRANSACTIONS BRUTES (Source de données)
+    // ============================================================================
+    const sheet1 = workbook.addWorksheet('1-Transactions', {
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
     })
     
-    sheetRaw.columns = [
-      { header: 'N° Carte', key: 'carte', width: 15 },
+    sheet1.columns = [
+      { header: 'N° Carte', key: 'carte', width: 12 },
+      { header: 'Nom', key: 'nom', width: 18 },
+      { header: 'Prénom', key: 'prenom', width: 18 },
       { header: 'Email', key: 'email', width: 25 },
-      { header: 'Nom', key: 'nom', width: 20 },
-      { header: 'Prénom', key: 'prenom', width: 20 },
-      { header: 'Ville', key: 'ville', width: 20 },
-      { header: 'CP', key: 'cp', width: 10 },
-      { header: 'Dernière Visite', key: 'derniere_visite', width: 15 },
-      { header: 'Première Visite', key: 'premiere_visite', width: 15 },
-      { header: 'Fréquence', key: 'frequence', width: 12 },
-      { header: 'Montant Total', key: 'montant_total', width: 15 }
+      { header: 'Ville', key: 'ville', width: 18 },
+      { header: 'CP', key: 'cp', width: 8 },
+      { header: 'Sexe', key: 'sexe', width: 6 },
+      { header: 'Date Achat', key: 'date_achat', width: 12 },
+      { header: 'Montant (€)', key: 'montant', width: 12 },
+      { header: 'N° Facture', key: 'facture', width: 15 }
     ]
     
-    // Style d'en-tête
-    sheetRaw.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
-    sheetRaw.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF2563EB' }
-    }
-    sheetRaw.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
+    // Style header
+    sheet1.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    sheet1.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } }
+    sheet1.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
     
-    rawData.forEach(row => {
-      sheetRaw.addRow({
-        carte: row.carte,
-        email: row.email || 'N/A',
-        nom: row.nom || 'N/A',
-        prenom: row.prenom || 'N/A',
-        ville: row.ville || 'N/A',
-        cp: row.cp || 'N/A',
-        derniere_visite: row.derniere_visite?.toISOString().split('T')[0] || 'N/A',
-        premiere_visite: row.premiere_visite?.toISOString().split('T')[0] || 'N/A',
-        frequence: row.frequence,
-        montant_total: row.montant_total
+    // Insérer les données
+    rawTransactions.forEach(tx => {
+      sheet1.addRow({
+        carte: tx.carte,
+        nom: tx.nom || '',
+        prenom: tx.prenom || '',
+        email: tx.email || '',
+        ville: tx.ville || '',
+        cp: tx.cp || '',
+        sexe: tx.sexe || '',
+        date_achat: tx.date_achat,
+        montant: tx.montant,
+        facture: tx.facture || ''
       })
     })
 
-    // ===============================
-    // ONGLET 2: MÉTRIQUES RFM
-    // ===============================
-    const sheetMetrics = workbook.addWorksheet('2. Métriques RFM', {
+    console.log('✅ Onglet 1 créé')
+
+    // ============================================================================
+    // ONGLET 2: AGRÉGATION PAR CLIENT (Avec formules Excel)
+    // ============================================================================
+    const sheet2 = workbook.addWorksheet('2-Clients_Agrégés', {
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
     })
     
-    sheetMetrics.columns = [
-      { header: 'N° Carte', key: 'carte', width: 15 },
-      { header: 'Recency (jours)', key: 'recency', width: 15 },
-      { header: 'Frequency (visites)', key: 'frequency', width: 18 },
-      { header: 'Monetary (€)', key: 'monetary', width: 15 }
+    const uniqueClients = [...new Map(rawTransactions.map(t => [t.carte, {
+      carte: t.carte,
+      nom: t.nom || '',
+      prenom: t.prenom || '',
+      email: t.email || '',
+      ville: t.ville || '',
+      cp: t.cp || '',
+      sexe: t.sexe || ''
+    }])).values()]
+
+    sheet2.columns = [
+      { header: 'N° Carte', key: 'carte', width: 12 },
+      { header: 'Nom client', key: 'nom_complet', width: 30 },
+      { header: 'Email', key: 'email', width: 25 },
+      { header: 'Date dernière visite', key: 'derniere_visite', width: 18 },
+      { header: 'Date première visite', key: 'premiere_visite', width: 18 },
+      { header: 'CA Total (€)', key: 'ca_total', width: 15 },
+      { header: 'Nb transactions', key: 'nb_transactions', width: 15 }
     ]
     
-    sheetMetrics.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
-    sheetMetrics.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF059669' }
-    }
-    sheetMetrics.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
+    sheet2.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    sheet2.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } }
+    sheet2.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
     
-    rfmMetrics.forEach(row => {
-      sheetMetrics.addRow({
-        carte: row.carte,
-        recency: row.recency,
-        frequency: row.frequency,
-        monetary: parseFloat(row.monetary).toFixed(2)
+    // Limiter à 1000 clients pour performance
+    const topClients = uniqueClients.slice(0, 1000)
+    
+    topClients.forEach((client, idx) => {
+      const rowNum = idx + 2
+      const carte = client.carte
+      
+      sheet2.addRow({
+        carte: carte,
+        nom_complet: `${client.prenom} ${client.nom}`.trim() || 'N/A',
+        email: client.email,
+        derniere_visite: '', // Formule
+        premiere_visite: '', // Formule
+        ca_total: '', // Formule
+        nb_transactions: '' // Formule
       })
+      
+      // FORMULES EXCEL qui pointent vers l'onglet 1
+      // Dernière visite = MAX des dates pour cette carte
+      sheet2.getCell(`D${rowNum}`).value = {
+        formula: `MAXIFS('1-Transactions'!$H:$H,'1-Transactions'!$A:$A,A${rowNum})`
+      }
+      
+      // Première visite = MIN des dates pour cette carte
+      sheet2.getCell(`E${rowNum}`).value = {
+        formula: `MINIFS('1-Transactions'!$H:$H,'1-Transactions'!$A:$A,A${rowNum})`
+      }
+      
+      // CA Total = SOMME des montants pour cette carte
+      sheet2.getCell(`F${rowNum}`).value = {
+        formula: `SUMIF('1-Transactions'!$A:$A,A${rowNum},'1-Transactions'!$I:$I)`
+      }
+      
+      // Nb transactions = COMPTE pour cette carte
+      sheet2.getCell(`G${rowNum}`).value = {
+        formula: `COUNTIF('1-Transactions'!$A:$A,A${rowNum})`
+      }
     })
 
-    // ===============================
-    // ONGLET 3: SEUILS QUINTILES
-    // ===============================
-    const sheetThresholds = workbook.addWorksheet('3. Seuils Quintiles', {
+    console.log('✅ Onglet 2 créé avec FORMULES liées à onglet 1')
+
+    // ============================================================================
+    // ONGLET 3: MÉTRIQUES RFM (Calculs avec formules)
+    // ============================================================================
+    const sheet3 = workbook.addWorksheet('3-Métriques_RFM', {
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
     })
     
-    sheetThresholds.columns = [
+    sheet3.columns = [
+      { header: 'N° Carte', key: 'carte', width: 12 },
+      { header: 'Recency (jours)', key: 'recency', width: 16 },
+      { header: 'Frequency (nb)', key: 'frequency', width: 16 },
+      { header: 'Monetary (€)', key: 'monetary', width: 16 }
+    ]
+    
+    sheet3.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    sheet3.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } }
+    sheet3.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
+    
+    topClients.forEach((client, idx) => {
+      const rowNum = idx + 2
+      const sheet2RowNum = idx + 2
+      
+      sheet3.addRow({
+        carte: client.carte,
+        recency: '', // Formule
+        frequency: '', // Formule
+        monetary: '' // Formule
+      })
+      
+      // RECENCY = Aujourd'hui - Date dernière visite (référence à l'onglet 2)
+      sheet3.getCell(`B${rowNum}`).value = {
+        formula: `TODAY()-'2-Clients_Agrégés'!D${sheet2RowNum}`
+      }
+      
+      // FREQUENCY = Nombre de transactions (référence à l'onglet 2)
+      sheet3.getCell(`C${rowNum}`).value = {
+        formula: `'2-Clients_Agrégés'!G${sheet2RowNum}`
+      }
+      
+      // MONETARY = CA Total (référence à l'onglet 2)
+      sheet3.getCell(`D${rowNum}`).value = {
+        formula: `'2-Clients_Agrégés'!F${sheet2RowNum}`
+      }
+    })
+
+    console.log('✅ Onglet 3 créé avec FORMULES liées à onglet 2')
+
+    // ============================================================================
+    // ONGLET 4: SEUILS DE QUINTILES (Calcul des percentiles)
+    // ============================================================================
+    const sheet4 = workbook.addWorksheet('4-Seuils_Quintiles', {
+      views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
+    })
+    
+    sheet4.columns = [
       { header: 'Métrique', key: 'metric', width: 20 },
-      { header: 'Quintile 1 (0-20%)', key: 'q1', width: 18 },
-      { header: 'Quintile 2 (20-40%)', key: 'q2', width: 18 },
-      { header: 'Quintile 3 (40-60%)', key: 'q3', width: 18 },
-      { header: 'Quintile 4 (60-80%)', key: 'q4', width: 18 },
-      { header: 'Quintile 5 (80-100%)', key: 'q5', width: 18 }
+      { header: 'Q1 (20%)', key: 'q1', width: 12 },
+      { header: 'Q2 (40%)', key: 'q2', width: 12 },
+      { header: 'Q3 (60%)', key: 'q3', width: 12 },
+      { header: 'Q4 (80%)', key: 'q4', width: 12 },
+      { header: 'Formule utilisée', key: 'formule', width: 40 }
     ]
     
-    sheetThresholds.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
-    sheetThresholds.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFDC2626' }
-    }
-    sheetThresholds.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
+    sheet4.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    sheet4.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF7C3AED' } }
+    sheet4.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
     
-    sheetThresholds.addRow({
-      metric: 'Recency (jours)',
-      q1: `≤ ${Math.round(thresholds.r_q1)}`,
-      q2: `${Math.round(thresholds.r_q1) + 1} - ${Math.round(thresholds.r_q2)}`,
-      q3: `${Math.round(thresholds.r_q2) + 1} - ${Math.round(thresholds.r_q3)}`,
-      q4: `${Math.round(thresholds.r_q3) + 1} - ${Math.round(thresholds.r_q4)}`,
-      q5: `> ${Math.round(thresholds.r_q4)}`
-    })
+    const lastRow = topClients.length + 1
     
-    sheetThresholds.addRow({
-      metric: 'Frequency (visites)',
-      q1: `≤ ${Math.round(thresholds.f_q1)}`,
-      q2: `${Math.round(thresholds.f_q1) + 1} - ${Math.round(thresholds.f_q2)}`,
-      q3: `${Math.round(thresholds.f_q2) + 1} - ${Math.round(thresholds.f_q3)}`,
-      q4: `${Math.round(thresholds.f_q3) + 1} - ${Math.round(thresholds.f_q4)}`,
-      q5: `> ${Math.round(thresholds.f_q4)}`
-    })
+    // Ligne Recency
+    sheet4.addRow({ metric: 'Recency (jours)' })
+    sheet4.getCell('B2').value = { formula: `PERCENTILE('3-Métriques_RFM'!B2:B${lastRow},0.2)` }
+    sheet4.getCell('C2').value = { formula: `PERCENTILE('3-Métriques_RFM'!B2:B${lastRow},0.4)` }
+    sheet4.getCell('D2').value = { formula: `PERCENTILE('3-Métriques_RFM'!B2:B${lastRow},0.6)` }
+    sheet4.getCell('E2').value = { formula: `PERCENTILE('3-Métriques_RFM'!B2:B${lastRow},0.8)` }
+    sheet4.getCell('F2').value = '=PERCENTILE(colonne_recency, 0.2 à 0.8)'
     
-    sheetThresholds.addRow({
-      metric: 'Monetary (€)',
-      q1: `≤ ${Math.round(thresholds.m_q1)}€`,
-      q2: `${Math.round(thresholds.m_q1) + 1}€ - ${Math.round(thresholds.m_q2)}€`,
-      q3: `${Math.round(thresholds.m_q2) + 1}€ - ${Math.round(thresholds.m_q3)}€`,
-      q4: `${Math.round(thresholds.m_q3) + 1}€ - ${Math.round(thresholds.m_q4)}€`,
-      q5: `> ${Math.round(thresholds.m_q4)}€`
-    })
+    // Ligne Frequency
+    sheet4.addRow({ metric: 'Frequency (nb)' })
+    sheet4.getCell('B3').value = { formula: `PERCENTILE('3-Métriques_RFM'!C2:C${lastRow},0.2)` }
+    sheet4.getCell('C3').value = { formula: `PERCENTILE('3-Métriques_RFM'!C2:C${lastRow},0.4)` }
+    sheet4.getCell('D3').value = { formula: `PERCENTILE('3-Métriques_RFM'!C2:C${lastRow},0.6)` }
+    sheet4.getCell('E3').value = { formula: `PERCENTILE('3-Métriques_RFM'!C2:C${lastRow},0.8)` }
+    sheet4.getCell('F3').value = '=PERCENTILE(colonne_frequency, 0.2 à 0.8)'
+    
+    // Ligne Monetary
+    sheet4.addRow({ metric: 'Monetary (€)' })
+    sheet4.getCell('B4').value = { formula: `PERCENTILE('3-Métriques_RFM'!D2:D${lastRow},0.2)` }
+    sheet4.getCell('C4').value = { formula: `PERCENTILE('3-Métriques_RFM'!D2:D${lastRow},0.4)` }
+    sheet4.getCell('D4').value = { formula: `PERCENTILE('3-Métriques_RFM'!D2:D${lastRow},0.6)` }
+    sheet4.getCell('E4').value = { formula: `PERCENTILE('3-Métriques_RFM'!D2:D${lastRow},0.8)` }
+    sheet4.getCell('F4').value = '=PERCENTILE(colonne_monetary, 0.2 à 0.8)'
 
-    // ===============================
-    // ONGLET 4: SCORES RFM (AVEC FORMULES)
-    // ===============================
-    const sheetScores = workbook.addWorksheet('4. Scores RFM', {
+    console.log('✅ Onglet 4 créé avec FORMULES PERCENTILE')
+
+    // ============================================================================
+    // ONGLET 5: SCORES RFM (Attribution avec formules IFS)
+    // ============================================================================
+    const sheet5 = workbook.addWorksheet('5-Scores_RFM', {
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
     })
     
-    sheetScores.columns = [
-      { header: 'N° Carte', key: 'carte', width: 15 },
-      { header: 'R (Recency)', key: 'r_score', width: 15 },
-      { header: 'F (Frequency)', key: 'f_score', width: 15 },
-      { header: 'M (Monetary)', key: 'm_score', width: 15 },
-      { header: 'Score Total', key: 'total_score', width: 15 },
-      { header: '% Position', key: 'percentile', width: 15 }
+    sheet5.columns = [
+      { header: 'N° Carte', key: 'carte', width: 12 },
+      { header: 'R (1-5)', key: 'r_score', width: 10 },
+      { header: 'F (1-5)', key: 'f_score', width: 10 },
+      { header: 'M (1-5)', key: 'm_score', width: 10 },
+      { header: 'Score Total', key: 'total', width: 12 },
+      { header: '% Position', key: 'pct', width: 12 }
     ]
     
-    sheetScores.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
-    sheetScores.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF7C3AED' }
-    }
-    sheetScores.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
+    sheet5.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    sheet5.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEA580C' } }
+    sheet5.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
     
-    rfmMetrics.forEach((row, index) => {
-      const rowNum = index + 2
-      sheetScores.addRow({
-        carte: row.carte,
-        r_score: row.r_score,
-        f_score: row.f_score,
-        m_score: row.m_score,
-        total_score: '', // Sera une formule
-        percentile: '' // Sera une formule
-      })
+    topClients.forEach((client, idx) => {
+      const rowNum = idx + 2
+      const sheet3RowNum = idx + 2
       
-      // Ajouter les FORMULES (visible dans Excel)
-      sheetScores.getCell(`E${rowNum}`).value = { formula: `B${rowNum}+C${rowNum}+D${rowNum}` }
-      sheetScores.getCell(`F${rowNum}`).value = { formula: `ROUND((E${rowNum}/15)*100,0)&"%"` }
+      sheet5.addRow({ carte: client.carte })
+      
+      // SCORE R (inversé car moins de jours = meilleur)
+      // IFS: si <= Q1 alors 5, si <= Q2 alors 4, si <= Q3 alors 3, si <= Q4 alors 2, sinon 1
+      sheet5.getCell(`B${rowNum}`).value = {
+        formula: `IFS('3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$B$2,5,'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$C$2,4,'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$D$2,3,'3-Métriques_RFM'!B${sheet3RowNum}<='4-Seuils_Quintiles'!$E$2,2,TRUE,1)`
+      }
+      
+      // SCORE F (normal: plus = meilleur)
+      sheet5.getCell(`C${rowNum}`).value = {
+        formula: `IFS('3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$B$3,1,'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$C$3,2,'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$D$3,3,'3-Métriques_RFM'!C${sheet3RowNum}<='4-Seuils_Quintiles'!$E$3,4,TRUE,5)`
+      }
+      
+      // SCORE M (normal: plus = meilleur)
+      sheet5.getCell(`D${rowNum}`).value = {
+        formula: `IFS('3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$B$4,1,'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$C$4,2,'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$D$4,3,'3-Métriques_RFM'!D${sheet3RowNum}<='4-Seuils_Quintiles'!$E$4,4,TRUE,5)`
+      }
+      
+      // SCORE TOTAL = R + F + M
+      sheet5.getCell(`E${rowNum}`).value = {
+        formula: `B${rowNum}+C${rowNum}+D${rowNum}`
+      }
+      
+      // % Position = (Score / 15) * 100
+      sheet5.getCell(`F${rowNum}`).value = {
+        formula: `ROUND((E${rowNum}/15)*100,0)&"%"`
+      }
     })
 
-    // ===============================
-    // ONGLET 5: SEGMENTATION FINALE
-    // ===============================
-    const sheetSegments = workbook.addWorksheet('5. Segments Clients', {
+    console.log('✅ Onglet 5 créé avec FORMULES IFS pour scores')
+
+    // ============================================================================
+    // ONGLET 6: SEGMENTATION FINALE (Avec formules IFS)
+    // ============================================================================
+    const sheet6 = workbook.addWorksheet('6-Segments', {
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
     })
     
-    sheetSegments.columns = [
-      { header: 'N° Carte', key: 'carte', width: 15 },
-      { header: 'Nom', key: 'nom', width: 20 },
+    sheet6.columns = [
+      { header: 'N° Carte', key: 'carte', width: 12 },
+      { header: 'Nom client', key: 'nom', width: 25 },
       { header: 'Email', key: 'email', width: 25 },
-      { header: 'Score Total', key: 'total_score', width: 12 },
+      { header: 'Score Total', key: 'score', width: 12 },
       { header: 'Segment', key: 'segment', width: 20 },
-      { header: 'Priorité', key: 'priorite', width: 12 }
+      { header: 'Priorité', key: 'priorite', width: 10 }
     ]
     
-    sheetSegments.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
-    sheetSegments.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFEA580C' }
-    }
-    sheetSegments.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
+    sheet6.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    sheet6.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEF4444' } }
+    sheet6.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
     
-    rfmMetrics.forEach((row, index) => {
-      const totalScore = row.r_score + row.f_score + row.m_score
-      const client = rawData.find(c => c.carte === row.carte)
+    topClients.forEach((client, idx) => {
+      const rowNum = idx + 2
+      const sheet2RowNum = idx + 2
+      const sheet5RowNum = idx + 2
       
-      let segment = ''
-      let priorite = ''
-      
-      if (totalScore >= 13) {
-        segment = '👑 Champions'
-        priorite = 'P1'
-      } else if (totalScore >= 11) {
-        segment = '⭐ Fidèles'
-        priorite = 'P2'
-      } else if (totalScore >= 9) {
-        segment = '💎 Potentiels'
-        priorite = 'P3'
-      } else if (totalScore >= 7) {
-        segment = '⚠️ Risque'
-        priorite = 'P4'
-      } else {
-        segment = '😴 Endormis'
-        priorite = 'P5'
-      }
-      
-      const rowNum = index + 2
-      sheetSegments.addRow({
-        carte: row.carte,
-        nom: client?.nom || 'N/A',
-        email: client?.email || 'N/A',
-        total_score: totalScore,
-        segment: segment,
-        priorite: priorite
+      sheet6.addRow({
+        carte: client.carte,
+        nom: '',
+        email: '',
+        score: '',
+        segment: '',
+        priorite: ''
       })
       
-      // Colorer selon le segment
-      const lastRow = sheetSegments.lastRow
-      if (segment.includes('Champions')) {
-        lastRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE047' } }
-      } else if (segment.includes('Fidèles')) {
-        lastRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF86EFAC' } }
-      } else if (segment.includes('Potentiels')) {
-        lastRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF93C5FD' } }
-      } else if (segment.includes('Risque')) {
-        lastRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFBBF24' } }
-      } else {
-        lastRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCA5A5' } }
+      // NOM depuis onglet 2
+      sheet6.getCell(`B${rowNum}`).value = {
+        formula: `'2-Clients_Agrégés'!B${sheet2RowNum}`
       }
+      
+      // EMAIL depuis onglet 2
+      sheet6.getCell(`C${rowNum}`).value = {
+        formula: `'2-Clients_Agrégés'!C${sheet2RowNum}`
+      }
+      
+      // SCORE depuis onglet 5
+      sheet6.getCell(`D${rowNum}`).value = {
+        formula: `'5-Scores_RFM'!E${sheet5RowNum}`
+      }
+      
+      // SEGMENT basé sur score avec IFS
+      sheet6.getCell(`E${rowNum}`).value = {
+        formula: `IFS(D${rowNum}>=13,"👑 Champions",D${rowNum}>=11,"⭐ Fidèles",D${rowNum}>=9,"💎 Potentiels",D${rowNum}>=7,"⚠️ Risque",TRUE,"😴 Endormis")`
+      }
+      
+      // PRIORITÉ basée sur score
+      sheet6.getCell(`F${rowNum}`).value = {
+        formula: `IFS(D${rowNum}>=13,"P1",D${rowNum}>=11,"P2",D${rowNum}>=9,"P3",D${rowNum}>=7,"P4",TRUE,"P5")`
+      }
+      
+      // Colorer selon segment (formule conditionnelle dans le style)
+      const scoreVal = topClients.length > 100 ? null : null // On peut pas pré-calculer facilement
     })
 
-    // ===============================
-    // ONGLET 6: DOCUMENTATION
-    // ===============================
-    const sheetDoc = workbook.addWorksheet('Documentation')
-    sheetDoc.columns = [
+    console.log('✅ Onglet 6 créé avec FORMULES de segmentation')
+
+    // ============================================================================
+    // ONGLET 7: DOCUMENTATION & AUDIT
+    // ============================================================================
+    const sheet7 = workbook.addWorksheet('DOCUMENTATION')
+    sheet7.columns = [
       { header: 'Section', key: 'section', width: 30 },
-      { header: 'Description', key: 'description', width: 80 }
+      { header: 'Explication', key: 'explication', width: 80 }
     ]
     
-    sheetDoc.getRow(1).font = { bold: true, size: 14 }
-    sheetDoc.addRow({
-      section: '🎯 Objectif',
-      description: 'Ce fichier Excel contient TOUTES les étapes de calcul RFM avec formules visibles pour audit complet.'
+    sheet7.getRow(1).font = { bold: true, size: 14 }
+    
+    sheet7.addRow({
+      section: '🎯 OBJECTIF',
+      explication: 'Ce fichier Excel est un AUDIT TRAIL COMPLET où TOUTES les formules sont visibles et vérifiables manuellement.'
     })
-    sheetDoc.addRow({
-      section: '📊 Onglet 1 - Données Brutes',
-      description: 'Transactions agrégées par client : dernière visite, fréquence, montant total (100 meilleurs clients)'
+    
+    sheet7.addRow({
+      section: '📊 Onglet 1 - Transactions',
+      explication: `${rawTransactions.length} transactions brutes issues de la base de données. SOURCE DE VÉRITÉAll other tabs calculate from this data using Excel formulas.`
     })
-    sheetDoc.addRow({
-      section: '📈 Onglet 2 - Métriques RFM',
-      description: 'Calcul des 3 dimensions : Recency (jours depuis dernière visite), Frequency (nb visites), Monetary (CA total)'
+    
+    sheet7.addRow({
+      section: '📈 Onglet 2 - Clients Agrégés',
+      explication: `${topClients.length} clients agrégés. FORMULES: MAXIFS(), MINIFS(), SUMIF(), COUNTIF() pointant vers onglet 1. Double-cliquez sur les cellules D2, E2, F2, G2 pour voir les formules.`
     })
-    sheetDoc.addRow({
-      section: '🎚️ Onglet 3 - Seuils Quintiles',
-      description: 'Seuils calculés par PERCENTILE pour diviser en 5 groupes égaux (20% chacun). Base: 144k clients.'
+    
+    sheet7.addRow({
+      section: '🔢 Onglet 3 - Métriques RFM',
+      explication: 'Calcul des 3 dimensions RFM. FORMULES: Recency = TODAY() - date dernière visite, Frequency = nb transactions, Monetary = CA total. Références à onglet 2.'
     })
-    sheetDoc.addRow({
-      section: '🔢 Onglet 4 - Scores RFM',
-      description: 'Scores de 1 à 5 attribués selon quintiles. FORMULES VISIBLES : Score Total = R+F+M, % Position = (Total/15)*100'
+    
+    sheet7.addRow({
+      section: '🎚️ Onglet 4 - Seuils Quintiles',
+      explication: 'Calcul des seuils de quintiles (20%, 40%, 60%, 80%). FORMULES: PERCENTILE() sur les colonnes de l\'onglet 3. Ces seuils servent à attribuer les scores.'
     })
-    sheetDoc.addRow({
-      section: '🏆 Onglet 5 - Segments',
-      description: 'Classification finale : Champions (13-15), Fidèles (11-12), Potentiels (9-10), Risque (7-8), Endormis (3-6)'
+    
+    sheet7.addRow({
+      section: '⭐ Onglet 5 - Scores RFM',
+      explication: 'Attribution des scores de 1 à 5. FORMULES: IFS() comparant chaque métrique avec les seuils de l\'onglet 4. R inversé (moins de jours = meilleur), F et M normaux (plus = meilleur).'
     })
-    sheetDoc.addRow({
-      section: '✅ Vérification',
-      description: 'Double-cliquez sur une cellule de l\'onglet 4 pour voir la FORMULE de calcul. Tout est auditable manuellement.'
+    
+    sheet7.addRow({
+      section: '🏆 Onglet 6 - Segments',
+      explication: 'Segmentation finale basée sur score total. FORMULES: IFS() sur score total. Champions (13-15), Fidèles (11-12), Potentiels (9-10), Risque (7-8), Endormis (3-6).'
     })
-    sheetDoc.addRow({
-      section: '🔬 Algorithme',
-      description: 'SQL: NTILE(5) OVER (ORDER BY metric) pour quintiles. R inversé: (6 - NTILE) car plus récent = meilleur.'
+    
+    sheet7.addRow({
+      section: '✅ VÉRIFICATION MANUELLE',
+      explication: 'Double-cliquez sur N\'IMPORTE QUELLE cellule des onglets 2 à 6 pour voir la FORMULE. Vous pouvez modifier les formules, recalculer, vérifier étape par étape.'
     })
-    sheetDoc.addRow({
+    
+    sheet7.addRow({
+      section: '🔬 ALGORITHME RFM',
+      explication: 'Recency: moins de jours depuis dernier achat = meilleur (score inversé). Frequency: plus d\'achats = meilleur. Monetary: plus de CA = meilleur. Quintiles divisent en 5 groupes égaux (20% chacun).'
+    })
+    
+    sheet7.addRow({
       section: '📅 Généré le',
-      description: new Date().toLocaleString('fr-FR')
+      explication: today.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })
+    })
+    
+    sheet7.addRow({
+      section: '💡 ASTUCE EXCEL',
+      explication: 'Utilisez Ctrl+` (accent grave) pour afficher TOUTES les formules en mode texte dans un onglet. Ou Formules > Afficher les formules.'
     })
 
-    // Générer le buffer
+    console.log('✅ Onglet 7 documentation créé')
+
+    // Générer et envoyer
     const buffer = await workbook.xlsx.writeBuffer()
-
-    console.log('✅ Excel Audit RFM généré')
-
-    // Retourner le fichier
+    
+    console.log('✅ Excel Audit RFM TECHNIQUE généré avec succès')
+    
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    res.setHeader('Content-Disposition', `attachment; filename=RFM_Audit_Complet_${new Date().toISOString().split('T')[0]}.xlsx`)
+    res.setHeader('Content-Disposition', `attachment; filename=RFM_Audit_Technique_${today.toISOString().split('T')[0]}.xlsx`)
     res.send(Buffer.from(buffer))
 
   } catch (error) {
-    console.error('❌ Erreur génération Excel:', error)
+    console.error('❌ Erreur génération Excel Audit:', error)
     res.status(500).json({ 
-      error: 'Erreur lors de la génération du fichier Excel',
-      details: error.message 
+      error: 'Erreur génération Excel',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     })
   } finally {
     await prisma.$disconnect()
