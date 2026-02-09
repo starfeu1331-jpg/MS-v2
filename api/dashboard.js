@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     
     // Gestion des périodes personnalisées (startDate/endDate)
     if (startDate && endDate) {
-      const kpis = await prisma.$queryRaw(Prisma.sql`
+      const kpis = await prisma.$queryRaw`
         SELECT 
           COUNT(DISTINCT carte)::int as "totalClients",
           COUNT(*)::int as "totalTransactions",
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
         WHERE date >= ${startDate} AND date <= ${endDate}
-      `)
+      `
       
       const statsClients = await prisma.$queryRaw`
         SELECT 
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
         FROM clients
       `
       
-      const topProduits = await prisma.$queryRaw(Prisma.sql`
+      const topProduits = await prisma.$queryRaw`
         SELECT 
           p.id as code,
           p.id as nom,
@@ -58,9 +58,9 @@ export default async function handler(req, res) {
         GROUP BY p.id, p.famille, p.sous_famille
         ORDER BY ca DESC
         LIMIT 10
-      `)
+      `
       
-      const topMagasins = await prisma.$queryRaw(Prisma.sql`
+      const topMagasins = await prisma.$queryRaw`
         SELECT 
           m.code,
           m.nom,
@@ -75,9 +75,9 @@ export default async function handler(req, res) {
         GROUP BY m.code, m.nom, m.zone
         ORDER BY ca DESC
         LIMIT 5
-      `)
+      `
       
-      const topClients = await prisma.$queryRaw(Prisma.sql`
+      const topClients = await prisma.$queryRaw`
         SELECT 
           c.carte,
           c.ville,
@@ -89,9 +89,9 @@ export default async function handler(req, res) {
         GROUP BY c.carte, c.ville
         ORDER BY ca DESC
         LIMIT 10
-      `)
+      `
       
-      const evolutionMensuelle = await prisma.$queryRaw(Prisma.sql`
+      const evolutionMensuelle = await prisma.$queryRaw`
         SELECT 
           TO_CHAR(date, 'YYYY-MM') as mois,
           SUM(ca)::float as ca,
@@ -100,7 +100,7 @@ export default async function handler(req, res) {
         WHERE date >= ${startDate} AND date <= ${endDate}
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
-      `)
+      `
       
       return res.status(200).json(serializeJSON({
         period: { type: 'custom', startDate, endDate },
@@ -170,7 +170,7 @@ export default async function handler(req, res) {
       const startDateStr = startDateCalc.toISOString().split('T')[0]
       const endDateStr = endDateCalc.toISOString().split('T')[0]
       
-      const kpis = await prisma.$queryRaw(Prisma.sql`
+      const kpis = await prisma.$queryRaw`
         SELECT 
           COUNT(DISTINCT carte)::int as "totalClients",
           COUNT(*)::int as "totalTransactions",
@@ -178,7 +178,7 @@ export default async function handler(req, res) {
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
         WHERE date >= ${startDateStr} AND date <= ${endDateStr}
-      `)
+      `
       
       const statsClients = await prisma.$queryRaw`
         SELECT 
@@ -192,7 +192,7 @@ export default async function handler(req, res) {
         FROM clients
       `
       
-      const topProduits = await prisma.$queryRaw(Prisma.sql`
+      const topProduits = await prisma.$queryRaw`
         SELECT 
           p.id as code,
           p.id as nom,
@@ -206,9 +206,9 @@ export default async function handler(req, res) {
         GROUP BY p.id, p.famille, p.sous_famille
         ORDER BY ca DESC
         LIMIT 10
-      `)
+      `
       
-      const topMagasins = await prisma.$queryRaw(Prisma.sql`
+      const topMagasins = await prisma.$queryRaw`
         SELECT 
           m.code,
           m.nom,
@@ -223,9 +223,9 @@ export default async function handler(req, res) {
         GROUP BY m.code, m.nom, m.zone
         ORDER BY ca DESC
         LIMIT 5
-      `)
+      `
       
-      const topClients = await prisma.$queryRaw(Prisma.sql`
+      const topClients = await prisma.$queryRaw`
         SELECT 
           c.carte,
           c.ville,
@@ -237,9 +237,9 @@ export default async function handler(req, res) {
         GROUP BY c.carte, c.ville
         ORDER BY ca DESC
         LIMIT 10
-      `)
+      `
       
-      const evolutionMensuelle = await prisma.$queryRaw(Prisma.sql`
+      const evolutionMensuelle = await prisma.$queryRaw`
         SELECT 
           TO_CHAR(date, 'YYYY-MM') as mois,
           SUM(ca)::float as ca,
@@ -248,7 +248,7 @@ export default async function handler(req, res) {
         WHERE date >= ${startDateStr} AND date <= ${endDateStr}
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
-      `)
+      `
       
       return res.status(200).json(serializeJSON({
         period: { type: 'months', value: monthsNum },
@@ -448,7 +448,7 @@ export default async function handler(req, res) {
     const startDate = `${year}-01-01`
     const endDate = `${year}-12-31`
     
-    const kpis = await prisma.$queryRaw(Prisma.sql`
+    const kpis = await prisma.$queryRaw`
       SELECT 
         COUNT(DISTINCT carte)::int as "totalClients",
         COUNT(*)::int as "totalTransactions",
@@ -456,7 +456,7 @@ export default async function handler(req, res) {
         (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
       FROM transactions
       WHERE date >= ${startDate} AND date <= ${endDate}
-    `)
+    `
     
     // Statistiques qualité des données clients
     const statsClients = await prisma.$queryRaw`
@@ -471,7 +471,7 @@ export default async function handler(req, res) {
       FROM clients
     `
     
-    const topProduits = await prisma.$queryRaw(Prisma.sql`
+    const topProduits = await prisma.$queryRaw`
       SELECT 
         p.id as code,
         p.id as nom,
@@ -485,9 +485,9 @@ export default async function handler(req, res) {
       GROUP BY p.id, p.famille, p.sous_famille
       ORDER BY ca DESC
       LIMIT 10
-    `)
+    `
     
-    const topMagasins = await prisma.$queryRaw(Prisma.sql`
+    const topMagasins = await prisma.$queryRaw`
       SELECT 
         m.code,
         m.nom,
@@ -502,9 +502,9 @@ export default async function handler(req, res) {
       GROUP BY m.code, m.nom, m.zone
       ORDER BY ca DESC
       LIMIT 5
-    `)
+    `
     
-    const topClients = await prisma.$queryRaw(Prisma.sql`
+    const topClients = await prisma.$queryRaw`
       SELECT 
         c.carte,
         c.ville,
@@ -516,9 +516,9 @@ export default async function handler(req, res) {
       GROUP BY c.carte, c.ville
       ORDER BY ca DESC
       LIMIT 10
-    `)
+    `
     
-    const evolutionMensuelle = await prisma.$queryRaw(Prisma.sql`
+    const evolutionMensuelle = await prisma.$queryRaw`
       SELECT 
         TO_CHAR(date, 'YYYY-MM') as mois,
         SUM(ca)::float as ca,
@@ -527,7 +527,7 @@ export default async function handler(req, res) {
       WHERE date >= ${startDate} AND date <= ${endDate}
       GROUP BY TO_CHAR(date, 'YYYY-MM')
       ORDER BY mois
-    `)
+    `
     
     res.status(200).json(serializeJSON({
       year: parseInt(year),
