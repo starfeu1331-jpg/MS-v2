@@ -48,15 +48,15 @@ export default async function handler(req, res) {
       
       const statsClients = await prisma.$queryRawUnsafe(`
         SELECT 
-          COUNT(DISTINCT c.code)::int as total,
-          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.code END)::int as hommes,
-          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.code END)::int as femmes,
-          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.code END)::int as avec_nom,
-          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.code END)::int as avec_prenom,
-          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.code END)::int as avec_email,
-          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.code END)::int as avec_telephone
+          COUNT(DISTINCT c.carte)::int as total,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.carte END)::int as hommes,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.carte END)::int as femmes,
+          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.carte END)::int as avec_nom,
+          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.carte END)::int as avec_prenom,
+          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.carte END)::int as avec_email,
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
         FROM clients c
-        INNER JOIN transactions t ON c.code = t.carte
+        INNER JOIN transactions t ON c.carte = t.carte
         WHERE t.date >= '${startDate}' AND t.date <= '${endDate}'
       `)
       
@@ -198,15 +198,15 @@ export default async function handler(req, res) {
       
       const statsClients = await prisma.$queryRawUnsafe(`
         SELECT 
-          COUNT(DISTINCT c.code)::int as total,
-          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.code END)::int as hommes,
-          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.code END)::int as femmes,
-          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.code END)::int as avec_nom,
-          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.code END)::int as avec_prenom,
-          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.code END)::int as avec_email,
-          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.code END)::int as avec_telephone
+          COUNT(DISTINCT c.carte)::int as total,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.carte END)::int as hommes,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.carte END)::int as femmes,
+          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.carte END)::int as avec_nom,
+          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.carte END)::int as avec_prenom,
+          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.carte END)::int as avec_email,
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
         FROM clients c
-        INNER JOIN transactions t ON c.code = t.carte
+        INNER JOIN transactions t ON c.carte = t.carte
         WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}'
       `)
       
@@ -339,15 +339,15 @@ export default async function handler(req, res) {
       
       const statsClients = await prisma.$queryRawUnsafe(`
         SELECT 
-          COUNT(DISTINCT c.code)::int as total,
-          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.code END)::int as hommes,
-          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.code END)::int as femmes,
-          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.code END)::int as avec_nom,
-          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.code END)::int as avec_prenom,
-          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.code END)::int as avec_email,
-          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.code END)::int as avec_telephone
+          COUNT(DISTINCT c.carte)::int as total,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.carte END)::int as hommes,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.carte END)::int as femmes,
+          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.carte END)::int as avec_nom,
+          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.carte END)::int as avec_prenom,
+          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.carte END)::int as avec_email,
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
         FROM clients c
-        INNER JOIN transactions t ON c.code = t.carte
+        INNER JOIN transactions t ON c.carte = t.carte
       `)
       
       const topProduits = await prisma.$queryRawUnsafe(`
@@ -479,15 +479,15 @@ export default async function handler(req, res) {
     // Statistiques qualité des données clients
     const statsClients = await prisma.$queryRawUnsafe(`
       SELECT 
-        COUNT(DISTINCT c.code)::int as total,
-        COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.code END)::int as hommes,
-        COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.code END)::int as femmes,
-        COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.code END)::int as avec_nom,
-        COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.code END)::int as avec_prenom,
-        COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.code END)::int as avec_email,
-        COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.code END)::int as avec_telephone
+        COUNT(DISTINCT c.carte)::int as total,
+        COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.carte END)::int as hommes,
+        COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.carte END)::int as femmes,
+        COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.carte END)::int as avec_nom,
+        COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.carte END)::int as avec_prenom,
+        COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.carte END)::int as avec_email,
+        COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
       FROM clients c
-      INNER JOIN transactions t ON c.code = t.carte
+      INNER JOIN transactions t ON c.carte = t.carte
       WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}'
     `)
     
