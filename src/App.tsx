@@ -136,11 +136,33 @@ function App() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-zinc-800 flex items-center justify-center">
-            {sidebarOpen ? (
-              <img src="/Logo%20Magic%20Système%20texte.png" alt="Magic Système" className="object-contain" style={{ height: '5rem', maxWidth: '200px', minHeight: '60px', margin: '-5%' }} />
-            ) : (
-              <img src="/Logo%20Magic%20Système.png" alt="Logo" className="object-contain" style={{ height: '100%', width: '100%' }} />
-            )}
+            <AnimatePresence mode="wait">
+              {sidebarOpen ? (
+                <motion.img
+                  key="logo-open"
+                  src="/Logo%20Magic%20Système%20texte.png"
+                  alt="Magic Système"
+                  className="object-contain"
+                  style={{ height: '5rem', maxWidth: '200px', minHeight: '60px', margin: '-5%' }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                />
+              ) : (
+                <motion.img
+                  key="logo-closed"
+                  src="/Logo%20Magic%20Système.png"
+                  alt="Logo"
+                  className="object-contain"
+                  style={{ height: '100%', width: '100%' }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                />
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Navigation */}
