@@ -82,13 +82,23 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
 
         // Construction de l'URL selon le type de période
         let url = '/api/dashboard?year='
+        
         if (period.type === 'year') {
+          // Année spécifique (ex: 2025)
           url = `/api/dashboard?year=${period.value}`
         } else if (period.type === 'all') {
+          // Toutes les périodes
           url = '/api/dashboard?year=all'
+        } else if (period.type === 'custom') {
+          // Période personnalisée avec dates de début et fin
+          const [startDate, endDate] = (period.value as string).split('_')
+          url = `/api/dashboard?startDate=${startDate}&endDate=${endDate}`
+        } else if (period.type === 'months') {
+          // X derniers mois
+          url = `/api/dashboard?months=${period.value}`
         } else {
-          // Pour l'instant on utilise 2025 par défaut pour les autres périodes
-          url = '/api/dashboard?year=2025'
+          // Fallback sur toutes les périodes
+          url = '/api/dashboard?year=all'
         }
 
         // Appel API avec données pré-agrégées
