@@ -137,9 +137,9 @@ function App() {
           {/* Logo */}
           <div className="p-6 border-b border-zinc-800 flex items-center justify-center">
             {sidebarOpen ? (
-              <img src="/Logo%20Magic%20Système%20texte.png" alt="Magic Système" className="w-auto object-contain" style={{ height: '5rem', margin: '-5%' }} />
+              <img src="/Logo%20Magic%20Système%20texte.png" alt="Magic Système" className="object-contain" style={{ height: '5rem', maxWidth: '200px', minHeight: '60px', margin: '-5%' }} />
             ) : (
-              <img src="/Logo%20Magic%20Système.png" alt="Logo" className="h-8 w-auto object-contain" />
+              <img src="/Logo%20Magic%20Système.png" alt="Logo" className="object-contain" style={{ height: '32px', width: '32px', minHeight: '28px', minWidth: '28px', maxHeight: '40px', maxWidth: '40px' }} />
             )}
           </div>
 
