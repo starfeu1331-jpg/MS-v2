@@ -155,7 +155,7 @@ function App() {
                   src="/Logo%20Magic%20Système.png"
                   alt="Logo"
                   className="object-contain"
-                  style={{ height: '48px', width: '48px' }}
+                  style={{ height: '48px', width: 'auto' }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
