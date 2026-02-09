@@ -48,14 +48,16 @@ export default async function handler(req, res) {
       
       const statsClients = await prisma.$queryRawUnsafe(`
         SELECT 
-          COUNT(*)::int as total,
-          COUNT(CASE WHEN sexe = 'H' THEN 1 END)::int as hommes,
-          COUNT(CASE WHEN sexe = 'F' THEN 1 END)::int as femmes,
-          COUNT(CASE WHEN nom IS NOT NULL AND nom != '' THEN 1 END)::int as avec_nom,
-          COUNT(CASE WHEN prenom IS NOT NULL AND prenom != '' THEN 1 END)::int as avec_prenom,
-          COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END)::int as avec_email,
-          COUNT(CASE WHEN telephone IS NOT NULL AND telephone != '' THEN 1 END)::int as avec_telephone
-        FROM clients
+          COUNT(DISTINCT c.code)::int as total,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.code END)::int as hommes,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.code END)::int as femmes,
+          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.code END)::int as avec_nom,
+          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.code END)::int as avec_prenom,
+          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.code END)::int as avec_email,
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.code END)::int as avec_telephone
+        FROM clients c
+        INNER JOIN transactions t ON c.code = t.carte
+        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}'
       `)
       
       const topProduits = await prisma.$queryRawUnsafe(`
@@ -196,14 +198,16 @@ export default async function handler(req, res) {
       
       const statsClients = await prisma.$queryRawUnsafe(`
         SELECT 
-          COUNT(*)::int as total,
-          COUNT(CASE WHEN sexe = 'H' THEN 1 END)::int as hommes,
-          COUNT(CASE WHEN sexe = 'F' THEN 1 END)::int as femmes,
-          COUNT(CASE WHEN nom IS NOT NULL AND nom != '' THEN 1 END)::int as avec_nom,
-          COUNT(CASE WHEN prenom IS NOT NULL AND prenom != '' THEN 1 END)::int as avec_prenom,
-          COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END)::int as avec_email,
-          COUNT(CASE WHEN telephone IS NOT NULL AND telephone != '' THEN 1 END)::int as avec_telephone
-        FROM clients
+          COUNT(DISTINCT c.code)::int as total,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.code END)::int as hommes,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.code END)::int as femmes,
+          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.code END)::int as avec_nom,
+          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.code END)::int as avec_prenom,
+          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.code END)::int as avec_email,
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.code END)::int as avec_telephone
+        FROM clients c
+        INNER JOIN transactions t ON c.code = t.carte
+        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}'
       `)
       
       const topProduits = await prisma.$queryRawUnsafe(`
@@ -335,14 +339,15 @@ export default async function handler(req, res) {
       
       const statsClients = await prisma.$queryRawUnsafe(`
         SELECT 
-          COUNT(*)::int as total,
-          COUNT(CASE WHEN sexe = 'H' THEN 1 END)::int as hommes,
-          COUNT(CASE WHEN sexe = 'F' THEN 1 END)::int as femmes,
-          COUNT(CASE WHEN nom IS NOT NULL AND nom != '' THEN 1 END)::int as avec_nom,
-          COUNT(CASE WHEN prenom IS NOT NULL AND prenom != '' THEN 1 END)::int as avec_prenom,
-          COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END)::int as avec_email,
-          COUNT(CASE WHEN telephone IS NOT NULL AND telephone != '' THEN 1 END)::int as avec_telephone
-        FROM clients
+          COUNT(DISTINCT c.code)::int as total,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.code END)::int as hommes,
+          COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.code END)::int as femmes,
+          COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.code END)::int as avec_nom,
+          COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.code END)::int as avec_prenom,
+          COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.code END)::int as avec_email,
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.code END)::int as avec_telephone
+        FROM clients c
+        INNER JOIN transactions t ON c.code = t.carte
       `)
       
       const topProduits = await prisma.$queryRawUnsafe(`
@@ -474,14 +479,16 @@ export default async function handler(req, res) {
     // Statistiques qualité des données clients
     const statsClients = await prisma.$queryRawUnsafe(`
       SELECT 
-        COUNT(*)::int as total,
-        COUNT(CASE WHEN sexe = 'H' THEN 1 END)::int as hommes,
-        COUNT(CASE WHEN sexe = 'F' THEN 1 END)::int as femmes,
-        COUNT(CASE WHEN nom IS NOT NULL AND nom != '' THEN 1 END)::int as avec_nom,
-        COUNT(CASE WHEN prenom IS NOT NULL AND prenom != '' THEN 1 END)::int as avec_prenom,
-        COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END)::int as avec_email,
-        COUNT(CASE WHEN telephone IS NOT NULL AND telephone != '' THEN 1 END)::int as avec_telephone
-      FROM clients
+        COUNT(DISTINCT c.code)::int as total,
+        COUNT(DISTINCT CASE WHEN c.sexe = 'H' THEN c.code END)::int as hommes,
+        COUNT(DISTINCT CASE WHEN c.sexe = 'F' THEN c.code END)::int as femmes,
+        COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.code END)::int as avec_nom,
+        COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.code END)::int as avec_prenom,
+        COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.code END)::int as avec_email,
+        COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.code END)::int as avec_telephone
+      FROM clients c
+      INNER JOIN transactions t ON c.code = t.carte
+      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}'
     `)
     
     const topProduits = await prisma.$queryRawUnsafe(`
