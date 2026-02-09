@@ -522,5 +522,7 @@ export default async function handler(req, res) {
       error: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     })
+  } finally {
+    await prisma.$disconnect()
   }
 }
