@@ -43,7 +43,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as "totalCA",
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
-        WHERE date >= '${startDate}' AND date <= '${endDate}' AND depot NOT IN ('1', '41', '42')
+        WHERE date >= '${startDate}' AND date <= '${endDate}' AND depot NOT IN ('1', '41', '42') AND ca > 0
       `)
       
       const statsClients = await prisma.$queryRawUnsafe(`
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
-        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42')
+        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
       `)
       
       const topProduits = await prisma.$queryRawUnsafe(`
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
           SUM(t.quantite)::float as volume
         FROM transactions t
         JOIN produits p ON t.produit = p.id
-        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42')
+        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY p.id, p.famille, p.sous_famille
         ORDER BY ca DESC
         LIMIT 10
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
           (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
         FROM transactions t
         JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
-        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42')
+        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY m.code, m.nom, m.zone
         ORDER BY ca DESC
         LIMIT 5
@@ -101,7 +101,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT t.facture)::int as "nbCommandes"
         FROM transactions t
         JOIN clients c ON t.carte = c.carte
-        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42')
+        WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY c.carte, c.ville
         ORDER BY ca DESC
         LIMIT 10
@@ -113,7 +113,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as ca,
           COUNT(*)::int as tickets
         FROM transactions
-        WHERE date >= '${startDate}' AND date <= '${endDate}' AND depot NOT IN ('1', '41', '42')
+        WHERE date >= '${startDate}' AND date <= '${endDate}' AND depot NOT IN ('1', '41', '42') AND ca > 0
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
       `)
@@ -193,7 +193,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as "totalCA",
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
-        WHERE date >= '${startDateStr}' AND date <= '${endDateStr}' AND depot NOT IN ('1', '41', '42')
+        WHERE date >= '${startDateStr}' AND date <= '${endDateStr}' AND depot NOT IN ('1', '41', '42') AND ca > 0
       `)
       
       const statsClients = await prisma.$queryRawUnsafe(`
@@ -207,7 +207,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
-        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42')
+        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
       `)
       
       const topProduits = await prisma.$queryRawUnsafe(`
@@ -220,7 +220,7 @@ export default async function handler(req, res) {
           SUM(t.quantite)::float as volume
         FROM transactions t
         JOIN produits p ON t.produit = p.id
-        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42')
+        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY p.id, p.famille, p.sous_famille
         ORDER BY ca DESC
         LIMIT 10
@@ -237,7 +237,7 @@ export default async function handler(req, res) {
           (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
         FROM transactions t
         JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
-        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42')
+        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY m.code, m.nom, m.zone
         ORDER BY ca DESC
         LIMIT 5
@@ -251,7 +251,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT t.facture)::int as "nbCommandes"
         FROM transactions t
         JOIN clients c ON t.carte = c.carte
-        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42')
+        WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY c.carte, c.ville
         ORDER BY ca DESC
         LIMIT 10
@@ -263,7 +263,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as ca,
           COUNT(*)::int as tickets
         FROM transactions
-        WHERE date >= '${startDateStr}' AND date <= '${endDateStr}' AND depot NOT IN ('1', '41', '42')
+        WHERE date >= '${startDateStr}' AND date <= '${endDateStr}' AND depot NOT IN ('1', '41', '42') AND ca > 0
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
       `)
@@ -335,7 +335,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as "totalCA",
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
-        WHERE depot NOT IN ('1', '41', '42')
+        WHERE depot NOT IN ('1', '41', '42') AND ca > 0
       `)
       
       const statsClients = await prisma.$queryRawUnsafe(`
@@ -349,6 +349,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
+        WHERE t.depot NOT IN ('1', '41', '42') AND t.ca > 0
       `)
       
       const topProduits = await prisma.$queryRawUnsafe(`
@@ -361,6 +362,7 @@ export default async function handler(req, res) {
           SUM(t.quantite)::float as volume
         FROM transactions t
         JOIN produits p ON t.produit = p.id
+        WHERE t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY p.id, p.famille, p.sous_famille
         ORDER BY ca DESC
         LIMIT 10
@@ -377,6 +379,7 @@ export default async function handler(req, res) {
           (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
         FROM transactions t
         JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
+        WHERE t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY m.code, m.nom, m.zone
         ORDER BY ca DESC
         LIMIT 5
@@ -390,6 +393,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT t.facture)::int as "nbCommandes"
         FROM transactions t
         JOIN clients c ON t.carte = c.carte
+        WHERE t.depot NOT IN ('1', '41', '42') AND t.ca > 0
         GROUP BY c.carte, c.ville
         ORDER BY ca DESC
         LIMIT 10
@@ -401,7 +405,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as ca,
           COUNT(*)::int as tickets
         FROM transactions
-        WHERE depot NOT IN (\'1\', \'41\', \'42\')
+        WHERE depot NOT IN (\'1\', \'41\', \'42\') AND ca > 0
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
       `)
@@ -475,7 +479,7 @@ export default async function handler(req, res) {
         SUM(ca)::float as "totalCA",
         (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
       FROM transactions
-      WHERE date >= '${startDateYear}' AND date <= '${endDateYear}' AND depot NOT IN ('1', '41', '42')
+      WHERE date >= '${startDateYear}' AND date <= '${endDateYear}' AND depot NOT IN ('1', '41', '42') AND ca > 0
     `)
     
     // Statistiques qualité des données clients
@@ -490,7 +494,7 @@ export default async function handler(req, res) {
         COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
       FROM clients c
       INNER JOIN transactions t ON c.carte = t.carte
-      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42')
+      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
     `)
     
     const topProduits = await prisma.$queryRawUnsafe(`
@@ -503,7 +507,7 @@ export default async function handler(req, res) {
         SUM(t.quantite)::float as volume
       FROM transactions t
       JOIN produits p ON t.produit = p.id
-      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42')
+      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
       GROUP BY p.id, p.famille, p.sous_famille
       ORDER BY ca DESC
       LIMIT 10
@@ -520,7 +524,7 @@ export default async function handler(req, res) {
         (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
       FROM transactions t
       JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
-      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42')
+      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
       GROUP BY m.code, m.nom, m.zone
       ORDER BY ca DESC
       LIMIT 5
@@ -534,7 +538,7 @@ export default async function handler(req, res) {
         COUNT(DISTINCT t.facture)::int as "nbCommandes"
       FROM transactions t
       JOIN clients c ON t.carte = c.carte
-      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42')
+      WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
       GROUP BY c.carte, c.ville
       ORDER BY ca DESC
       LIMIT 10
@@ -546,7 +550,7 @@ export default async function handler(req, res) {
         SUM(ca)::float as ca,
         COUNT(*)::int as tickets
       FROM transactions
-      WHERE date >= '${startDateYear}' AND date <= '${endDateYear}' AND depot NOT IN ('1', '41', '42')
+      WHERE date >= '${startDateYear}' AND date <= '${endDateYear}' AND depot NOT IN ('1', '41', '42') AND ca > 0
       GROUP BY TO_CHAR(date, 'YYYY-MM')
       ORDER BY mois
     `)
