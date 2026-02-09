@@ -173,13 +173,16 @@ Les limites de QlikQ dans cet objectif :
 Magic Système en Action : Clara & Quentin
 ```
 
-### **📧 CAS CLARA : Campagne Emailing Segmentée**
+### **🎯 CAS CLARA : Campagne Meta Acquero**
 
-**Avant :** Email masse 144 000 clients → ROI 2,4x
-**Avec MS :** 3 campagnes ciblées (VIP, Dormants, Récents) → ROI 90x
+**Contexte :** Carrousel produits Meta annuel, 15 produits choisis "à l'intuition"  
+**Problème :** Doute sur la fiabilité du top produits
+
+**Avec MS :** Export top 30 réels classés par CA + Analyse révèle biais (trop de gazon)  
+**Suggestion :** Max 3 produits/sous-famille pour diversifier sans dénaturer
 
 ```
-✅ RÉSULTAT : -64% budget email, +1 258% efficacité
+✅ RÉSULTAT : Campagne optimisée avec vrais tops, visuels priorisés correctement
 ```
 
 ---
