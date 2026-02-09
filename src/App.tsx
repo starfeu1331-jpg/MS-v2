@@ -139,7 +139,7 @@ function App() {
             {sidebarOpen ? (
               <img src="/Logo%20Magic%20Système%20texte.png" alt="Magic Système" className="w-auto object-contain" style={{ height: '5rem', margin: '-5%' }} />
             ) : (
-              <img src="/Logo%20Magic%20Système.png" alt="Logo" className="object-contain" style={{ height: '5rem', margin: '-5%' }} />
+              <img src="/Logo%20Magic%20Système.png" alt="Logo" className="w-8 h-8 object-contain" />
             )}
           </div>
 
