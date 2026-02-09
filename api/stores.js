@@ -257,7 +257,7 @@ export default async function handler(req, res) {
         COUNT(DISTINCT CASE WHEN client_achats.nb_achats > 1 THEN t.carte END)::int as nb_clients_actifs,
         COUNT(DISTINCT CASE WHEN client_achats.nb_achats >= 3 THEN t.carte END)::int as nb_clients_fideles,
         COUNT(*)::int as nb_transactions,
-        AVG(t.ca)::numeric as panier_moyen
+        (SUM(t.ca) / COUNT(DISTINCT t.facture))::numeric as panier_moyen
       FROM transactions t
       LEFT JOIN (
         SELECT carte, COUNT(*) as nb_achats

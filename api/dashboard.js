@@ -27,7 +27,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT carte)::int as "totalClients",
           COUNT(*)::int as "totalTransactions",
           SUM(ca)::float as "totalCA",
-          AVG(ca)::float as "panierMoyen"
+          (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
       `
       
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
           SUM(t.ca)::float as ca,
           SUM(t.quantite)::float as volume,
           COUNT(DISTINCT t.facture)::int as "nbTickets",
-          AVG(t.ca)::float as "panierMoyen"
+          (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
         FROM transactions t
         JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
         GROUP BY m.code, m.nom, m.zone
@@ -165,7 +165,7 @@ export default async function handler(req, res) {
         COUNT(DISTINCT carte)::int as "totalClients",
         COUNT(*)::int as "totalTransactions",
         SUM(ca)::float as "totalCA",
-        AVG(ca)::float as "panierMoyen"
+        (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
       FROM transactions
       WHERE date >= ${startDate}::timestamp AND date <= ${endDate}::timestamp
     `)
@@ -207,7 +207,7 @@ export default async function handler(req, res) {
         SUM(t.ca)::float as ca,
         SUM(t.quantite)::float as volume,
         COUNT(DISTINCT t.facture)::int as "nbTickets",
-        AVG(t.ca)::float as "panierMoyen"
+        (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
       FROM transactions t
       JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
       WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
