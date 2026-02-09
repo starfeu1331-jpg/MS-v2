@@ -137,15 +137,12 @@ function App() {
           {/* Logo */}
           <div className="p-6 border-b border-zinc-800 flex items-center justify-center">
             {sidebarOpen ? (
-              <div className="flex items-center gap-3">
-                <img src="/logo-magicsysteme.svg" alt="Magic Système" className="w-8 h-8" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }} />
-                <BarChart3 className="w-8 h-8 text-blue-500 hidden" />
-                <span className="text-xl font-bold text-white">Magic Système</span>
+              <div className="flex items-center justify-center">
+                <img src="/Logo Magic Système + texte.png" alt="Magic Système" className="h-10 w-auto object-contain" />
               </div>
             ) : (
               <>
-                <img src="/logo-magicsysteme.svg" alt="Logo" className="w-6 h-6" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }} />
-                <BarChart3 className="w-6 h-6 text-blue-500 hidden" />
+                <img src="/Logo Magic Système.png" alt="Logo" className="w-8 h-8 object-contain" />
               </>
             )}
           </div>
