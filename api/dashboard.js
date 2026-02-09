@@ -322,8 +322,10 @@ export default async function handler(req, res) {
       }))
     }
     
+    // === SECTION ALL - REFAIT PROPREMENT ===
     if (year === 'all') {
-      // Toutes les périodes - utilisation de $queryRawUnsafe car pas de paramètres
+      console.log('📊 Dashboard ALL: Chargement toutes périodes')
+      
       const kpis = await prisma.$queryRawUnsafe(`
         SELECT 
           COUNT(DISTINCT carte)::int as "totalClients",
@@ -332,8 +334,8 @@ export default async function handler(req, res) {
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
       `)
+      console.log('✅ KPIs loaded:', kpis[0])
       
-      // Statistiques qualité des données clients
       const statsClients = await prisma.$queryRawUnsafe(`
         SELECT 
           COUNT(*)::int as total,
@@ -345,6 +347,7 @@ export default async function handler(req, res) {
           COUNT(CASE WHEN telephone IS NOT NULL AND telephone != '' THEN 1 END)::int as avec_telephone
         FROM clients
       `)
+      console.log('✅ Stats clients loaded')
       
       const topProduits = await prisma.$queryRawUnsafe(`
         SELECT 
@@ -360,6 +363,7 @@ export default async function handler(req, res) {
         ORDER BY ca DESC
         LIMIT 10
       `)
+      console.log('✅ Top produits loaded:', topProduits.length)
       
       const topMagasins = await prisma.$queryRawUnsafe(`
         SELECT 
@@ -376,6 +380,7 @@ export default async function handler(req, res) {
         ORDER BY ca DESC
         LIMIT 5
       `)
+      console.log('✅ Top magasins loaded:', topMagasins.length)
       
       const topClients = await prisma.$queryRawUnsafe(`
         SELECT 
@@ -389,6 +394,7 @@ export default async function handler(req, res) {
         ORDER BY ca DESC
         LIMIT 10
       `)
+      console.log('✅ Top clients loaded:', topClients.length)
       
       const evolutionMensuelle = await prisma.$queryRawUnsafe(`
         SELECT 
@@ -399,33 +405,34 @@ export default async function handler(req, res) {
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
       `)
+      console.log('✅ Evolution loaded:', evolutionMensuelle.length, 'mois')
       
-      return res.status(200).json(serializeJSON({
+      const response = {
         year: 'all',
         kpis: {
-          totalCA: (kpis[0]?.totalCA) || 0,
-          totalCAMagasin: (kpis[0]?.totalCA) || 0,
+          totalCA: kpis[0]?.totalCA || 0,
+          totalCAMagasin: kpis[0]?.totalCA || 0,
           totalCAWeb: 0,
-          totalTransactions: (kpis[0]?.totalTransactions) || 0,
-          totalTransactionsMag: (kpis[0]?.totalTransactions) || 0,
+          totalTransactions: kpis[0]?.totalTransactions || 0,
+          totalTransactionsMag: kpis[0]?.totalTransactions || 0,
           totalTransactionsWeb: 0,
-          totalClients: (kpis[0]?.totalClients) || 0,
-          panierMoyen: (kpis[0]?.panierMoyen) || 0,
-          panierMoyenMag: (kpis[0]?.panierMoyen) || 0,
+          totalClients: kpis[0]?.totalClients || 0,
+          panierMoyen: kpis[0]?.panierMoyen || 0,
+          panierMoyenMag: kpis[0]?.panierMoyen || 0,
           panierMoyenWeb: 0
         },
         statsClients: {
-          total: (statsClients[0]?.total) || 0,
-          hommes: (statsClients[0]?.hommes) || 0,
-          femmes: (statsClients[0]?.femmes) || 0,
-          avecNom: (statsClients[0]?.avec_nom) || 0,
-          avecPrenom: (statsClients[0]?.avec_prenom) || 0,
-          avecEmail: (statsClients[0]?.avec_email) || 0,
-          avecTelephone: (statsClients[0]?.avec_telephone) || 0,
-          pctHommes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.hommes) / (statsClients[0]?.total) * 100) : 0,
-          pctFemmes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.femmes) / (statsClients[0]?.total) * 100) : 0,
-          pctEmail: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_email) / (statsClients[0]?.total) * 100) : 0,
-          pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0
+          total: statsClients[0]?.total || 0,
+          hommes: statsClients[0]?.hommes || 0,
+          femmes: statsClients[0]?.femmes || 0,
+          avecNom: statsClients[0]?.avec_nom || 0,
+          avecPrenom: statsClients[0]?.avec_prenom || 0,
+          avecEmail: statsClients[0]?.avec_email || 0,
+          avecTelephone: statsClients[0]?.avec_telephone || 0,
+          pctHommes: statsClients[0]?.total > 0 ? (statsClients[0]?.hommes / statsClients[0]?.total * 100) : 0,
+          pctFemmes: statsClients[0]?.total > 0 ? (statsClients[0]?.femmes / statsClients[0]?.total * 100) : 0,
+          pctEmail: statsClients[0]?.total > 0 ? (statsClients[0]?.avec_email / statsClients[0]?.total * 100) : 0,
+          pctTelephone: statsClients[0]?.total > 0 ? (statsClients[0]?.avec_telephone / statsClients[0]?.total * 100) : 0
         },
         topProduits: topProduits.map(p => ({
           code: p.code,
@@ -455,7 +462,10 @@ export default async function handler(req, res) {
           ca: e.ca,
           tickets: e.tickets
         }))
-      }))
+      }
+      
+      console.log('📤 Envoi réponse all - CA:', response.kpis.totalCA, '€')
+      return res.status(200).json(serializeJSON(response))
     }
     
     // Année spécifique
