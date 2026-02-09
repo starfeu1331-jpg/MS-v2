@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       const kpis = await prisma.$queryRawUnsafe(`
         SELECT 
           COUNT(DISTINCT carte)::int as "totalClients",
-          COUNT(*)::int as "totalTransactions",
+          COUNT(DISTINCT facture)::int as "totalTickets",
           SUM(ca)::float as "totalCA",
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
@@ -122,9 +122,9 @@ export default async function handler(req, res) {
           totalCA: (kpis[0]?.totalCA) || 0,
           totalCAMagasin: (kpis[0]?.totalCA) || 0,
           totalCAWeb: 0,
-          totalTransactions: (kpis[0]?.totalTransactions) || 0,
-          totalTransactionsMag: (kpis[0]?.totalTransactions) || 0,
-          totalTransactionsWeb: 0,
+          totalTickets: (kpis[0]?.totalTickets) || 0,
+          totalTicketsMag: (kpis[0]?.totalTickets) || 0,
+          totalTicketsWeb: 0,
           totalClients: (kpis[0]?.totalClients) || 0,
           panierMoyen: (kpis[0]?.panierMoyen) || 0,
           panierMoyenMag: (kpis[0]?.panierMoyen) || 0,
@@ -187,7 +187,7 @@ export default async function handler(req, res) {
       const kpis = await prisma.$queryRawUnsafe(`
         SELECT 
           COUNT(DISTINCT carte)::int as "totalClients",
-          COUNT(*)::int as "totalTransactions",
+          COUNT(DISTINCT facture)::int as "totalTickets",
           SUM(ca)::float as "totalCA",
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
@@ -270,9 +270,9 @@ export default async function handler(req, res) {
           totalCA: (kpis[0]?.totalCA) || 0,
           totalCAMagasin: (kpis[0]?.totalCA) || 0,
           totalCAWeb: 0,
-          totalTransactions: (kpis[0]?.totalTransactions) || 0,
-          totalTransactionsMag: (kpis[0]?.totalTransactions) || 0,
-          totalTransactionsWeb: 0,
+          totalTickets: (kpis[0]?.totalTickets) || 0,
+          totalTicketsMag: (kpis[0]?.totalTickets) || 0,
+          totalTicketsWeb: 0,
           totalClients: (kpis[0]?.totalClients) || 0,
           panierMoyen: (kpis[0]?.panierMoyen) || 0,
           panierMoyenMag: (kpis[0]?.panierMoyen) || 0,
@@ -327,7 +327,7 @@ export default async function handler(req, res) {
       const kpis = await prisma.$queryRawUnsafe(`
         SELECT 
           COUNT(DISTINCT carte)::int as "totalClients",
-          COUNT(*)::int as "totalTransactions",
+          COUNT(DISTINCT facture)::int as "totalTickets",
           SUM(ca)::float as "totalCA",
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
@@ -405,9 +405,9 @@ export default async function handler(req, res) {
           totalCA: kpis[0]?.totalCA || 0,
           totalCAMagasin: kpis[0]?.totalCA || 0,
           totalCAWeb: 0,
-          totalTransactions: kpis[0]?.totalTransactions || 0,
-          totalTransactionsMag: kpis[0]?.totalTransactions || 0,
-          totalTransactionsWeb: 0,
+          totalTickets: kpis[0]?.totalTickets || 0,
+          totalTicketsMag: kpis[0]?.totalTickets || 0,
+          totalTicketsWeb: 0,
           totalClients: kpis[0]?.totalClients || 0,
           panierMoyen: kpis[0]?.panierMoyen || 0,
           panierMoyenMag: kpis[0]?.panierMoyen || 0,
@@ -464,7 +464,7 @@ export default async function handler(req, res) {
     const kpis = await prisma.$queryRawUnsafe(`
       SELECT 
         COUNT(DISTINCT carte)::int as "totalClients",
-        COUNT(*)::int as "totalTransactions",
+        COUNT(DISTINCT facture)::int as "totalTickets",
         SUM(ca)::float as "totalCA",
         (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
       FROM transactions
@@ -548,9 +548,9 @@ export default async function handler(req, res) {
         totalCA: (kpis[0]?.totalCA) || 0,
         totalCAMagasin: (kpis[0]?.totalCA) || 0,
         totalCAWeb: 0,
-        totalTransactions: (kpis[0]?.totalTransactions) || 0,
-        totalTransactionsMag: (kpis[0]?.totalTransactions) || 0,
-        totalTransactionsWeb: 0,
+        totalTickets: (kpis[0]?.totalTickets) || 0,
+        totalTicketsMag: (kpis[0]?.totalTickets) || 0,
+        totalTicketsWeb: 0,
         totalClients: (kpis[0]?.totalClients) || 0,
         panierMoyen: (kpis[0]?.panierMoyen) || 0,
         panierMoyenMag: (kpis[0]?.panierMoyen) || 0,

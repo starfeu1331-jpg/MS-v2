@@ -88,15 +88,15 @@ CLIENTS_COLS = [
     'carte',           # [0]
     'nom',             # [1]
     'prenom',          # [2]
-    'date_creation', # [3]
+    'date_creation',   # [3]  
     'statut',          # [4]
     'date_validite',   # [5]
     'civilite',        # [6]
     'date_naissance',  # [7]
     'sexe',            # [8]
-    'nom_adresse',     # [9]
+    'email',           # [9] ← CORRIGÉ : L'email est ICI !
     'telephone',       # [10]
-    'email',           # [11]
+    'adresse_complement', # [11]
     'adresse_num',     # [12]
     'adresse',         # [13]
     'adresse_2',       # [14]
@@ -185,14 +185,11 @@ print(f"  • Clients : {cur.fetchone()[0]:,}")
 cur.execute("SELECT COUNT(*) FROM produits")
 print(f"  • Produits : {cur.fetchone()[0]:,}")
 
-print(f"\n⚠️  VOUS ALLEZ SUPPRIMER TOUTES CES DONNÉES !")
-print(f"   Nouvelles : {len(df_transactions):,} transactions, "
+print(f"\n⚠️  IMPORT : {len(df_transactions):,} transactions, "
       f"{len(df_clients_filtered):,} clients, {len(df_produits_filtered):,} produits")
 
-response = input("\n❓ Continuer ? (tapez 'oui') : ")
-if response.lower() != 'oui':
-    print("\n❌ Abandon")
-    sys.exit(0)
+# Auto-continue pour réimport (BDD déjà vide)
+print("✅ Démarrage automatique de l'import...")
 
 # ============================================================================
 # ÉTAPE 5 : NETTOYAGE BDD
@@ -235,7 +232,7 @@ for _, row in df_clients_filtered.iterrows():
         'civilite': row['civilite'].strip() if pd.notna(row['civilite']) and row['civilite'].strip() else None,
         'date_naissance': row['date_naissance'] if pd.notna(row['date_naissance']) and row['date_naissance'].strip() else None,
         'sexe': row['sexe'].strip() if pd.notna(row['sexe']) and row['sexe'].strip() else None,
-        'nom_adresse': row['nom_adresse'].strip() if pd.notna(row['nom_adresse']) and row['nom_adresse'].strip() else None,
+        'nom_adresse': row['adresse_complement'].strip() if pd.notna(row['adresse_complement']) and row['adresse_complement'].strip() else None,
         'adresse': row['adresse'].strip() if pd.notna(row['adresse']) and row['adresse'].strip() else None,
         'adresse_2': row['adresse_2'].strip() if pd.notna(row['adresse_2']) and row['adresse_2'].strip() else None,
         'adresse_4': None,  # Pas dans le fichier

@@ -173,27 +173,30 @@ Les limites de QlikQ dans cet objectif :
 Magic Système en Action : Clara & Quentin
 ```
 
-### **🎯 CAS CLARA : Campagne Meta Acquero**
+### **📊 CAS CLARA : Campagne Meta Acquero**
 
-**Contexte :** Carrousel produits Meta annuel, 15 produits choisis "à l'intuition"  
-**Problème :** Doute sur la fiabilité du top produits
+**Demande :** Top 10 produits par mois (année 2025) pour carrousel Meta annuel  
+**Contrainte :** Maximum 3 produits par sous-famille pour diversifier  
+**Objectif :** Remplacer sélection intuitive par données CA réelles
 
-**Avec MS :** Export top 30 réels classés par CA + Analyse révèle biais (trop de gazon)  
-**Suggestion :** Max 3 produits/sous-famille pour diversifier sans dénaturer
+**Avec MS :** Export automatisé avec CA mensuel + filtre diversité
 
 ```
-✅ RÉSULTAT : Campagne optimisée avec vrais tops, visuels priorisés correctement
+✅ RÉSULTAT : Campagne data-driven, visuels optimisés par CA, diversité garantie
 ```
 
 ---
 
-### **🌐 CAS QUENTIN : King Quentin (Produits Web vs Magasin)**
+### **👑 CAS QUENTIN : King Quentin (Potentiel Web)**
 
-**Avant :** 9h30 de travail manuel Excel (exports, RECHERCHEV, nettoyage)
-**Avec MS :** 2 minutes automatisées (clic → export)
+**Demande :** Top 100 produits vendus en magasin mais absents du site web  
+**Contrainte :** Classement par CA pour relecture humaine avant mise en ligne  
+**Objectif :** Identifier opportunités e-commerce (produits retirés ou jamais listés)
+
+**Avec MS :** Export automatisé avec détection magasin-only + tri CA décroissant
 
 ```
-✅ RÉSULTAT : Top 100 produits identifiés = 127 098€ potentiel web
+✅ RÉSULTAT : 127 098€ de potentiel web identifié en 2 minutes (vs 9h30 manuel)
 ```
 
 ---
@@ -202,113 +205,27 @@ Magic Système en Action : Clara & Quentin
 
 **Titre** :
 ```
-Et Ce N'est Que Le Début...
+Les Possibilités de Demain
 ```
 
-### **🎯 Aujourd'hui : Focus Marketing (Opérationnel)**
+### **🚀 Ce Que Magic Système Pourrait Devenir**
 
 ```
-✅ Segmentation RFM (8 segments détaillés)
-✅ Analyse ABC produits
-✅ Cohortes d'acquisition
-✅ Cross-selling (recommandations)
-✅ Analyse géographique (heatmaps)
-✅ Exports Excel personnalisés
-✅ King Quentin (web vs magasin)
-✅ Dashboard temps réel
-
-Développement : 3 mois (Oct 2025 - Jan 2026)
-Pôle aidé : Marketing & Direction
+🎨 Dashboard personnalisé pour chaque collaborateur
+📦 Modules spécifiques adaptés aux besoins de chaque service
+🤖 Communications automatisées, personnalisées et analysées (suivi complet de toutes actions)
+📊 Rapports hebdomadaires automatiques des performances (magasins + siège)
+💬 Campagnes SMS ciblées par segment client
+🏢 CRM complet intégré (fusion données Web + Magasin)
+🔓 Liberté totale sur conception, limites et accès utilisateurs
 ```
 
 ---
 
-### **🚀 Demain : Étendre à TOUS les Pôles**
-
-#### **📱 PÔLE COMMERCIAL & VENTES**
+**💡 Principe :**
 ```
-App Mobile Vendeur :
-├─ Scan carte fidélité → Profil client instantané
-├─ Affichage segment RFM + CA total + derniers achats
-├─ Suggestions cross-sell temps réel
-└─ Impact estimé : +8% panier moyen magasin
-
-Développement : 15 jours
-```
-
-#### **📦 PÔLE LOGISTIQUE**
-```
-Prévisions Stock Intelligentes :
-├─ Machine Learning sur 3 ans historique
-├─ Détection saisonnalité (Noël, été, soldes)
-├─ Alertes anticipées rupture stock
-└─ Impact : -15% ruptures, -8% sur-stockage
-
-Développement : 20 jours
-```
-
-#### **🤖 PÔLE COMMUNICATION**
-```
-Emails Automatisés & Tracking :
-├─ Déclenchement auto (inactif 3 mois, anniversaire, etc.)
-├─ Personnalisation poussée (produits selon historique)
-├─ Dashboard : qui a reçu quoi, quand (0 doublon)
-├─ A/B testing automatique
-└─ Impact : -80% temps gestion, +120% ROI email
-
-Développement : 30 jours
-```
-
-#### **🔗 FUSION DONNÉES WEB + MAGASIN**
-```
-Plateforme Unifiée (Saint Graal) :
-├─ ID unique : Email ou carte fidélité
-├─ Vue 360° client (achats web + magasin fusionnés)
-├─ Analyses omnicanal complètes
-├─ Click & collect optimisé
-└─ Impact : +15-25% CA cross-canal
-
-Développement : 45 jours (complexe)
-```
-
-#### **🏢 CRM COMPLET (Vision 2027)**
-```
-Module CRM Intégré :
-├─ Fiches clients enrichies (historique complet)
-├─ Timeline tous contacts (email, SMS, appel)
-├─ Automatisations métier (alertes, escalades)
-├─ Intégrations : Téléphonie, caisse, SAV
-└─ Économie : 18 000€/an (vs Salesforce)
-
-Développement : 90 jours
-```
-
----
-
-### **💡 Principe Clé**
-
-```
-╔════════════════════════════════════════════════════╗
-║                                                    ║
-║  Magic Système n'est pas UN outil figé,           ║
-║  c'est UNE PLATEFORME évolutive                   ║
-║  qui s'adapte à VOS besoins métier.               ║
-║                                                    ║
-║  Chaque nouveau module = Réponse à problème réel  ║
-║  Chaque euro dépensé = ROI mesurable              ║
-║  Chaque fonctionnalité = Gain temps ou CA         ║
-║                                                    ║
-╚════════════════════════════════════════════════════╝
-```
-
-**Roadmap Vision 2026-2028 :**
-```
-Q1 2026 (ACT) ✅  Marketing Analytics complet
-Q2 2026       📱  App mobile vendeurs + Emails auto
-Q3 2026       📦  Prévisions stock + Fusion Web/Mag
-Q4 2026       🏢  CRM léger
-2027          🚀  CRM complet + IA prédictive
-2028          🌐  Plateforme data unifiée entreprise
+Plateforme ÉVOLUTIVE adaptée à VOS besoins précis
+Chaque module = ROI mesurable + gain temps ou CA
 ```
 
 ---
@@ -317,143 +234,51 @@ Q4 2026       🏢  CRM léger
 
 **Titre** :
 ```
-Infrastructure : Pro, Sécurisée, Conforme
+Infrastructure 100% OVH France : Pro, Sécurisée, Conforme
 ```
 
-### **🏢 Architecture Technique**
+### **🏢 Configuration Technique**
 
 ```
-┌─────────────────────────────────────────────┐
-│         👥 UTILISATEURS (Browser)           │
-└─────────────────┬───────────────────────────┘
-                  │ HTTPS (SSL chiffré)
-                  ↓
-┌─────────────────────────────────────────────┐
-│    🌐 FRONTEND (Interface Web)              │
-│                                             │
-│  Vercel CDN : 200+ datacenters monde       │
-│  Performance : < 100ms réponse              │
-│  SSL : Let's Encrypt auto                   │
-│  Coût : 0€ (Hobby plan)                     │
-└─────────────────┬───────────────────────────┘
-                  │ API REST
-                  ↓
-┌─────────────────────────────────────────────┐
-│    ⚙️ BACKEND (Logique Métier)             │
-│                                             │
-│  OVH VPS Roubaix (France - RGPD)           │
-│  2 vCPU, 2 GB RAM, Ubuntu 22.04            │
-│  Node.js 20 + Express + PM2                 │
-│  Coût : 10€/mois (120€/an)                  │
-└─────────────────┬───────────────────────────┘
-                  │ PostgreSQL SSL
-                  ↓
-┌─────────────────────────────────────────────┐
-│    💾 BASE DONNÉES (Neon DB)                │
-│                                             │
-│  AWS Frankfurt (UE - RGPD)                 │
-│  PostgreSQL 15, 1 GB storage               │
-│  Backups auto quotidiens (7j)               │
-│  Données : 709k transactions, 144k clients  │
-│  Coût : 12,50€/mois (150€/an)               │
-└─────────────────────────────────────────────┘
+💾 PostgreSQL Cloud Database OVH Essential
+   └─ 2 GB RAM, 40 GB SSD, backups auto quotidiens, SSL inclus
+
+⚙️ VPS SSD Starter OVH Gravelines
+   └─ 2 vCPU, 2 GB RAM, Ubuntu 22.04, Node.js 20
+
+🌐 Domaine .fr OVH
+   └─ Certificat SSL Let's Encrypt gratuit
 ```
 
 ---
 
-### **🔒 Sécurité Multi-Niveaux**
+### **🔒 Sécurité & Conformité**
 
-**Réseau :**
 ```
-✅ HTTPS Obligatoire (TLS 1.3) - Note SSL A+
-✅ Firewall : Ports 80/443/22 uniquement
-✅ Rate Limiting : Max 100 req/min par IP
-✅ Protection DDoS intégrée (Vercel + OVH)
-```
-
-**Données :**
-```
-✅ Connexion DB SSL required (refus non-chiffré)
-✅ Backups automatiques quotidiens (restore 5 min)
-✅ IP Whitelisting : Seul VPS autorisé
-✅ Variables environnement (jamais dans code)
-```
-
-**Application :**
-```
-✅ Authentification JWT (expiration 24h)
-✅ Autorisations par rôle (Admin/Manager/Analyst/Viewer)
-✅ Protection SQL Injection (requêtes paramétrées)
-✅ Audit logs : Qui a accédé à quoi, quand
+✅ Hébergement 100% France (Gravelines) - RGPD natif
+✅ HTTPS obligatoire (TLS 1.3) - Connexions chiffrées
+✅ Backups automatiques quotidiens (restauration < 5 min)
+✅ Authentification JWT + gestion rôles utilisateurs
+✅ Audit logs complets (traçabilité 90 jours)
+✅ Protection SQL Injection + Rate Limiting
+✅ Disponibilité 99.9% garantie OVH
 ```
 
 ---
 
-### **🇪🇺 Conformité RGPD**
+### **💰 Coût Total**
 
 ```
-✅ Hébergement données UE uniquement (France + Allemagne)
-✅ Base légale : Intérêt légitime (optimisation marketing)
-✅ Durée conservation : 3 ans clients, 10 ans compta
-✅ Droits utilisateurs RGPD :
-   ├─ Droit d'accès : Export < 1 min
-   ├─ Droit rectification : Modification Proginov
-   ├─ Droit effacement : Script suppression < 48h
-   └─ Droit opposition : Blacklist marketing
-✅ Logs audit 90 jours (traçabilité complète)
-✅ Procédure incident : Notification CNIL < 72h si fuite
-```
+PostgreSQL Cloud  : 15€/mois
+VPS SSD          : 6€/mois
+Domaine .fr      : 8€/an
+──────────────────────────────
+TOTAL : 21€/mois = 260€/an
 
----
-
-### **📊 Disponibilité & Performance**
-
-**SLA Garantis :**
-```
-OVH VPS        : 99.9%  uptime (8,76h downtime/an max)
-Neon DB        : 99.95% uptime (4,38h downtime/an max)
-Vercel CDN     : 99.99% uptime (52 min downtime/an max)
-──────────────────────────────────────────────────────
-TOTAL Système  : 99.84% (14h downtime/an estimé)
-```
-
-**Performance Mesurée :**
-```
-Dashboard      : < 1s   (864ms mesuré)
-Exports Excel  : < 3s   (2,1s mesuré)
-King Quentin   : < 1s   (789ms mesuré)
-RFM Segment    : < 2s   (1,4s mesuré)
-```
-
----
-
-### **💰 Coût Infrastructure**
-
-```
-╔═══════════════════════════════════════════════╗
-║  COMPOSANT          │  COÛT/AN    │  NOTES   ║
-╠═══════════════════════════════════════════════╣
-║  OVH VPS            │  120€       │  France  ║
-║  Neon DB            │  150€       │  AWS UE  ║
-║  Vercel             │  0€         │  Gratuit ║
-║  Domaine .fr        │  12€        │  OVH     ║
-║  SSL                │  0€         │  Gratuit ║
-╠═══════════════════════════════════════════════╣
-║  TOTAL ANNUEL       │  282€       │  ~24€/m  ║
-╚═══════════════════════════════════════════════╝
-
-Arrondissage : 300€/an pour marge fluctuations
-```
-
-**vs Alternatives :**
-```
-Magic Système : 300€/an
-vs
-   SaaS BI (Tableau)     : 12 000€/an
-   CRM (Salesforce)      : 18 000€/an
-   Prestataire custom    : 25 000€ an 1
-   
-Économies : 40 à 83x moins cher
+vs alternatives :
+  SaaS BI        : 12 000€/an (46x plus cher)
+  CRM            : 18 000€/an (69x plus cher)
+  Prestataire    : 25 000€/an (96x plus cher)
 ```
 
 ---

@@ -12,9 +12,9 @@ interface DashboardData {
   totalCA: number
   totalCAMagasin: number
   totalCAWeb: number
-  totalTransactions: number
-  totalTransactionsMag: number
-  totalTransactionsWeb: number
+  totalTickets: number
+  totalTicketsMag: number
+  totalTicketsWeb: number
   totalClients: number
   panierMoyen: number
   panierMoyenMag: number
@@ -188,7 +188,7 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
   }
 
   const currentCA = showWeb ? data.totalCAWeb : data.totalCAMagasin
-  const currentTransactions = showWeb ? data.totalTransactionsWeb : data.totalTransactionsMag
+  const currentTickets = showWeb ? data.totalTicketsWeb : data.totalTicketsMag
   const currentPanierMoyen = showWeb ? data.panierMoyenWeb : data.panierMoyenMag
 
   return (
@@ -260,9 +260,9 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
           <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800">
             <div className="flex items-center gap-2 mb-2">
               <ShoppingCart className="w-5 h-5 text-blue-500" />
-              <p className="text-xs text-zinc-500 font-semibold uppercase">Transactions</p>
+              <p className="text-xs text-zinc-500 font-semibold uppercase">Tickets</p>
             </div>
-            <p className="text-3xl font-bold text-white">{formatNumber(currentTransactions)}</p>
+            <p className="text-3xl font-bold text-white">{formatNumber(currentTickets)}</p>
           </div>
 
           <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800">
