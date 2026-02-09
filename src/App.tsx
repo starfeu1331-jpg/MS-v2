@@ -135,7 +135,7 @@ function App() {
       <aside className={`desktop-sidebar fixed lg:sticky top-0 left-0 h-screen bg-zinc-900 border-r border-zinc-800 transition-all duration-300 z-50 ${sidebarOpen ? 'w-64' : 'w-0 lg:w-20'}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="h-24 border-b border-zinc-800 flex items-center justify-center px-4">
+          <div className="p-6 border-b border-zinc-800 flex items-center justify-center h-24">
             <AnimatePresence mode="wait">
               {sidebarOpen ? (
                 <motion.img
@@ -143,11 +143,11 @@ function App() {
                   src="/Logo%20Magic%20Système%20texte.png"
                   alt="Magic Système"
                   className="object-contain"
-                  style={{ height: '64px', width: 'auto', maxWidth: '220px' }}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  style={{ height: '64px', width: 'auto' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
                 />
               ) : (
                 <motion.img
@@ -156,10 +156,10 @@ function App() {
                   alt="Logo"
                   className="object-contain"
                   style={{ height: '48px', width: '48px' }}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
                 />
               )}
             </AnimatePresence>
