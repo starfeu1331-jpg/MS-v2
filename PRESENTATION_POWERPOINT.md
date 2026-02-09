@@ -170,85 +170,27 @@ Les limites de QlikQ dans cet objectif :
 
 **Titre** :
 ```
-Magic Système en Action : Cas Réels
+Magic Système en Action : Clara & Quentin
 ```
 
-### **CAS #1 : Campagne Emailing Segmentée**
+### **📧 CAS CLARA : Campagne Emailing Segmentée**
 
-**❌ Avant Magic Système :**
+**Avant :** Email masse 144 000 clients → ROI 2,4x
+**Avec MS :** 3 campagnes ciblées (VIP, Dormants, Récents) → ROI 90x
+
 ```
-📧 Email "SOLDES -30%" → 144 000 clients (communication de masse)
-   
-   Résultats :
-   ├─ Taux d'ouverture : 18%
-   ├─ Taux de clic : 3%
-   ├─ Coût : 2 880€
-   └─ ROI : 2,4x
-
-   Problème : Message identique pour TOUT LE MONDE
-```
-
-**✅ Avec Magic Système :**
-```
-🎯 3 campagnes différenciées basées sur segmentation RFM :
-
-📧 Email "EXCLUSIVITÉ VIP" → 2 847 Ultra Champions
-   ├─ -40% vente privée (48h avant le public)
-   ├─ Taux ouverture : 42% (+133%)
-   ├─ Taux clic : 15% (+400%)
-   └─ ROI : 30x
-
-📧 Email "ON VOUS A MANQUÉ" → 33 135 Dormants
-   ├─ Bon retour -20% + livraison offerte
-   ├─ Taux réactivation : 8% (2 650 clients récupérés)
-   └─ CA récupéré : 67 890€
-
-📧 Email "NOUVEAUTÉS" → 15 234 Récents
-   ├─ Cross-selling produits complémentaires
-   ├─ Taux clic : 12%
-   └─ CA complémentaire : 24 560€
-
-──────────────────────────────────────────────
-RÉSULTAT : 1 025€ investis → 92 450€ CA généré
-           ROI 90x (vs 2,4x en masse)
-           -64% budget email, +1 258% efficacité
+✅ RÉSULTAT : -64% budget email, +1 258% efficacité
 ```
 
 ---
 
-### **CAS #2 : King Quentin (Analyse Web vs Magasin)**
+### **🌐 CAS QUENTIN : King Quentin (Produits Web vs Magasin)**
 
-**Besoin de Quentin :**
+**Avant :** 9h30 de travail manuel Excel (exports, RECHERCHEV, nettoyage)
+**Avec MS :** 2 minutes automatisées (clic → export)
+
 ```
-"Donne-moi les produits vendus en magasin mais PAS sur le web,
- avec le CA magasin, pour savoir quoi mettre en ligne en priorité"
-```
-
-**❌ Sans Magic Système :**
-```
-1️⃣ Export QlikSense ventes magasin → Excel (2h)
-2️⃣ Export WooCommerce catalogue web → CSV (30min)
-3️⃣ Croisement manuel Excel RECHERCHEV (4h)
-4️⃣ Nettoyage doublons/erreurs (2h)
-5️⃣ Tri + mise en forme (1h)
-
-TOTAL : 9h30 de travail + risque erreurs
-```
-
-**✅ Avec Magic Système :**
-```
-Module "King Quentin" :
-├─ Clic bouton "Produits Magasin uniquement"
-├─ Croisement automatique avec catalogue web
-├─ Tri par CA décroissant
-└─ Export Excel 1 clic
-
-TOTAL : 2 minutes + 0 erreur
-
-Résultat :
-✅ Top 100 produits = 847 320€ CA magasin/an
-✅ Potentiel web estimé : 127 098€ CA additionnel
-✅ ROI fonctionnalité seule : 9 320%
+✅ RÉSULTAT : Top 100 produits identifiés = 127 098€ potentiel web
 ```
 
 ---
