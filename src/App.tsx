@@ -135,7 +135,7 @@ function App() {
       <aside className={`desktop-sidebar fixed lg:sticky top-0 left-0 h-screen bg-zinc-900 border-r border-zinc-800 transition-all duration-300 z-50 ${sidebarOpen ? 'w-64' : 'w-0 lg:w-20'}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-zinc-800 flex items-center justify-center h-24">
+          <div className="p-3 border-b border-zinc-800 flex items-center justify-center h-24">
             <AnimatePresence mode="wait">
               {sidebarOpen ? (
                 <motion.img
