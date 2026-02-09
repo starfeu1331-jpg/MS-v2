@@ -29,7 +29,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as "totalCA",
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
-        WHERE date >= ${startDate}::timestamp AND date <= ${endDate}::timestamp
+        WHERE date >= ${startDate} AND date <= ${endDate}
       `)
       
       const statsClients = await prisma.$queryRaw`
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
           SUM(t.quantite)::float as volume
         FROM transactions t
         JOIN produits p ON t.produit = p.id
-        WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
+        WHERE t.date >= ${startDate} AND t.date <= ${endDate}
         GROUP BY p.id, p.famille, p.sous_famille
         ORDER BY ca DESC
         LIMIT 10
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
           (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
         FROM transactions t
         JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
-        WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
+        WHERE t.date >= ${startDate} AND t.date <= ${endDate}
         GROUP BY m.code, m.nom, m.zone
         ORDER BY ca DESC
         LIMIT 5
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT t.facture)::int as "nbCommandes"
         FROM transactions t
         JOIN clients c ON t.carte = c.carte
-        WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
+        WHERE t.date >= ${startDate} AND t.date <= ${endDate}
         GROUP BY c.carte, c.ville
         ORDER BY ca DESC
         LIMIT 10
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as ca,
           COUNT(*)::int as tickets
         FROM transactions
-        WHERE date >= ${startDate}::timestamp AND date <= ${endDate}::timestamp
+        WHERE date >= ${startDate} AND date <= ${endDate}
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
       `)
@@ -105,29 +105,29 @@ export default async function handler(req, res) {
       return res.status(200).json(serializeJSON({
         period: { type: 'custom', startDate, endDate },
         kpis: {
-          totalCA: kpis[0].totalCA || 0,
-          totalCAMagasin: kpis[0].totalCA || 0,
+          totalCA: (kpis[0]?.totalCA) || 0,
+          totalCAMagasin: (kpis[0]?.totalCA) || 0,
           totalCAWeb: 0,
-          totalTransactions: kpis[0].totalTransactions || 0,
-          totalTransactionsMag: kpis[0].totalTransactions || 0,
+          totalTransactions: (kpis[0]?.totalTransactions) || 0,
+          totalTransactionsMag: (kpis[0]?.totalTransactions) || 0,
           totalTransactionsWeb: 0,
-          totalClients: kpis[0].totalClients || 0,
-          panierMoyen: kpis[0].panierMoyen || 0,
-          panierMoyenMag: kpis[0].panierMoyen || 0,
+          totalClients: (kpis[0]?.totalClients) || 0,
+          panierMoyen: (kpis[0]?.panierMoyen) || 0,
+          panierMoyenMag: (kpis[0]?.panierMoyen) || 0,
           panierMoyenWeb: 0
         },
         statsClients: {
-          total: statsClients[0].total || 0,
-          hommes: statsClients[0].hommes || 0,
-          femmes: statsClients[0].femmes || 0,
-          avecNom: statsClients[0].avec_nom || 0,
-          avecPrenom: statsClients[0].avec_prenom || 0,
-          avecEmail: statsClients[0].avec_email || 0,
-          avecTelephone: statsClients[0].avec_telephone || 0,
-          pctHommes: statsClients[0].total > 0 ? (statsClients[0].hommes / statsClients[0].total * 100) : 0,
-          pctFemmes: statsClients[0].total > 0 ? (statsClients[0].femmes / statsClients[0].total * 100) : 0,
-          pctEmail: statsClients[0].total > 0 ? (statsClients[0].avec_email / statsClients[0].total * 100) : 0,
-          pctTelephone: statsClients[0].total > 0 ? (statsClients[0].avec_telephone / statsClients[0].total * 100) : 0
+          total: (statsClients[0]?.total) || 0,
+          hommes: (statsClients[0]?.hommes) || 0,
+          femmes: (statsClients[0]?.femmes) || 0,
+          avecNom: (statsClients[0]?.avec_nom) || 0,
+          avecPrenom: (statsClients[0]?.avec_prenom) || 0,
+          avecEmail: (statsClients[0]?.avec_email) || 0,
+          avecTelephone: (statsClients[0]?.avec_telephone) || 0,
+          pctHommes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.hommes) / (statsClients[0]?.total) * 100) : 0,
+          pctFemmes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.femmes) / (statsClients[0]?.total) * 100) : 0,
+          pctEmail: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_email) / (statsClients[0]?.total) * 100) : 0,
+          pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0
         },
         topProduits: topProduits.map(p => ({
           code: p.code,
@@ -177,7 +177,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as "totalCA",
           (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
         FROM transactions
-        WHERE date >= ${startDateStr}::timestamp AND date <= ${endDateStr}::timestamp
+        WHERE date >= ${startDateStr} AND date <= ${endDateStr}
       `)
       
       const statsClients = await prisma.$queryRaw`
@@ -202,7 +202,7 @@ export default async function handler(req, res) {
           SUM(t.quantite)::float as volume
         FROM transactions t
         JOIN produits p ON t.produit = p.id
-        WHERE t.date >= ${startDateStr}::timestamp AND t.date <= ${endDateStr}::timestamp
+        WHERE t.date >= ${startDateStr} AND t.date <= ${endDateStr}
         GROUP BY p.id, p.famille, p.sous_famille
         ORDER BY ca DESC
         LIMIT 10
@@ -219,7 +219,7 @@ export default async function handler(req, res) {
           (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
         FROM transactions t
         JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
-        WHERE t.date >= ${startDateStr}::timestamp AND t.date <= ${endDateStr}::timestamp
+        WHERE t.date >= ${startDateStr} AND t.date <= ${endDateStr}
         GROUP BY m.code, m.nom, m.zone
         ORDER BY ca DESC
         LIMIT 5
@@ -233,7 +233,7 @@ export default async function handler(req, res) {
           COUNT(DISTINCT t.facture)::int as "nbCommandes"
         FROM transactions t
         JOIN clients c ON t.carte = c.carte
-        WHERE t.date >= ${startDateStr}::timestamp AND t.date <= ${endDateStr}::timestamp
+        WHERE t.date >= ${startDateStr} AND t.date <= ${endDateStr}
         GROUP BY c.carte, c.ville
         ORDER BY ca DESC
         LIMIT 10
@@ -245,7 +245,7 @@ export default async function handler(req, res) {
           SUM(ca)::float as ca,
           COUNT(*)::int as tickets
         FROM transactions
-        WHERE date >= ${startDateStr}::timestamp AND date <= ${endDateStr}::timestamp
+        WHERE date >= ${startDateStr} AND date <= ${endDateStr}
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
       `)
@@ -253,29 +253,29 @@ export default async function handler(req, res) {
       return res.status(200).json(serializeJSON({
         period: { type: 'months', value: monthsNum },
         kpis: {
-          totalCA: kpis[0].totalCA || 0,
-          totalCAMagasin: kpis[0].totalCA || 0,
+          totalCA: (kpis[0]?.totalCA) || 0,
+          totalCAMagasin: (kpis[0]?.totalCA) || 0,
           totalCAWeb: 0,
-          totalTransactions: kpis[0].totalTransactions || 0,
-          totalTransactionsMag: kpis[0].totalTransactions || 0,
+          totalTransactions: (kpis[0]?.totalTransactions) || 0,
+          totalTransactionsMag: (kpis[0]?.totalTransactions) || 0,
           totalTransactionsWeb: 0,
-          totalClients: kpis[0].totalClients || 0,
-          panierMoyen: kpis[0].panierMoyen || 0,
-          panierMoyenMag: kpis[0].panierMoyen || 0,
+          totalClients: (kpis[0]?.totalClients) || 0,
+          panierMoyen: (kpis[0]?.panierMoyen) || 0,
+          panierMoyenMag: (kpis[0]?.panierMoyen) || 0,
           panierMoyenWeb: 0
         },
         statsClients: {
-          total: statsClients[0].total || 0,
-          hommes: statsClients[0].hommes || 0,
-          femmes: statsClients[0].femmes || 0,
-          avecNom: statsClients[0].avec_nom || 0,
-          avecPrenom: statsClients[0].avec_prenom || 0,
-          avecEmail: statsClients[0].avec_email || 0,
-          avecTelephone: statsClients[0].avec_telephone || 0,
-          pctHommes: statsClients[0].total > 0 ? (statsClients[0].hommes / statsClients[0].total * 100) : 0,
-          pctFemmes: statsClients[0].total > 0 ? (statsClients[0].femmes / statsClients[0].total * 100) : 0,
-          pctEmail: statsClients[0].total > 0 ? (statsClients[0].avec_email / statsClients[0].total * 100) : 0,
-          pctTelephone: statsClients[0].total > 0 ? (statsClients[0].avec_telephone / statsClients[0].total * 100) : 0
+          total: (statsClients[0]?.total) || 0,
+          hommes: (statsClients[0]?.hommes) || 0,
+          femmes: (statsClients[0]?.femmes) || 0,
+          avecNom: (statsClients[0]?.avec_nom) || 0,
+          avecPrenom: (statsClients[0]?.avec_prenom) || 0,
+          avecEmail: (statsClients[0]?.avec_email) || 0,
+          avecTelephone: (statsClients[0]?.avec_telephone) || 0,
+          pctHommes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.hommes) / (statsClients[0]?.total) * 100) : 0,
+          pctFemmes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.femmes) / (statsClients[0]?.total) * 100) : 0,
+          pctEmail: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_email) / (statsClients[0]?.total) * 100) : 0,
+          pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0
         },
         topProduits: topProduits.map(p => ({
           code: p.code,
@@ -389,29 +389,29 @@ export default async function handler(req, res) {
       return res.status(200).json(serializeJSON({
         year: 'all',
         kpis: {
-          totalCA: kpis[0].totalCA || 0,
-          totalCAMagasin: kpis[0].totalCA || 0,
+          totalCA: (kpis[0]?.totalCA) || 0,
+          totalCAMagasin: (kpis[0]?.totalCA) || 0,
           totalCAWeb: 0,
-          totalTransactions: kpis[0].totalTransactions || 0,
-          totalTransactionsMag: kpis[0].totalTransactions || 0,
+          totalTransactions: (kpis[0]?.totalTransactions) || 0,
+          totalTransactionsMag: (kpis[0]?.totalTransactions) || 0,
           totalTransactionsWeb: 0,
-          totalClients: kpis[0].totalClients || 0,
-          panierMoyen: kpis[0].panierMoyen || 0,
-          panierMoyenMag: kpis[0].panierMoyen || 0,
+          totalClients: (kpis[0]?.totalClients) || 0,
+          panierMoyen: (kpis[0]?.panierMoyen) || 0,
+          panierMoyenMag: (kpis[0]?.panierMoyen) || 0,
           panierMoyenWeb: 0
         },
         statsClients: {
-          total: statsClients[0].total || 0,
-          hommes: statsClients[0].hommes || 0,
-          femmes: statsClients[0].femmes || 0,
-          avecNom: statsClients[0].avec_nom || 0,
-          avecPrenom: statsClients[0].avec_prenom || 0,
-          avecEmail: statsClients[0].avec_email || 0,
-          avecTelephone: statsClients[0].avec_telephone || 0,
-          pctHommes: statsClients[0].total > 0 ? (statsClients[0].hommes / statsClients[0].total * 100) : 0,
-          pctFemmes: statsClients[0].total > 0 ? (statsClients[0].femmes / statsClients[0].total * 100) : 0,
-          pctEmail: statsClients[0].total > 0 ? (statsClients[0].avec_email / statsClients[0].total * 100) : 0,
-          pctTelephone: statsClients[0].total > 0 ? (statsClients[0].avec_telephone / statsClients[0].total * 100) : 0
+          total: (statsClients[0]?.total) || 0,
+          hommes: (statsClients[0]?.hommes) || 0,
+          femmes: (statsClients[0]?.femmes) || 0,
+          avecNom: (statsClients[0]?.avec_nom) || 0,
+          avecPrenom: (statsClients[0]?.avec_prenom) || 0,
+          avecEmail: (statsClients[0]?.avec_email) || 0,
+          avecTelephone: (statsClients[0]?.avec_telephone) || 0,
+          pctHommes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.hommes) / (statsClients[0]?.total) * 100) : 0,
+          pctFemmes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.femmes) / (statsClients[0]?.total) * 100) : 0,
+          pctEmail: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_email) / (statsClients[0]?.total) * 100) : 0,
+          pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0
         },
         topProduits: topProduits.map(p => ({
           code: p.code,
@@ -455,7 +455,7 @@ export default async function handler(req, res) {
         SUM(ca)::float as "totalCA",
         (SUM(ca) / COUNT(DISTINCT facture))::float as "panierMoyen"
       FROM transactions
-      WHERE date >= ${startDate}::timestamp AND date <= ${endDate}::timestamp
+      WHERE date >= ${startDate} AND date <= ${endDate}
     `)
     
     // Statistiques qualité des données clients
@@ -481,7 +481,7 @@ export default async function handler(req, res) {
         SUM(t.quantite)::float as volume
       FROM transactions t
       JOIN produits p ON t.produit = p.id
-      WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
+      WHERE t.date >= ${startDate} AND t.date <= ${endDate}
       GROUP BY p.id, p.famille, p.sous_famille
       ORDER BY ca DESC
       LIMIT 10
@@ -498,7 +498,7 @@ export default async function handler(req, res) {
         (SUM(t.ca) / COUNT(DISTINCT t.facture))::float as "panierMoyen"
       FROM transactions t
       JOIN magasins m ON (t.depot = m.code OR t.depot = CONCAT('M', m.code) OR REPLACE(t.depot, 'M', '') = m.code)
-      WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
+      WHERE t.date >= ${startDate} AND t.date <= ${endDate}
       GROUP BY m.code, m.nom, m.zone
       ORDER BY ca DESC
       LIMIT 5
@@ -512,7 +512,7 @@ export default async function handler(req, res) {
         COUNT(DISTINCT t.facture)::int as "nbCommandes"
       FROM transactions t
       JOIN clients c ON t.carte = c.carte
-      WHERE t.date >= ${startDate}::timestamp AND t.date <= ${endDate}::timestamp
+      WHERE t.date >= ${startDate} AND t.date <= ${endDate}
       GROUP BY c.carte, c.ville
       ORDER BY ca DESC
       LIMIT 10
@@ -524,7 +524,7 @@ export default async function handler(req, res) {
         SUM(ca)::float as ca,
         COUNT(*)::int as tickets
       FROM transactions
-      WHERE date >= ${startDate}::timestamp AND date <= ${endDate}::timestamp
+      WHERE date >= ${startDate} AND date <= ${endDate}
       GROUP BY TO_CHAR(date, 'YYYY-MM')
       ORDER BY mois
     `)
@@ -532,29 +532,29 @@ export default async function handler(req, res) {
     res.status(200).json(serializeJSON({
       year: parseInt(year),
       kpis: {
-        totalCA: kpis[0].totalCA || 0,
-        totalCAMagasin: kpis[0].totalCA || 0,
+        totalCA: (kpis[0]?.totalCA) || 0,
+        totalCAMagasin: (kpis[0]?.totalCA) || 0,
         totalCAWeb: 0,
-        totalTransactions: kpis[0].totalTransactions || 0,
-        totalTransactionsMag: kpis[0].totalTransactions || 0,
+        totalTransactions: (kpis[0]?.totalTransactions) || 0,
+        totalTransactionsMag: (kpis[0]?.totalTransactions) || 0,
         totalTransactionsWeb: 0,
-        totalClients: kpis[0].totalClients || 0,
-        panierMoyen: kpis[0].panierMoyen || 0,
-        panierMoyenMag: kpis[0].panierMoyen || 0,
+        totalClients: (kpis[0]?.totalClients) || 0,
+        panierMoyen: (kpis[0]?.panierMoyen) || 0,
+        panierMoyenMag: (kpis[0]?.panierMoyen) || 0,
         panierMoyenWeb: 0
       },
       statsClients: {
-        total: statsClients[0].total || 0,
-        hommes: statsClients[0].hommes || 0,
-        femmes: statsClients[0].femmes || 0,
-        avecNom: statsClients[0].avec_nom || 0,
-        avecPrenom: statsClients[0].avec_prenom || 0,
-        avecEmail: statsClients[0].avec_email || 0,
-        avecTelephone: statsClients[0].avec_telephone || 0,
-        pctHommes: statsClients[0].total > 0 ? (statsClients[0].hommes / statsClients[0].total * 100) : 0,
-        pctFemmes: statsClients[0].total > 0 ? (statsClients[0].femmes / statsClients[0].total * 100) : 0,
-        pctEmail: statsClients[0].total > 0 ? (statsClients[0].avec_email / statsClients[0].total * 100) : 0,
-        pctTelephone: statsClients[0].total > 0 ? (statsClients[0].avec_telephone / statsClients[0].total * 100) : 0
+        total: (statsClients[0]?.total) || 0,
+        hommes: (statsClients[0]?.hommes) || 0,
+        femmes: (statsClients[0]?.femmes) || 0,
+        avecNom: (statsClients[0]?.avec_nom) || 0,
+        avecPrenom: (statsClients[0]?.avec_prenom) || 0,
+        avecEmail: (statsClients[0]?.avec_email) || 0,
+        avecTelephone: (statsClients[0]?.avec_telephone) || 0,
+        pctHommes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.hommes) / (statsClients[0]?.total) * 100) : 0,
+        pctFemmes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.femmes) / (statsClients[0]?.total) * 100) : 0,
+        pctEmail: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_email) / (statsClients[0]?.total) * 100) : 0,
+        pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0
       },
       topProduits: topProduits.map(p => ({
         code: p.code,
