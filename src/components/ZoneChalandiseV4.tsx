@@ -9,23 +9,23 @@ import * as XLSX from 'xlsx';
 // Icône personnalisée pour les magasins (DivIcon avec SVG lucide)
 const storeIcon = L.divIcon({
   html: `
-    <div style="position: relative; width: 40px; height: 40px;">
+    <div style="position: relative; width: 28px; height: 28px;">
       <div style="
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 36px;
-        height: 36px;
+        width: 24px;
+        height: 24px;
         background: #dc2626;
         border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        border: 2px solid white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
       ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
           <polyline points="9 22 9 12 15 12 15 22"></polyline>
         </svg>
@@ -33,9 +33,9 @@ const storeIcon = L.divIcon({
     </div>
   `,
   className: 'custom-store-marker',
-  iconSize: [40, 40],
-  iconAnchor: [20, 20],
-  popupAnchor: [0, -20],
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14],
 });
 
 interface Store {
