@@ -6,17 +6,36 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import * as XLSX from 'xlsx';
 
-// Icône personnalisée pour les magasins (point rouge)
+// Icône personnalisée pour les magasins (pictogramme magasin)
 const storeIcon = new L.Icon({
   iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-      <circle cx="16" cy="16" r="10" fill="#dc2626" stroke="#fff" stroke-width="3"/>
-      <text x="16" y="20" font-size="14" text-anchor="middle" fill="#fff" font-weight="bold">🏪</text>
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+      <!-- Ombre -->
+      <ellipse cx="18" cy="32" rx="10" ry="2" fill="rgba(0,0,0,0.2)"/>
+      
+      <!-- Cercle principal rouge -->
+      <circle cx="18" cy="16" r="13" fill="#dc2626" stroke="#fff" stroke-width="2.5"/>
+      
+      <!-- Icône magasin simplifié -->
+      <g transform="translate(18, 16)">
+        <!-- Toit -->
+        <path d="M -6,-6 L 0,-9 L 6,-6 Z" fill="#fff" opacity="0.95"/>
+        <!-- Façade -->
+        <rect x="-6" y="-6" width="12" height="10" fill="#fff" opacity="0.95"/>
+        <!-- Porte -->
+        <rect x="-2" y="0" width="4" height="4" fill="#dc2626"/>
+        <!-- Fenêtres -->
+        <rect x="-5" y="-4" width="2" height="2" fill="#dc2626" opacity="0.6"/>
+        <rect x="3" y="-4" width="2" height="2" fill="#dc2626" opacity="0.6"/>
+      </g>
+      
+      <!-- Point lumineux -->
+      <circle cx="18" cy="16" r="4" fill="#fff" opacity="0.3"/>
     </svg>
   `),
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-  popupAnchor: [0, -16],
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+  popupAnchor: [0, -18],
 });
 
 interface Store {

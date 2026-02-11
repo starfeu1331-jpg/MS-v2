@@ -684,15 +684,7 @@ function App() {
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <Map className="w-6 h-6 text-green-400" />
-                <span className="font-medium">Zone de Chalandise</span>
-              </button>
-              
-              <button
-                onClick={() => { handleTabChange('zonesv3'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <Globe className="w-6 h-6 text-emerald-400" />
-                <span className="font-medium">Zone de Chalandise V2</span>
+                <span className="font-medium">Zones de Chalandise</span>
               </button>
               
               <button
