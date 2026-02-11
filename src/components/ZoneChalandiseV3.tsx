@@ -571,12 +571,9 @@ export default function ZoneChalandiseV3() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* Zones colorées - Filtrer pour afficher seulement les top N */}
+          {/* Zones colorées */}
           {geoData
-            .filter(feature => {
-              const zone = zones.find(z => z.cp === feature.properties.cp);
-              return zone && zone.rank! <= maxZonesToDisplay && visibleDeciles.has(feature.properties.decile);
-            })
+            .filter(feature => visibleDeciles.has(feature.properties.decile))
             .map((feature, idx) => (
             <GeoJSON
               key={`zone-${idx}`}
