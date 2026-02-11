@@ -6,12 +6,17 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import * as XLSX from 'xlsx';
 
-// Fix Leaflet default icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+// Icône personnalisée pour les magasins (point rouge)
+const storeIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+      <circle cx="16" cy="16" r="10" fill="#dc2626" stroke="#fff" stroke-width="3"/>
+      <text x="16" y="20" font-size="14" text-anchor="middle" fill="#fff" font-weight="bold">🏪</text>
+    </svg>
+  `),
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
 });
 
 interface Store {
@@ -377,24 +382,30 @@ export default function ZoneChalandiseV4() {
     
     // Popup enrichi
     layer.bindPopup(`
-      <div style="min-width: 220px; font-family: system-ui;">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      <div style="min-width: 250px; font-family: system-ui;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <h3 style="margin: 0; font-size: 16px; font-weight: bold;">CP ${props.cp}</h3>
           ${props.rank ? `<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">#${props.rank}</span>` : ''}
         </div>
-        <p style="margin: 4px 0; color: #666; font-size: 13px;">${props.ville}</p>
-        <div style="border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;">
+        <p style="margin: 4px 0 8px 0; color: #666; font-size: 14px; font-weight: 500;">${props.ville}</p>
+        ${props.population ? `
+          <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #22c55e;">
+            <p style="margin: 0; font-size: 13px; color: #166534; font-weight: 600;">
+              👥 ${props.population.toLocaleString()} habitants
+            </p>
+          </div>
+        ` : ''}
+        <div style="border-top: 1px solid #e5e7eb; padding-top: 8px;">
           <p style="margin: 4px 0;"><strong>👥 Clients:</strong> ${props.nbClients.toLocaleString()}</p>
           <p style="margin: 4px 0;"><strong>💰 CA:</strong> ${props.totalCA.toFixed(0).toLocaleString()}€</p>
           <p style="margin: 4px 0;"><strong>🛒 Transactions:</strong> ${props.nbTransactions.toLocaleString()}</p>
-          ${props.population ? `<p style="margin: 4px 0;"><strong>🏘️ Population:</strong> ${props.population.toLocaleString()} hab</p>` : ''}
         </div>
         ${props.caPerCapita || props.clientsPerCapita || props.txPerCapita ? `
-          <div style="border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;">
-            <p style="font-weight: bold; margin: 4px 0; font-size: 13px;">📊 Par habitant:</p>
-            ${props.caPerCapita ? `<p style="margin: 4px 0; font-size: 12px;">• CA/hab: ${props.caPerCapita.toFixed(2)}€</p>` : ''}
-            ${props.clientsPerCapita ? `<p style="margin: 4px 0; font-size: 12px;">• Clients/hab: ${(props.clientsPerCapita * 100).toFixed(2)}%</p>` : ''}
-            ${props.txPerCapita ? `<p style="margin: 4px 0; font-size: 12px;">• Tx/hab: ${(props.txPerCapita * 100).toFixed(2)}%</p>` : ''}
+          <div style="border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px; background: #fef3c7; padding: 8px; border-radius: 6px;">
+            <p style="font-weight: bold; margin: 0 0 6px 0; font-size: 13px; color: #92400e;">📊 Par habitant:</p>
+            ${props.caPerCapita ? `<p style="margin: 4px 0; font-size: 12px; color: #78350f;">• CA/hab: ${props.caPerCapita.toFixed(2)}€</p>` : ''}
+            ${props.clientsPerCapita ? `<p style="margin: 4px 0; font-size: 12px; color: #78350f;">• Clients/hab: ${(props.clientsPerCapita * 100).toFixed(2)}%</p>` : ''}
+            ${props.txPerCapita ? `<p style="margin: 4px 0; font-size: 12px; color: #78350f;">• Tx/hab: ${(props.txPerCapita * 100).toFixed(2)}%</p>` : ''}
           </div>
         ` : ''}
       </div>
@@ -488,14 +499,47 @@ export default function ZoneChalandiseV4() {
               <Marker
                 key={store.code}
                 position={[store.lat!, store.lon!]}
+                icon={storeIcon}
+                eventHandlers={{
+                  click: () => {
+                    console.log(`🖱️ Clic sur magasin ${store.code} - ${store.nom}`);
+                  },
+                  dblclick: () => {
+                    console.log(`🖱️🖱️ Double-clic sur magasin ${store.code} - Chargement zones...`);
+                    setSelectedStore(store.code);
+                  }
+                }}
               >
                 <Popup>
                   <div style={{ minWidth: '200px' }}>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>
+                    <h3 style={{ 
+                      margin: '0 0 8px 0', 
+                      fontSize: '14px', 
+                      fontWeight: 'bold',
+                      color: '#dc2626',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setSelectedStore(store.code)}
+                    >
                       {store.code} - {store.nom}
                     </h3>
+                    <p style={{ margin: '4px 0', fontSize: '12px', color: '#6b7280' }}>
+                      📍 {store.ville || 'N/A'}
+                    </p>
+                    <div style={{ 
+                      marginTop: '8px', 
+                      padding: '6px 8px',
+                      backgroundColor: '#fef2f2',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      color: '#991b1b',
+                      textAlign: 'center',
+                      fontStyle: 'italic'
+                    }}>
+                      Double-cliquez pour charger les zones
+                    </div>
                     {store.code === selectedStore && storeStats && (
-                      <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '8px' }}>
+                      <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '8px', marginTop: '8px' }}>
                         <p style={{ margin: '4px 0', fontSize: '13px' }}>
                           <strong>👥 Clients:</strong> {storeStats.nbClients.toLocaleString()}
                         </p>
@@ -551,7 +595,7 @@ export default function ZoneChalandiseV4() {
             fontSize: panelOpen ? '15px' : '13px',
             margin: 0,
           }}>
-            {panelOpen ? '🗺️ Zone de Chalandise V4' : '🗺️'}
+            {panelOpen ? '📍 Zones de Chalandise' : '📍'}
           </h3>
           <button style={{ 
             color: '#60a5fa', 

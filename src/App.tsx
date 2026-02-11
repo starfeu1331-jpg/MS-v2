@@ -16,16 +16,14 @@ const CrossSellingAnalysis = lazy(() => import('./components/CrossSellingAnalysi
 const CohortAnalysis = lazy(() => import('./components/CohortAnalysis'))
 const ABCAnalysis = lazy(() => import('./components/ABCAnalysis'))
 const KingQuentin = lazy(() => import('./components/KingQuentin'))
-const ZoneChalandise = lazy(() => import('./components/ZoneChalandiseSimple'));
-const ZoneChalandiseV3 = lazy(() => import('./components/ZoneChalandiseV3'));
-const ZoneChalandiseV4 = lazy(() => import('./components/ZoneChalandiseV4'));
+const ZoneChalandise = lazy(() => import('./components/ZoneChalandiseV4'));
 const StorePerformance = lazy(() => import('./components/StorePerformanceV2'))
 const ForecastAnomalies = lazy(() => import('./components/ForecastAnomalies'))
 const SocialMediaInsights = lazy(() => import('./components/SocialMediaInsights'))
 const ExportData = lazy(() => import('./components/ExportData'))
 const SettingsView = lazy(() => import('./components/Settings'))
 
-type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'zones' | 'zonesv3' | 'zonesv4' | 'stores' | 'forecast' | 'social' | 'exports' | 'settings'
+type TabType = 'dashboard' | 'search' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'zones' | 'stores' | 'forecast' | 'social' | 'exports' | 'settings'
 
 // Définition de tous les onglets pour le carousel mobile
 const ALL_TABS = [
@@ -38,8 +36,6 @@ const ALL_TABS = [
   { id: 'abc' as TabType, icon: Package, color: 'text-cyan-400' },
   { id: 'kingquentin' as TabType, icon: Crown, color: 'text-yellow-400' },
   { id: 'zones' as TabType, icon: Map, color: 'text-green-400' },
-  { id: 'zonesv3' as TabType, icon: Globe, color: 'text-emerald-400' },
-  { id: 'zonesv4' as TabType, icon: Globe, color: 'text-lime-400' },
   { id: 'stores' as TabType, icon: Store, color: 'text-teal-400' },
   { id: 'forecast' as TabType, icon: Activity, color: 'text-orange-400' },
   { id: 'social' as TabType, icon: Megaphone, color: 'text-pink-400' },
@@ -271,29 +267,7 @@ function App() {
                 }`}
               >
                 <Map className="w-5 h-5" />
-                {sidebarOpen && <span>Zone de Chalandise</span>}
-              </button>
-              <button
-                onClick={() => handleTabChange('zonesv3')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'zonesv3'
-                    ? 'bg-emerald-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Globe className="w-5 h-5" />
-                {sidebarOpen && <span>Zone de Chalandise V3</span>}
-              </button>
-              <button
-                onClick={() => handleTabChange('zonesv4')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'zonesv4'
-                    ? 'bg-lime-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Globe className="w-5 h-5" />
-                {sidebarOpen && <span>Zone de Chalandise V4</span>}
+                {sidebarOpen && <span>Zones de Chalandise</span>}
               </button>
               <button
                 onClick={() => handleTabChange('stores')}
@@ -378,9 +352,7 @@ function App() {
               {page === 'cohortes' && 'Analyse de Cohortes'}
               {page === 'abc' && 'ABC Analysis'}
               {page === 'kingquentin' && 'King Quentin 👑'}
-              {page === 'zones' && 'Zone de Chalandise 🗺️'}
-              {page === 'zonesv3' && 'Zone de Chalandise V3 🗺️'}
-              {page === 'zonesv4' && 'Zone de Chalandise V4 🌍'}
+              {page === 'zones' && '📍 Zones de Chalandise'}
               {page === 'stores' && 'Performance Magasins'}
               {page === 'forecast' && 'Prévisions & Anomalies'}
               {page === 'social' && 'Réseaux Sociaux'}
@@ -597,8 +569,6 @@ function App() {
             {page === 'abc' && <div className="p-6"><ABCAnalysis /></div>}
             {page === 'kingquentin' && <div className="p-6"><KingQuentin data={null} /></div>}
             {page === 'zones' && <ZoneChalandise />}
-            {page === 'zonesv3' && <ZoneChalandiseV3 />}
-            {page === 'zonesv4' && <ZoneChalandiseV4 />}
             {page === 'stores' && <div className="p-6"><StorePerformance /></div>}
             {page === 'forecast' && <div className="p-6"><ForecastAnomalies /></div>}
             {page === 'social' && <div className="p-6"><SocialMediaInsights data={null} /></div>}
