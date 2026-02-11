@@ -30,6 +30,9 @@ interface Zone {
   nbTransactions: number;
   population?: number;
   caPerCapita?: number;
+  clientsPerCapita?: number;
+  txPerCapita?: number;
+  rank?: number;
 }
 
 interface StoreWithZones extends Store {
@@ -48,31 +51,48 @@ export default function ZoneChalandiseV3() {
   const [perCapitaMode, setPerCapitaMode] = useState(false);
   const [loadingPopulation, setLoadingPopulation] = useState(false);
   const [maxZonesToDisplay] = useState(50); // Nombre max de zones à afficher
+  const [visibleDeciles, setVisibleDeciles] = useState<Set<number>>(new Set([0,1,2,3,4,5,6,7,8,9]));
+  const [storeStats, setStoreStats] = useState<any>(null);
 
   // Fonction pour filtrer et afficher les zones selon le critère actif
   const filterAndDisplayZones = (zonesToFilter: Zone[]) => {
-    console.log(`🎯 Filtrage des zones selon critère: ${perCapitaMode && sortCriterion === 'ca' ? 'CA/Habitant' : sortCriterion}`);
+    const criterionLabel = perCapitaMode ? 
+      (sortCriterion === 'ca' ? 'CA/Habitant' : 
+       sortCriterion === 'clients' ? 'Clients/Habitant' : 
+       'Transactions/Habitant') : 
+      (sortCriterion === 'ca' ? 'CA' : 
+       sortCriterion === 'clients' ? 'Clients' : 
+       'Transactions');
+    
+    console.log(`🎯 Filtrage des zones selon critère: ${criterionLabel}`);
     
     // Trier selon le critère actif (décroissant pour afficher les meilleures d'abord)
     const sorted = [...zonesToFilter].sort((a, b) => {
-      if (perCapitaMode && sortCriterion === 'ca') {
-        return (b.caPerCapita || 0) - (a.caPerCapita || 0); // Décroissant
+      if (perCapitaMode) {
+        if (sortCriterion === 'ca') return (b.caPerCapita || 0) - (a.caPerCapita || 0);
+        if (sortCriterion === 'clients') return (b.clientsPerCapita || 0) - (a.clientsPerCapita || 0);
+        return (b.txPerCapita || 0) - (a.txPerCapita || 0);
       }
       if (sortCriterion === 'ca') return b.totalCA - a.totalCA;
       if (sortCriterion === 'clients') return b.nbClients - a.nbClients;
       return b.nbTransactions - a.nbTransactions;
     });
     
-    // Prendre les top N zones
-    const topZones = sorted.slice(0, maxZonesToDisplay);
+    // Prendre les top N zones et ajouter le classement
+    const topZones = sorted.slice(0, maxZonesToDisplay).map((zone, idx) => ({
+      ...zone,
+      rank: idx + 1
+    }));
     
     console.log(`📊 Top ${topZones.length} zones sélectionnées:`);
-    topZones.slice(0, 5).forEach((z, idx) => {
+    topZones.slice(0, 5).forEach((z) => {
       const value = perCapitaMode && sortCriterion === 'ca' ? `${z.caPerCapita?.toFixed(2)}€/hab` :
+                    perCapitaMode && sortCriterion === 'clients' ? `${z.clientsPerCapita?.toFixed(3)} clients/hab` :
+                    perCapitaMode && sortCriterion === 'transactions' ? `${z.txPerCapita?.toFixed(3)} tx/hab` :
                     sortCriterion === 'ca' ? `${z.totalCA.toFixed(0)}€` :
                     sortCriterion === 'clients' ? `${z.nbClients} clients` :
                     `${z.nbTransactions} tx`;
-      console.log(`  ${idx + 1}. ${z.cp} (${z.ville}): ${value}`);
+      console.log(`  ${z.rank}. ${z.cp} (${z.ville}): ${value}`);
     });
     
     setZones(topZones);
@@ -113,11 +133,15 @@ export default function ZoneChalandiseV3() {
         
         const population = await fetchPopulation(zone.cp);
         const caPerCapita = population && population > 0 ? zone.totalCA / population : 0;
+        const clientsPerCapita = population && population > 0 ? zone.nbClients / population : 0;
+        const txPerCapita = population && population > 0 ? zone.nbTransactions / population : 0;
         
         return {
           ...zone,
           population: population || 0,
-          caPerCapita: caPerCapita
+          caPerCapita: caPerCapita,
+          clientsPerCapita: clientsPerCapita,
+          txPerCapita: txPerCapita
         };
       })
     );
@@ -144,8 +168,8 @@ export default function ZoneChalandiseV3() {
     const storeName = stores.find(s => s.code === selectedStore)?.nom || 'Magasin';
     
     // Préparer les données avec formatage
-    const excelData = zones.map((zone, index) => ({
-      'Rang': index + 1,
+    const excelData = zones.map((zone) => ({
+      'Rang': zone.rank || '',
       'Code Postal': zone.cp,
       'Ville': zone.ville,
       'Nb Clients': zone.nbClients,
@@ -154,7 +178,9 @@ export default function ZoneChalandiseV3() {
       'Nb Transactions': zone.nbTransactions,
       'Tx/Client': (zone.nbTransactions / zone.nbClients).toFixed(1),
       'Population': zone.population || 'N/A',
-      'CA/Habitant (€)': zone.caPerCapita ? zone.caPerCapita.toFixed(2) : 'N/A'
+      'CA/Habitant (€)': zone.caPerCapita ? zone.caPerCapita.toFixed(2) : 'N/A',
+      'Clients/Habitant': zone.clientsPerCapita ? zone.clientsPerCapita.toFixed(4) : 'N/A',
+      'Tx/Habitant': zone.txPerCapita ? zone.txPerCapita.toFixed(4) : 'N/A'
     }));
 
     // Créer le workbook et la feuille
@@ -172,7 +198,9 @@ export default function ZoneChalandiseV3() {
       { wch: 16 },  // Nb Transactions
       { wch: 10 },  // Tx/Client
       { wch: 14 },  // Population
-      { wch: 16 }   // CA/Habitant
+      { wch: 16 },  // CA/Habitant
+      { wch: 18 },  // Clients/Habitant
+      { wch: 14 }   // Tx/Habitant
     ];
 
     // Ajouter des styles aux en-têtes (A1 à H1)
@@ -183,7 +211,7 @@ export default function ZoneChalandiseV3() {
     };
 
     // Appliquer le style aux cellules d'en-tête
-    ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1'].forEach(cell => {
+    ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1'].forEach(cell => {
       if (ws[cell]) {
         ws[cell].s = headerStyle;
       }
@@ -199,7 +227,7 @@ export default function ZoneChalandiseV3() {
 
     // Fusionner la cellule du titre
     ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } } // Fusionner A1:J1
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } } // Fusionner A1:L1
     ];
 
     // Ajouter la feuille au workbook
@@ -344,6 +372,21 @@ export default function ZoneChalandiseV3() {
       });
   }, [selectedStore]);
 
+  // Charger les stats globales du magasin
+  useEffect(() => {
+    if (!selectedStore) return;
+    
+    fetch(`/api/stores?action=performance&storeCode=${selectedStore}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.magasin) {
+          setStoreStats(data.magasin);
+          console.log('📊 Stats magasin:', data.magasin);
+        }
+      })
+      .catch(err => console.error('Erreur chargement stats magasin:', err));
+  }, [selectedStore]);
+
   // Recharger et refiltrer quand le critère change
   useEffect(() => {
     if (allZones.length > 0) {
@@ -458,6 +501,9 @@ export default function ZoneChalandiseV3() {
               nbTransactions: zone.nbTransactions,
               population: zone.population,
               caPerCapita: zone.caPerCapita,
+              clientsPerCapita: zone.clientsPerCapita,
+              txPerCapita: zone.txPerCapita,
+              rank: zone.rank,
               percentile,
               decile,
               color
@@ -482,14 +528,27 @@ export default function ZoneChalandiseV3() {
 
   const onEachFeature = (feature: any, layer: any) => {
     const props = feature.properties;
+    const rank = props.rank ? `#${props.rank}` : '';
     layer.bindPopup(`
-      <div class="p-2">
-        <h3 class="font-bold text-lg">${props.cp} - ${props.ville}</h3>
-        <p class="mt-1"><strong>Clients:</strong> ${props.nbClients}</p>
-        <p><strong>CA:</strong> ${props.totalCA.toFixed(0)}€</p>
-        <p><strong>Transactions:</strong> ${props.nbTransactions}</p>
-        ${props.population ? `<p><strong>Population:</strong> ${props.population.toLocaleString()} hab</p>` : ''}
-        ${props.caPerCapita ? `<p><strong>CA/Habitant:</strong> ${props.caPerCapita.toFixed(2)}€</p>` : ''}
+      <div style="min-width: 220px; padding: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+          <h3 style="font-weight: bold; font-size: 16px; margin: 0;">${props.cp} - ${props.ville}</h3>
+          ${rank ? `<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">${rank}</span>` : ''}
+        </div>
+        <div style="border-top: 1px solid #e5e7eb; padding-top: 8px;">
+          <p style="margin: 4px 0;"><strong>👥 Clients:</strong> ${props.nbClients.toLocaleString()}</p>
+          <p style="margin: 4px 0;"><strong>💰 CA:</strong> ${props.totalCA.toFixed(0)}€</p>
+          <p style="margin: 4px 0;"><strong>🛒 Transactions:</strong> ${props.nbTransactions.toLocaleString()}</p>
+          ${props.population ? `<p style="margin: 4px 0;"><strong>🏘️ Population:</strong> ${props.population.toLocaleString()} hab</p>` : ''}
+        </div>
+        ${props.caPerCapita || props.clientsPerCapita || props.txPerCapita ? `
+          <div style="border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;">
+            <p style="font-weight: bold; margin: 4px 0; font-size: 13px;">📊 Ratios par habitant:</p>
+            ${props.caPerCapita ? `<p style="margin: 4px 0; font-size: 12px;">• CA/hab: ${props.caPerCapita.toFixed(2)}€</p>` : ''}
+            ${props.clientsPerCapita ? `<p style="margin: 4px 0; font-size: 12px;">• Clients/hab: ${(props.clientsPerCapita * 100).toFixed(2)}%</p>` : ''}
+            ${props.txPerCapita ? `<p style="margin: 4px 0; font-size: 12px;">• Tx/hab: ${(props.txPerCapita * 100).toFixed(2)}%</p>` : ''}
+          </div>
+        ` : ''}
       </div>
     `);
   };
@@ -511,7 +570,9 @@ export default function ZoneChalandiseV3() {
           />
 
           {/* Zones colorées */}
-          {geoData.map((feature, idx) => (
+          {geoData
+            .filter(feature => visibleDeciles.has(feature.properties.decile))
+            .map((feature, idx) => (
             <GeoJSON
               key={`zone-${idx}`}
               data={feature}
@@ -546,24 +607,38 @@ export default function ZoneChalandiseV3() {
                   }}
                 >
                   <Popup>
-                    <div style={{ textAlign: 'center', minWidth: '120px' }}>
+                    <div style={{ minWidth: '240px', padding: '8px' }}>
                       <strong 
                         style={{ 
-                          fontSize: '14px', 
+                          fontSize: '16px', 
                           color: '#dc2626',
                           cursor: 'pointer',
-                          textDecoration: 'underline'
+                          textDecoration: 'underline',
+                          display: 'block',
+                          marginBottom: '4px'
                         }}
                         onClick={() => {
                           console.log(`🎯 Clic sur nom du magasin ${store.nom} (${store.code})`);
                           setSelectedStore(store.code);
                         }}
                       >
-                        {store.nom}
+                        🏪 {store.nom}
                       </strong>
-                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                        {store.ville}
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+                        📍 {store.ville}
                       </div>
+                      {store.code === selectedStore && storeStats ? (
+                        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '8px', fontSize: '12px' }}>
+                          <p style={{ margin: '4px 0' }}><strong>👥 Clients:</strong> {storeStats.nb_clients?.toLocaleString() || 'N/A'}</p>
+                          <p style={{ margin: '4px 0' }}><strong>💰 CA:</strong> {storeStats.ca_total ? `${Math.round(storeStats.ca_total).toLocaleString()}€` : 'N/A'}</p>
+                          <p style={{ margin: '4px 0' }}><strong>🛒 Transactions:</strong> {storeStats.nb_transactions?.toLocaleString() || 'N/A'}</p>
+                          <p style={{ margin: '4px 0' }}><strong>📊 Panier moyen:</strong> {storeStats.panier_moyen ? `${Math.round(storeStats.panier_moyen)}€` : 'N/A'}</p>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '11px', color: '#9ca3af', fontStyle: 'italic' }}>
+                          Cliquez pour voir les stats
+                        </div>
+                      )}
                     </div>
                   </Popup>
                 </Marker>
@@ -573,21 +648,25 @@ export default function ZoneChalandiseV3() {
         </MapContainer>
       </div>
 
-      {/* Panneau de contrôle - HAUT GAUCHE avec effet glassmorphism DARK */}
+      {/* Panneau de contrôle - Responsive positioning */}
       <div 
+        className="zone-control-panel"
         style={{ 
           position: 'fixed',
-          top: '100px', // Baissé pour ne pas chevaucher le titre
-          left: '280px', // Décalé pour ne pas chevaucher le menu
-          zIndex: 9999, // Au-dessus de tout sauf interactions map
-          minWidth: panelOpen ? '340px' : 'auto',
-          backgroundColor: 'rgba(17, 24, 39, 0.85)', // Dark
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          maxWidth: panelOpen ? '360px' : 'auto',
+          width: panelOpen ? 'calc(100vw - 40px)' : 'auto',
+          maxHeight: 'calc(100vh - 40px)',
+          overflowY: 'auto',
+          backgroundColor: 'rgba(17, 24, 39, 0.95)',
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           borderRadius: '16px',
           boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4)',
           border: '1px solid rgba(75, 85, 99, 0.3)',
-          overflow: 'hidden',
+          overflow: panelOpen ? 'auto' : 'hidden',
           transition: 'all 0.3s ease'
         }}
       >
@@ -731,7 +810,9 @@ export default function ZoneChalandiseV3() {
                   </>
                 ) : (
                   <>
-                    👥 {perCapitaMode ? 'CA/Habitant activé' : 'Activer CA/Habitant'}
+                    👥 {perCapitaMode ? 
+                      `${sortCriterion === 'ca' ? 'CA' : sortCriterion === 'clients' ? 'Clients' : 'Transactions'}/Habitant activé` : 
+                      'Activer Ratio par Habitant'}
                   </>
                 )}
               </button>
@@ -745,7 +826,7 @@ export default function ZoneChalandiseV3() {
                   color: '#6ee7b7',
                   textAlign: 'center'
                 }}>
-                  💡 Affichage du CA par habitant par zone
+                  💡 Affichage {sortCriterion === 'ca' ? 'du CA' : sortCriterion === 'clients' ? 'des clients' : 'des transactions'} par habitant
                 </div>
               )}
             </div>
@@ -828,35 +909,66 @@ export default function ZoneChalandiseV3() {
                 alignItems: 'center',
                 gap: '6px'
               }}>
-                🎨 Légende ({perCapitaMode && sortCriterion === 'ca' ? 'CA/Habitant' : sortCriterion === 'ca' ? 'CA' : sortCriterion === 'clients' ? 'Clients' : 'Transactions'} par décile)
+                🎨 Légende ({perCapitaMode ? 
+                  (sortCriterion === 'ca' ? 'CA/Habitant' : 
+                   sortCriterion === 'clients' ? 'Clients/Habitant' : 
+                   'Transactions/Habitant') : 
+                  (sortCriterion === 'ca' ? 'CA' : 
+                   sortCriterion === 'clients' ? 'Clients' : 
+                   'Transactions')} par décile)
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                 {[
-                  { color: '#1e3a8a', label: '0-10%' },
-                  { color: '#1e40af', label: '10-20%' },
-                  { color: '#2563eb', label: '20-30%' },
-                  { color: '#3b82f6', label: '30-40%' },
-                  { color: '#60a5fa', label: '40-50%' },
-                  { color: '#fbbf24', label: '50-60%' },
-                  { color: '#f59e0b', label: '60-70%' },
-                  { color: '#ea580c', label: '70-80%' },
-                  { color: '#dc2626', label: '80-90%' },
-                  { color: '#991b1b', label: '90-100%' }
-                ].map(({ color, label }) => (
-                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ 
-                      width: '16px', 
-                      height: '16px', 
-                      backgroundColor: color,
-                      borderRadius: '4px',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      flexShrink: 0
-                    }}></div>
-                    <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '500' }}>
-                      {label}
-                    </span>
-                  </div>
-                ))}
+                  { color: '#1e3a8a', label: '0-10%', decile: 0 },
+                  { color: '#1e40af', label: '10-20%', decile: 1 },
+                  { color: '#2563eb', label: '20-30%', decile: 2 },
+                  { color: '#3b82f6', label: '30-40%', decile: 3 },
+                  { color: '#60a5fa', label: '40-50%', decile: 4 },
+                  { color: '#fbbf24', label: '50-60%', decile: 5 },
+                  { color: '#f59e0b', label: '60-70%', decile: 6 },
+                  { color: '#ea580c', label: '70-80%', decile: 7 },
+                  { color: '#dc2626', label: '80-90%', decile: 8 },
+                  { color: '#991b1b', label: '90-100%', decile: 9 }
+                ].map(({ color, label, decile }) => {
+                  const isVisible = visibleDeciles.has(decile);
+                  return (
+                    <button 
+                      key={label} 
+                      onClick={() => {
+                        const newVisible = new Set(visibleDeciles);
+                        if (isVisible) {
+                          newVisible.delete(decile);
+                        } else {
+                          newVisible.add(decile);
+                        }
+                        setVisibleDeciles(newVisible);
+                      }}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        opacity: isVisible ? 1 : 0.4,
+                        transition: 'opacity 0.2s',
+                        padding: '4px'
+                      }}
+                    >
+                      <div style={{ 
+                        width: '16px', 
+                        height: '16px', 
+                        backgroundColor: color,
+                        borderRadius: '4px',
+                        border: isVisible ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)',
+                        flexShrink: 0
+                      }}></div>
+                      <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '500' }}>
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -908,10 +1020,27 @@ export default function ZoneChalandiseV3() {
         )}
       </div>
 
-      {/* Animation CSS pour le spinner */}
+      {/* Animation CSS pour le spinner + Responsive styles */}
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        
+        @media (min-width: 1024px) {
+          .zone-control-panel {
+            max-width: 380px !important;
+            width: auto !important;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .zone-control-panel {
+            top: 10px !important;
+            right: 10px !important;
+            left: 10px !important;
+            max-width: none !important;
+            width: calc(100vw - 20px) !important;
+          }
         }
       `}</style>
     </>
