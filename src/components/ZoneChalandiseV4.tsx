@@ -95,13 +95,12 @@ export default function ZoneChalandiseV4() {
       .catch(err => console.error('Erreur chargement magasins:', err));
   }, []);
 
-  // Charger zones quand magasin sélectionné
+  // Charger zones quand magasin sélectionné OU critères changent
   useEffect(() => {
     if (!selectedStore) return;
 
     setLoading(true);
     setGeoData([]);
-    setZones([]);
     
     console.log(`🔍 Chargement zones pour magasin ${selectedStore}...`);
 
@@ -126,7 +125,7 @@ export default function ZoneChalandiseV4() {
         console.error('❌ Erreur chargement zones:', err);
         setLoading(false);
       });
-  }, [selectedStore]);
+  }, [selectedStore, perCapitaMode, sortCriterion]);
 
   // Charger stats magasin
   useEffect(() => {
@@ -142,28 +141,7 @@ export default function ZoneChalandiseV4() {
       .catch(err => console.error('Erreur stats magasin:', err));
   }, [selectedStore]);
 
-  // Recalculer quand critère change
-  useEffect(() => {
-    if (zones.length > 0) {
-      processZones(zones);
-    }
-  }, [sortCriterion]);
-
-  // Switch mode per capita
-  useEffect(() => {
-    if (!selectedStore) return;
-    
-    if (perCapitaMode && zones.length > 0) {
-      // Si pas de population, enrichir
-      if (!zones[0].population) {
-        enrichWithPopulation(zones);
-      } else {
-        processZones(zones);
-      }
-    } else if (zones.length > 0) {
-      processZones(zones);
-    }
-  }, [perCapitaMode]);
+  // Note: pas besoin de useEffects séparés, tout géré par le useEffect principal
 
   // Enrichir avec population
   const enrichWithPopulation = async (rawZones: Zone[]) => {
