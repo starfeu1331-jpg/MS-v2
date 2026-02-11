@@ -33,6 +33,9 @@ interface Zone {
   clientsPerCapita?: number;
   txPerCapita?: number;
   rank?: number;
+  percentile?: number;
+  decile?: number;
+  color?: string;
 }
 
 interface StoreWithZones extends Store {
@@ -78,11 +81,50 @@ export default function ZoneChalandiseV3() {
       return b.nbTransactions - a.nbTransactions;
     });
     
-    // Ajouter le classement à TOUTES les zones
-    const rankedZones = sorted.map((zone, idx) => ({
-      ...zone,
-      rank: idx + 1
-    }));
+    // Calculer min/max pour les couleurs
+    const getValue = (z: Zone) => {
+      if (perCapitaMode) {
+        if (sortCriterion === 'ca') return z.caPerCapita || 0;
+        if (sortCriterion === 'clients') return z.clientsPerCapita || 0;
+        return z.txPerCapita || 0;
+      }
+      if (sortCriterion === 'ca') return z.totalCA;
+      if (sortCriterion === 'clients') return z.nbClients;
+      return z.nbTransactions;
+    };
+    
+    const values = sorted.map(getValue);
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    
+    // Couleurs du bleu (faible) au rouge (fort)
+    const colors = [
+      '#1e3a8a', // Bleu très foncé - 0-10%
+      '#1e40af', // Bleu foncé - 10-20%
+      '#2563eb', // Bleu - 20-30%
+      '#3b82f6', // Bleu clair - 30-40%
+      '#60a5fa', // Bleu très clair - 40-50%
+      '#fbbf24', // Jaune - 50-60%
+      '#f59e0b', // Orange - 60-70%
+      '#ea580c', // Orange foncé - 70-80%
+      '#dc2626', // Rouge - 80-90%
+      '#991b1b'  // Rouge très foncé - 90-100%
+    ];
+    
+    // Ajouter rank, percentile, decile et color à TOUTES les zones
+    const rankedZones = sorted.map((zone, idx) => {
+      const percentile = idx / (sorted.length - 1 || 1);
+      const decile = Math.floor(percentile * 10);
+      const color = colors[Math.min(decile, 9)];
+      
+      return {
+        ...zone,
+        rank: idx + 1,
+        percentile,
+        decile,
+        color
+      };
+    });
     
     console.log(`📊 ${rankedZones.length} zones classées:`);
     rankedZones.slice(0, 5).forEach((z) => {
@@ -92,7 +134,7 @@ export default function ZoneChalandiseV3() {
                     sortCriterion === 'ca' ? `${z.totalCA.toFixed(0)}€` :
                     sortCriterion === 'clients' ? `${z.nbClients} clients` :
                     `${z.nbTransactions} tx`;
-      console.log(`  ${z.rank}. ${z.cp} (${z.ville}): ${value}`);
+      console.log(`  ${z.rank}. ${z.cp} (${z.ville}): ${value} → décile ${z.decile} ${z.color}`);
     });
     
     return rankedZones;
@@ -385,28 +427,7 @@ export default function ZoneChalandiseV3() {
       .then(res => res.json())
       .then(data => {
         if (data.magasin) {
-          setStoreStats(data.magasin);
-          console.log('📊 Stats magasin:', data.magasin);
-        }
-      })
-      .catch(err => console.error('Erreur chargement stats magasin:', err));
-  }, [selectedStore]);
-
-  // Recharger et refiltrer quand le critère change
-  useEffect(() => {
-    if (allZones.length > 0) {
-      console.log('🔄 Critère changé, reclassement et rechargement...');
-      const ranked = rankZones(allZones);
-      setZones(ranked);
-      loadGeometries(ranked);
-    }
-  }, [sortCriterion]);
-
-  // Gérer le changement de mode per capita
-  useEffect(() => {
-    if (allZones.length > 0 && perCapitaMode && !allZones[0].population) {
-      enrichZonesWithPopulation(allZones);
-    } else if (allZones.length > 0) {
+          setStoreStats(data.magas
       const ranked = rankZones(allZones);
       setZones(ranked);
       loadGeometries(ranked);
@@ -425,27 +446,6 @@ export default function ZoneChalandiseV3() {
     }
     
     const geoFeatures: any[] = [];
-    
-    // Trier les zones selon le critère choisi pour calculer les déciles (10 tranches de 10%)
-    const sortedZones = [...zonesToLoad].sort((a, b) => {
-      if (perCapitaMode && sortCriterion === 'ca') {
-        return (a.caPerCapita || 0) - (b.caPerCapita || 0);
-      }
-      if (sortCriterion === 'ca') return a.totalCA - b.totalCA;
-      if (sortCriterion === 'clients') return a.nbClients - b.nbClients;
-      return a.nbTransactions - b.nbTransactions;
-    });
-    
-    const minValue = perCapitaMode && sortCriterion === 'ca' ? (sortedZones[0].caPerCapita || 0) :
-                     sortCriterion === 'ca' ? sortedZones[0].totalCA : 
-                     sortCriterion === 'clients' ? sortedZones[0].nbClients : 
-                     sortedZones[0].nbTransactions;
-    const maxValue = perCapitaMode && sortCriterion === 'ca' ? (sortedZones[sortedZones.length - 1].caPerCapita || 0) :
-                     sortCriterion === 'ca' ? sortedZones[sortedZones.length - 1].totalCA : 
-                     sortCriterion === 'clients' ? sortedZones[sortedZones.length - 1].nbClients : 
-                     sortedZones[sortedZones.length - 1].nbTransactions;
-    
-    console.log(`📊 ${sortCriterion === 'ca' ? 'CA' : sortCriterion === 'clients' ? 'Clients' : 'Transactions'} min: ${minValue.toFixed(0)} → max: ${maxValue.toFixed(0)}`);
 
     for (let i = 0; i < zonesToLoad.length; i++) {
       const zone = zonesToLoad[i];
@@ -477,29 +477,11 @@ export default function ZoneChalandiseV3() {
           continue;
         }
 
-        // Calculer le rang percentile de cette zone (0 à 1)
-        const rank = sortedZones.findIndex(z => z.cp === zone.cp);
-        if (rank === -1) {
-          console.error(`❌ CP ${normalizedCP} (${zone.ville}): Non trouvé dans sortedZones ! CP original: "${zone.cp}"`);
-          continue; // Skip cette zone
+        // Utiliser les valeurs déjà calculées par rankZones
+        if (zone.rank === undefined || zone.decile === undefined || !zone.color) {
+          console.error(`❌ CP ${normalizedCP}: Zone sans rank/decile/color!`, zone);
+          continue;
         }
-        const percentile = rank / (sortedZones.length - 1 || 1);
-        
-        // Attribuer une couleur basée sur le décile (10 tranches de 10%)
-        const decile = Math.floor(percentile * 10);
-        const colors = [
-          '#1e3a8a', // Bleu très foncé - 0-10%
-          '#1e40af', // Bleu foncé - 10-20%
-          '#2563eb', // Bleu - 20-30%
-          '#3b82f6', // Bleu clair - 30-40%
-          '#60a5fa', // Bleu très clair - 40-50%
-          '#fbbf24', // Jaune - 50-60%
-          '#f59e0b', // Orange - 60-70%
-          '#ea580c', // Orange foncé - 70-80%
-          '#dc2626', // Rouge - 80-90%
-          '#991b1b'  // Rouge très foncé - 90-100%
-        ];
-        const color = colors[Math.min(decile, 9)];
 
         // Ajouter chaque commune séparément (pas de fusion)
         geojson.features.forEach((feature: any) => {
@@ -517,14 +499,14 @@ export default function ZoneChalandiseV3() {
               clientsPerCapita: zone.clientsPerCapita,
               txPerCapita: zone.txPerCapita,
               rank: zone.rank,
-              percentile,
-              decile,
-              color
+              percentile: zone.percentile,
+              decile: zone.decile,
+              color: zone.color
             }
           });
         });
 
-        console.log(`  ✅ CP ${normalizedCP} (${zone.ville}): décile ${decile}/10 (${zone.nbClients} clients) → ${color}`);
+        console.log(`  ✅ CP ${normalizedCP} (${zone.ville}): décile ${zone.decile}/10 (${zone.nbClients} clients) → ${zone.color}`);
 
       } catch (err) {
         console.error(`❌ Erreur CP ${zone.cp}:`, err);
@@ -538,14 +520,14 @@ export default function ZoneChalandiseV3() {
     setGeoData(geoFeatures);
     setLoading(false);
   };
+: zone.percentile,
+              decile: zone.decile,
+              color: zone.color
+            }
+          });
+        });
 
-  const onEachFeature = (feature: any, layer: any) => {
-    const props = feature.properties;
-    const rank = props.rank ? `#${props.rank}` : '';
-    layer.bindPopup(`
-      <div style="min-width: 220px; padding: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-          <h3 style="font-weight: bold; font-size: 16px; margin: 0;">${props.cp} - ${props.ville}</h3>
+        console.log(`  ✅ CP ${normalizedCP} (${zone.ville}): décile ${zone.decile}/10 (${zone.nbClients} clients) → ${zone.
           ${rank ? `<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">${rank}</span>` : ''}
         </div>
         <div style="border-top: 1px solid #e5e7eb; padding-top: 8px;">
