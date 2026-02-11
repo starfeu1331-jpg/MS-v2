@@ -28,6 +28,8 @@ interface Zone {
   nbClients: number;
   totalCA: number;
   nbTransactions: number;
+  population?: number;
+  caPerCapita?: number;
 }
 
 interface StoreWithZones extends Store {
@@ -42,6 +44,63 @@ export default function ZoneChalandiseV3() {
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [sortCriterion, setSortCriterion] = useState<'ca' | 'clients' | 'transactions'>('ca');
+  const [perCapitaMode, setPerCapitaMode] = useState(false);
+  const [loadingPopulation, setLoadingPopulation] = useState(false);
+
+  // Fonction pour récupérer la population d'un code postal
+  const fetchPopulation = async (cp: string): Promise<number | null> => {
+    try {
+      const cleanCP = String(cp).trim().padStart(5, '0');
+      const response = await fetch(
+        `https://geo.api.gouv.fr/communes?codePostal=${cleanCP}&fields=nom,population`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        // Si plusieurs communes ont ce CP, prendre la somme des populations
+        const totalPop = data.reduce((sum: number, commune: any) => sum + (commune.population || 0), 0);
+        return totalPop;
+      }
+      return null;
+    } catch (error) {
+      console.warn(`⚠️ Erreur récupération population pour CP ${cp}:`, error);
+      return null;
+    }
+  };
+
+  // Fonction pour enrichir les zones avec les populations
+  const enrichZonesWithPopulation = async (zonesToEnrich: Zone[]) => {
+    setLoadingPopulation(true);
+    console.log('👥 Récupération des populations pour', zonesToEnrich.length, 'zones...');
+    
+    const enrichedZones = await Promise.all(
+      zonesToEnrich.map(async (zone) => {
+        if (zone.population !== undefined) {
+          return zone; // Déjà enrichie
+        }
+        
+        const population = await fetchPopulation(zone.cp);
+        const caPerCapita = population && population > 0 ? zone.totalCA / population : 0;
+        
+        return {
+          ...zone,
+          population: population || 0,
+          caPerCapita: caPerCapita
+        };
+      })
+    );
+    
+    console.log('✅ Populations récupérées, exemples:');
+    enrichedZones.slice(0, 5).forEach(z => {
+      console.log(`  📍 ${z.cp} (${z.ville}): ${z.population?.toLocaleString()} hab, CA/hab: ${z.caPerCapita?.toFixed(2)}€`);
+    });
+    
+    setZones(enrichedZones);
+    setLoadingPopulation(false);
+    
+    // Recharger les géométries avec les nouvelles données
+    loadGeometries(enrichedZones);
+  };
 
   // Fonction d'export Excel
   const exportToExcel = () => {
@@ -61,7 +120,9 @@ export default function ZoneChalandiseV3() {
       'CA Total (€)': Math.round(zone.totalCA),
       'CA Moyen (€)': Math.round(zone.totalCA / zone.nbClients),
       'Nb Transactions': zone.nbTransactions,
-      'Tx/Client': (zone.nbTransactions / zone.nbClients).toFixed(1)
+      'Tx/Client': (zone.nbTransactions / zone.nbClients).toFixed(1),
+      'Population': zone.population || 'N/A',
+      'CA/Habitant (€)': zone.caPerCapita ? zone.caPerCapita.toFixed(2) : 'N/A'
     }));
 
     // Créer le workbook et la feuille
@@ -77,7 +138,9 @@ export default function ZoneChalandiseV3() {
       { wch: 15 },  // CA Total
       { wch: 15 },  // CA Moyen
       { wch: 16 },  // Nb Transactions
-      { wch: 10 }   // Tx/Client
+      { wch: 10 },  // Tx/Client
+      { wch: 14 },  // Population
+      { wch: 16 }   // CA/Habitant
     ];
 
     // Ajouter des styles aux en-têtes (A1 à H1)
@@ -88,7 +151,7 @@ export default function ZoneChalandiseV3() {
     };
 
     // Appliquer le style aux cellules d'en-tête
-    ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'].forEach(cell => {
+    ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1'].forEach(cell => {
       if (ws[cell]) {
         ws[cell].s = headerStyle;
       }
@@ -104,7 +167,7 @@ export default function ZoneChalandiseV3() {
 
     // Fusionner la cellule du titre
     ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } } // Fusionner A1:H1
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } } // Fusionner A1:J1
     ];
 
     // Ajouter la feuille au workbook
@@ -235,8 +298,13 @@ export default function ZoneChalandiseV3() {
 
         setZones(storeZones);
         
-        // Charger les géométries
-        loadGeometries(storeZones);
+        // Si le mode per capita est activé, enrichir avec les populations
+        if (perCapitaMode) {
+          enrichZonesWithPopulation(storeZones);
+        } else {
+          // Charger les géométries
+          loadGeometries(storeZones);
+        }
       })
       .catch(err => {
         console.error('❌ Erreur chargement zones:', err);
@@ -250,6 +318,24 @@ export default function ZoneChalandiseV3() {
       loadGeometries(zones);
     }
   }, [sortCriterion]);
+
+  // Gérer le changement de mode per capita
+  useEffect(() => {
+    if (zones.length > 0 && perCapitaMode && !zones[0].population) {
+      enrichZonesWithPopulation(zones);
+    } else if (zones.length > 0) {
+      loadGeometries(zones);
+    }
+  }, [perCapitaMode]);
+
+  // Gérer le changement de mode per capita
+  useEffect(() => {
+    if (zones.length > 0 && perCapitaMode && !zones[0].population) {
+      enrichZonesWithPopulation(zones);
+    } else if (zones.length > 0) {
+      loadGeometries(zones);
+    }
+  }, [perCapitaMode]);
 
   const loadGeometries = async (zonesToLoad: Zone[]) => {
     console.log(`🗺️ Chargement géométries pour ${zonesToLoad.length} zones...`);
@@ -266,15 +352,20 @@ export default function ZoneChalandiseV3() {
     
     // Trier les zones selon le critère choisi pour calculer les déciles (10 tranches de 10%)
     const sortedZones = [...zonesToLoad].sort((a, b) => {
+      if (perCapitaMode && sortCriterion === 'ca') {
+        return (a.caPerCapita || 0) - (b.caPerCapita || 0);
+      }
       if (sortCriterion === 'ca') return a.totalCA - b.totalCA;
       if (sortCriterion === 'clients') return a.nbClients - b.nbClients;
       return a.nbTransactions - b.nbTransactions;
     });
     
-    const minValue = sortCriterion === 'ca' ? sortedZones[0].totalCA : 
+    const minValue = perCapitaMode && sortCriterion === 'ca' ? (sortedZones[0].caPerCapita || 0) :
+                     sortCriterion === 'ca' ? sortedZones[0].totalCA : 
                      sortCriterion === 'clients' ? sortedZones[0].nbClients : 
                      sortedZones[0].nbTransactions;
-    const maxValue = sortCriterion === 'ca' ? sortedZones[sortedZones.length - 1].totalCA : 
+    const maxValue = perCapitaMode && sortCriterion === 'ca' ? (sortedZones[sortedZones.length - 1].caPerCapita || 0) :
+                     sortCriterion === 'ca' ? sortedZones[sortedZones.length - 1].totalCA : 
                      sortCriterion === 'clients' ? sortedZones[sortedZones.length - 1].nbClients : 
                      sortedZones[sortedZones.length - 1].nbTransactions;
     
@@ -341,6 +432,8 @@ export default function ZoneChalandiseV3() {
               nbClients: zone.nbClients,
               totalCA: zone.totalCA,
               nbTransactions: zone.nbTransactions,
+              population: zone.population,
+              caPerCapita: zone.caPerCapita,
               percentile,
               decile,
               color
@@ -371,6 +464,8 @@ export default function ZoneChalandiseV3() {
         <p class="mt-1"><strong>Clients:</strong> ${props.nbClients}</p>
         <p><strong>CA:</strong> ${props.totalCA.toFixed(0)}€</p>
         <p><strong>Transactions:</strong> ${props.nbTransactions}</p>
+        ${props.population ? `<p><strong>Population:</strong> ${props.population.toLocaleString()} hab</p>` : ''}
+        ${props.caPerCapita ? `<p><strong>CA/Habitant:</strong> ${props.caPerCapita.toFixed(2)}€</p>` : ''}
       </div>
     `);
   };
@@ -576,6 +671,61 @@ export default function ZoneChalandiseV3() {
               </div>
             </div>
 
+            {/* Toggle CA par habitant */}
+            <div style={{ marginBottom: '14px' }}>
+              <button
+                onClick={() => setPerCapitaMode(!perCapitaMode)}
+                disabled={loadingPopulation}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '10px',
+                  border: perCapitaMode ? '2px solid #10b981' : '1px solid rgba(75, 85, 99, 0.6)',
+                  backgroundColor: perCapitaMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(31, 41, 55, 0.9)',
+                  color: perCapitaMode ? '#34d399' : '#9ca3af',
+                  cursor: loadingPopulation ? 'wait' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                {loadingPopulation ? (
+                  <>
+                    <div style={{ 
+                      width: '14px', 
+                      height: '14px', 
+                      border: '2px solid #10b981',
+                      borderTopColor: 'transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite'
+                    }}></div>
+                    Chargement populations...
+                  </>
+                ) : (
+                  <>
+                    👥 {perCapitaMode ? 'CA/Habitant activé' : 'Activer CA/Habitant'}
+                  </>
+                )}
+              </button>
+              {perCapitaMode && !loadingPopulation && zones.length > 0 && zones[0].population && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '8px 12px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  color: '#6ee7b7',
+                  textAlign: 'center'
+                }}>
+                  💡 Affichage du CA par habitant par zone
+                </div>
+              )}
+            </div>
+
             {/* Sélection magasin + Bouton Export */}
             <div style={{ marginBottom: '14px' }}>
               <label style={{ 
@@ -654,7 +804,7 @@ export default function ZoneChalandiseV3() {
                 alignItems: 'center',
                 gap: '6px'
               }}>
-                🎨 Légende (CA par décile)
+                🎨 Légende ({perCapitaMode && sortCriterion === 'ca' ? 'CA/Habitant' : sortCriterion === 'ca' ? 'CA' : sortCriterion === 'clients' ? 'Clients' : 'Transactions'} par décile)
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                 {[
