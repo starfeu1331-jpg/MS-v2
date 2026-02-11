@@ -39,13 +39,45 @@ interface StoreWithZones extends Store {
 export default function ZoneChalandiseV3() {
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>('');
-  const [zones, setZones] = useState<Zone[]>([]);
+  const [allZones, setAllZones] = useState<Zone[]>([]); // Toutes les zones brutes
+  const [zones, setZones] = useState<Zone[]>([]); // Zones filtrées selon critère
   const [geoData, setGeoData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [sortCriterion, setSortCriterion] = useState<'ca' | 'clients' | 'transactions'>('ca');
   const [perCapitaMode, setPerCapitaMode] = useState(false);
   const [loadingPopulation, setLoadingPopulation] = useState(false);
+  const [maxZonesToDisplay] = useState(50); // Nombre max de zones à afficher
+
+  // Fonction pour filtrer et afficher les zones selon le critère actif
+  const filterAndDisplayZones = (zonesToFilter: Zone[]) => {
+    console.log(`🎯 Filtrage des zones selon critère: ${perCapitaMode && sortCriterion === 'ca' ? 'CA/Habitant' : sortCriterion}`);
+    
+    // Trier selon le critère actif (décroissant pour afficher les meilleures d'abord)
+    const sorted = [...zonesToFilter].sort((a, b) => {
+      if (perCapitaMode && sortCriterion === 'ca') {
+        return (b.caPerCapita || 0) - (a.caPerCapita || 0); // Décroissant
+      }
+      if (sortCriterion === 'ca') return b.totalCA - a.totalCA;
+      if (sortCriterion === 'clients') return b.nbClients - a.nbClients;
+      return b.nbTransactions - a.nbTransactions;
+    });
+    
+    // Prendre les top N zones
+    const topZones = sorted.slice(0, maxZonesToDisplay);
+    
+    console.log(`📊 Top ${topZones.length} zones sélectionnées:`);
+    topZones.slice(0, 5).forEach((z, idx) => {
+      const value = perCapitaMode && sortCriterion === 'ca' ? `${z.caPerCapita?.toFixed(2)}€/hab` :
+                    sortCriterion === 'ca' ? `${z.totalCA.toFixed(0)}€` :
+                    sortCriterion === 'clients' ? `${z.nbClients} clients` :
+                    `${z.nbTransactions} tx`;
+      console.log(`  ${idx + 1}. ${z.cp} (${z.ville}): ${value}`);
+    });
+    
+    setZones(topZones);
+    loadGeometries(topZones);
+  };
 
   // Fonction pour récupérer la population d'un code postal
   const fetchPopulation = async (cp: string): Promise<number | null> => {
@@ -95,11 +127,11 @@ export default function ZoneChalandiseV3() {
       console.log(`  📍 ${z.cp} (${z.ville}): ${z.population?.toLocaleString()} hab, CA/hab: ${z.caPerCapita?.toFixed(2)}€`);
     });
     
-    setZones(enrichedZones);
+    setAllZones(enrichedZones);
     setLoadingPopulation(false);
     
-    // Recharger les géométries avec les nouvelles données
-    loadGeometries(enrichedZones);
+    // Filtrer et afficher les zones selon le critère
+    filterAndDisplayZones(enrichedZones);
   };
 
   // Fonction d'export Excel
@@ -296,14 +328,14 @@ export default function ZoneChalandiseV3() {
           console.log(`  ... et ${storeZones.length - 10} autres zones`);
         }
 
-        setZones(storeZones);
+        setAllZones(storeZones);
         
         // Si le mode per capita est activé, enrichir avec les populations
         if (perCapitaMode) {
           enrichZonesWithPopulation(storeZones);
         } else {
-          // Charger les géométries
-          loadGeometries(storeZones);
+          // Filtrer et afficher selon critère
+          filterAndDisplayZones(storeZones);
         }
       })
       .catch(err => {
@@ -312,28 +344,20 @@ export default function ZoneChalandiseV3() {
       });
   }, [selectedStore]);
 
-  // Recharger les géométries quand le critère change
+  // Recharger et refiltrer quand le critère change
   useEffect(() => {
-    if (zones.length > 0) {
-      loadGeometries(zones);
+    if (allZones.length > 0) {
+      console.log('🔄 Critère changé, refiltrage des zones...');
+      filterAndDisplayZones(allZones);
     }
   }, [sortCriterion]);
 
   // Gérer le changement de mode per capita
   useEffect(() => {
-    if (zones.length > 0 && perCapitaMode && !zones[0].population) {
-      enrichZonesWithPopulation(zones);
-    } else if (zones.length > 0) {
-      loadGeometries(zones);
-    }
-  }, [perCapitaMode]);
-
-  // Gérer le changement de mode per capita
-  useEffect(() => {
-    if (zones.length > 0 && perCapitaMode && !zones[0].population) {
-      enrichZonesWithPopulation(zones);
-    } else if (zones.length > 0) {
-      loadGeometries(zones);
+    if (allZones.length > 0 && perCapitaMode && !allZones[0].population) {
+      enrichZonesWithPopulation(allZones);
+    } else if (allZones.length > 0) {
+      filterAndDisplayZones(allZones);
     }
   }, [perCapitaMode]);
 
@@ -872,7 +896,12 @@ export default function ZoneChalandiseV3() {
                 borderRadius: '10px',
                 textAlign: 'center'
               }}>
-                ✓ {geoData.length} zone{geoData.length > 1 ? 's' : ''} affichée{geoData.length > 1 ? 's' : ''}
+                ✓ {zones.length} zone{zones.length > 1 ? 's' : ''} affichée{zones.length > 1 ? 's' : ''}
+                {allZones.length > zones.length && (
+                  <span style={{ color: '#9ca3af', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                    (sur {allZones.length} total{allZones.length > 1 ? 'es' : ''})
+                  </span>
+                )}
               </div>
             )}
           </div>
