@@ -55,7 +55,7 @@ export default function ZoneChalandiseV3() {
   const [storeStats, setStoreStats] = useState<any>(null);
 
   // Fonction pour filtrer et afficher les zones selon le critère actif
-  const filterAndDisplayZones = (zonesToFilter: Zone[]) => {
+  const rankAndFilterZones = (zonesToRank: Zone[]) => {
     const criterionLabel = perCapitaMode ? 
       (sortCriterion === 'ca' ? 'CA/Habitant' : 
        sortCriterion === 'clients' ? 'Clients/Habitant' : 
@@ -64,10 +64,10 @@ export default function ZoneChalandiseV3() {
        sortCriterion === 'clients' ? 'Clients' : 
        'Transactions');
     
-    console.log(`🎯 Filtrage des zones selon critère: ${criterionLabel}`);
+    console.log(`🎯 Classement des zones selon critère: ${criterionLabel}`);
     
     // Trier selon le critère actif (décroissant pour afficher les meilleures d'abord)
-    const sorted = [...zonesToFilter].sort((a, b) => {
+    const sorted = [...zonesToRank].sort((a, b) => {
       if (perCapitaMode) {
         if (sortCriterion === 'ca') return (b.caPerCapita || 0) - (a.caPerCapita || 0);
         if (sortCriterion === 'clients') return (b.clientsPerCapita || 0) - (a.clientsPerCapita || 0);
@@ -78,14 +78,14 @@ export default function ZoneChalandiseV3() {
       return b.nbTransactions - a.nbTransactions;
     });
     
-    // Prendre les top N zones et ajouter le classement
-    const topZones = sorted.slice(0, maxZonesToDisplay).map((zone, idx) => ({
+    // Ajouter le classement à TOUTES les zones
+    const rankedZones = sorted.map((zone, idx) => ({
       ...zone,
       rank: idx + 1
     }));
     
-    console.log(`📊 Top ${topZones.length} zones sélectionnées:`);
-    topZones.slice(0, 5).forEach((z) => {
+    console.log(`📊 ${rankedZones.length} zones classées:`);
+    rankedZones.slice(0, 5).forEach((z) => {
       const value = perCapitaMode && sortCriterion === 'ca' ? `${z.caPerCapita?.toFixed(2)}€/hab` :
                     perCapitaMode && sortCriterion === 'clients' ? `${z.clientsPerCapita?.toFixed(3)} clients/hab` :
                     perCapitaMode && sortCriterion === 'transactions' ? `${z.txPerCapita?.toFixed(3)} tx/hab` :
@@ -95,8 +95,8 @@ export default function ZoneChalandiseV3() {
       console.log(`  ${z.rank}. ${z.cp} (${z.ville}): ${value}`);
     });
     
-    setZones(topZones);
-    loadGeometries(topZones);
+    // Stocker TOUTES les zones classées (pas seulement le top)
+    setZones(rankedZones);
   };
 
   // Fonction pour récupérer la population d'un code postal
@@ -362,8 +362,9 @@ export default function ZoneChalandiseV3() {
         if (perCapitaMode) {
           enrichZonesWithPopulation(storeZones);
         } else {
-          // Filtrer et afficher selon critère
-          filterAndDisplayZones(storeZones);
+          // Classer les zones et charger toutes les géométries
+          rankAndFilterZones(storeZones);
+          loadGeometries(storeZones);
         }
       })
       .catch(err => {
@@ -390,8 +391,8 @@ export default function ZoneChalandiseV3() {
   // Recharger et refiltrer quand le critère change
   useEffect(() => {
     if (allZones.length > 0) {
-      console.log('🔄 Critère changé, refiltrage des zones...');
-      filterAndDisplayZones(allZones);
+      console.log('🔄 Critère changé, reclassement des zones...');
+      rankAndFilterZones(allZones);
     }
   }, [sortCriterion]);
 
@@ -400,7 +401,7 @@ export default function ZoneChalandiseV3() {
     if (allZones.length > 0 && perCapitaMode && !allZones[0].population) {
       enrichZonesWithPopulation(allZones);
     } else if (allZones.length > 0) {
-      filterAndDisplayZones(allZones);
+      rankAndFilterZones(allZones);
     }
   }, [perCapitaMode]);
 
@@ -569,9 +570,12 @@ export default function ZoneChalandiseV3() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* Zones colorées */}
+          {/* Zones colorées - Filtrer pour afficher seulement les top N */}
           {geoData
-            .filter(feature => visibleDeciles.has(feature.properties.decile))
+            .filter(feature => {
+              const zone = zones.find(z => z.cp === feature.properties.cp);
+              return zone && zone.rank! <= maxZonesToDisplay && visibleDeciles.has(feature.properties.decile);
+            })
             .map((feature, idx) => (
             <GeoJSON
               key={`zone-${idx}`}

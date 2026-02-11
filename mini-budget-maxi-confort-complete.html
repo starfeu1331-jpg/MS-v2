@@ -1,560 +1,146 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Mini Budget Maxi Confort - Le mois des prix bas chez Décor Discount">
-    <title>Mini Budget Maxi Confort | Décor Discount</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<div style="width: 100%; margin: 0; padding: 0; background-color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #1a1a1a;"><!-- ═══════════════════════════════════════════════════════════════
+       A) HERO SECTION - Impact immédiat
+  ═══════════════════════════════════════════════════════════════ -->
+<div style="background: linear-gradient(to bottom, #f0b719 0%, #f6d717 100%); padding: 48px 20px; text-align: center; position: relative; overflow: hidden;">
+  
+  <!-- Stickers flottants (badges visuels) -->
+  <div style="position: absolute; top: 20px; left: 20px; background-color: #e72166; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; transform: rotate(-5deg); box-shadow: 0 4px 12px rgba(231, 33, 102, 0.3); z-index: 1;">Prix bas</div>
+  <div style="position: absolute; top: 60px; right: 30px; background-color: #f6d717; color: #1a1a1a; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; transform: rotate(3deg); box-shadow: 0 4px 12px rgba(246, 215, 23, 0.3); z-index: 1;">Confort +++</div>
+  <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%) rotate(-2deg); background-color: #971b81; color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(151, 27, 129, 0.3); z-index: 2;">Opé limitée</div>
+<!-- Lignes blanches décoratives -->
+<img src="https://www.decor-discount.com/img/cms/lignes%20blanches.webp" alt="" style="position: absolute; right: -700px; bottom: -100px; width: 1200px; height: auto; opacity: 0.5; pointer-events: none; z-index: 0;" />
 
-        :root {
-            --color-primary: #FF4B12;
-            --color-secondary: #1A1A1A;
-            --color-bg: #FAFAFA;
-            --color-text: #2A2A2A;
-            --color-text-light: #666;
-            --color-white: #FFFFFF;
-            --color-success: #00C853;
-            --color-warning: #FFB300;
-        }
+<!-- Titre principal -->
+<h1 style="font-size: 48px; font-weight: 900; margin: 0 0 16px 0; color: #1a1a1a; letter-spacing: -1px; line-height: 1.1; position: relative; z-index: 1;">
+  <img src="https://www.decor-discount.com/img/cms/logo-mini-budget-maxi-confort@2x_1.webp" width="1125" height="149" />
+</h1>
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-            background: var(--color-bg);
-            color: var(--color-text);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+<!-- Sous-titre -->
+<p style="font-size: 22px; margin: 0 0 12px 0; color: #4a4a4a; font-weight: 500; position: relative; z-index: 1;">Le mois des prix bas. Plus que 3 mètres.</p>
 
-        @media (prefers-reduced-motion: reduce) {
-            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-        }
+<!-- Phrase d'humour subtile -->
+<p style="font-size: 16px; margin: 0 0 32px 0; color: #6a6a6a; font-style: italic; max-width: 500px; margin-left: auto; margin-right: auto; position: relative; z-index: 1;">Promis, vous allez trouver votre bonheur.</p>
 
-        /* Hero */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 2.5rem 1.5rem;
-            background: linear-gradient(135deg, #FF4B12 0%, #FF6B3D 100%);
-            color: var(--color-white);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
+<!-- CTA principal -->
+<a href="#deals" style="display: inline-block; background: linear-gradient(135deg, #e72166 0%, #971b81 100%); color: white; padding: 16px 40px; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 8px; box-shadow: 0 6px 20px rgba(231, 33, 102, 0.4); transition: transform 0.2s; position: relative; z-index: 1;">Voir les bons plans</a>
 
-        .hero-content {
-            position: relative;
-            z-index: 2;
-            max-width: 600px;
-        }
+</div>
+<!-- ═══════════════════════════════════════════════════════════════
+       B) SÉLECTION DE L'OPÉ - Deals produits
+  ═══════════════════════════════════════════════════════════════ -->
+<div id="deals" style="padding: 60px 20px; background-color: #fafafa;">
+  
+  <h2 style="font-size: 36px; font-weight: 800; text-align: center; margin: 0 0 16px 0; color: #1a1a1a;">Les petits nouveaux de l'opé</h2>
+  
+  <p style="text-align: center; font-size: 18px; color: #6a6a6a; margin: 0 0 60px 0; max-width: 600px; margin-left: auto; margin-right: auto;">Pour l'occasion, on a glissé quelques articles en plus. Ils n'étaient pas prévus au casting, mais ils ont clairement passé l'audition.</p>
 
-        .hero h1 {
-            font-size: clamp(2.5rem, 8vw, 4rem);
-            font-weight: 900;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-        }
-
-        .hero-subtitle {
-            font-size: clamp(1.1rem, 4vw, 1.5rem);
-            font-weight: 500;
-            margin-bottom: 2.5rem;
-            opacity: 0.95;
-        }
-
-        .btn-primary {
-            display: inline-block;
-            padding: 1.2rem 2.5rem;
-            background: var(--color-white);
-            color: var(--color-primary);
-            font-size: 1.2rem;
-            font-weight: 700;
-            text-decoration: none;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.16);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            cursor: pointer;
-            border: none;
-            margin-bottom: 1rem;
-        }
-
-        .btn-primary:hover,
-        .btn-primary:focus {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
-            outline: 3px solid rgba(255, 255, 255, 0.5);
-        }
-
-        .hero-spoiler {
-            font-size: 0.95rem;
-            opacity: 0.8;
-            font-style: italic;
-        }
-
-        /* Stickers */
-        .stickers-container {
-            position: relative;
-            height: 200px;
-            margin-top: 2rem;
-        }
-
-        .sticker {
-            position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.8rem 1.2rem;
-            background: var(--color-warning);
-            color: var(--color-secondary);
-            font-weight: 900;
-            font-size: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            transform: rotate(-5deg);
-            animation: stickerPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .sticker-1 { top: 0; right: 5%; animation-delay: 0.2s; }
-        .sticker-2 { top: 80px; left: 5%; background: var(--color-success); transform: rotate(8deg); animation-delay: 0.4s; }
-        .sticker-3 { bottom: 0; right: 15%; transform: rotate(-8deg); animation-delay: 0.6s; }
-
-        @keyframes stickerPop {
-            0% { transform: scale(0) rotate(-5deg); opacity: 0; }
-            50% { transform: scale(1.1) rotate(-5deg); }
-            100% { transform: scale(1) rotate(-5deg); }
-        }
-
-        .sticker.tapped {
-            animation: stickerTap 0.3s ease;
-        }
-
-        @keyframes stickerTap {
-            0%, 100% { transform: scale(1) rotate(-5deg); }
-            50% { transform: scale(1.15) rotate(-5deg); }
-        }
-
-        /* Sections */
-        section {
-            padding: 4rem 1.5rem;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-
-        section.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .section-title {
-            font-size: clamp(1.8rem, 5vw, 2.5rem);
-            font-weight: 800;
-            text-align: center;
-            margin-bottom: 2.5rem;
-            color: var(--color-secondary);
-        }
-
-        .section-subtitle {
-            text-align: center;
-            color: var(--color-text-light);
-            max-width: 600px;
-            margin: 0 auto 2.5rem;
-            font-size: 1.1rem;
-        }
-
-        /* Cards */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: var(--color-white);
-            padding: 2.5rem 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-        }
-
-        .card-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .card h3 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--color-secondary);
-        }
-
-        .card p {
-            color: var(--color-text-light);
-            font-size: 1rem;
-        }
-
-        /* Deals */
-        .deals-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 1.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .deal-card {
-            background: var(--color-white);
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            position: relative;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
-            border: 2px solid transparent;
-        }
-
-        .deal-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            border-color: var(--color-primary);
-        }
-
-        .deal-badge {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background: var(--color-primary);
-            color: var(--color-white);
-            padding: 0.4rem 0.8rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-        }
-
-        .deal-badge.success { background: var(--color-success); }
-        .deal-badge.warning { background: var(--color-warning); color: var(--color-secondary); }
-
-        .deal-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--color-secondary);
-        }
-
-        .deal-price {
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: var(--color-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .deal-note {
-            font-size: 0.85rem;
-            color: var(--color-text-light);
-            font-style: italic;
-        }
-
-        /* CTA Section */
-        .cta-section {
-            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%);
-            color: var(--color-white);
-            text-align: center;
-        }
-
-        .cta-section p {
-            font-size: 1.2rem;
-            margin-bottom: 2.5rem;
-            opacity: 0.9;
-        }
-
-        .btn-secondary {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: var(--color-primary);
-            color: var(--color-white);
-            font-size: 1.1rem;
-            font-weight: 700;
-            text-decoration: none;
-            border-radius: 12px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-secondary:hover,
-        .btn-secondary:focus {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            outline: 3px solid rgba(255, 75, 18, 0.5);
-        }
-
-        /* Footer */
-        .page-footer {
-            background: var(--color-secondary);
-            color: var(--color-white);
-            padding: 4rem 1.5rem;
-            text-align: center;
-        }
-
-        .page-footer p {
-            margin-bottom: 0.5rem;
-            opacity: 0.9;
-        }
-
-        .page-footer .tagline {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-top: 1.5rem;
-            opacity: 1;
-        }
-
-        /* Perf Banner */
-        .perf-banner {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(26, 26, 26, 0.95);
-            color: var(--color-white);
-            padding: 1rem 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
-            z-index: 1000;
-            transform: translateY(0);
-            transition: transform 0.3s ease;
-        }
-
-        .perf-banner.hidden {
-            transform: translateY(100%);
-        }
-
-        .perf-banner-text {
-            flex: 1;
-            font-size: 0.9rem;
-        }
-
-        .perf-banner-stats {
-            font-weight: 700;
-            color: var(--color-success);
-        }
-
-        .btn-dismiss {
-            padding: 0.5rem 1rem;
-            background: var(--color-white);
-            color: var(--color-secondary);
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .btn-dismiss:hover {
-            transform: scale(1.05);
-        }
-
-        /* Mobile */
-        @media (max-width: 768px) {
-            .hero { min-height: 90vh; }
-            .cards { grid-template-columns: 1fr; }
-            .deals-grid { grid-template-columns: 1fr; }
-            .perf-banner { flex-direction: column; text-align: center; }
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Hero -->
-    <section class="hero visible">
-        <div class="hero-content">
-            <h1>Mini budget.<br>Maxi confort.</h1>
-            <p class="hero-subtitle">Le mois des prix bas. Ton banquier nous a bloqués.</p>
-            
-            <a href="#deals" class="btn-primary">Je veux les bons plans</a>
-            
-            <div class="stickers-container">
-                <div class="sticker sticker-1">-30%</div>
-                <div class="sticker sticker-2">PRIX MINI</div>
-                <div class="sticker sticker-3">VITE!</div>
-            </div>
-            
-            <p class="hero-spoiler">Spoiler : pas besoin de vendre un rein.</p>
+  <!-- Grid de produits -->
+  <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; padding: 0 20px;">
+    
+    <!-- Produit 1 : Sol PVC -->
+    <div style="background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
+      <a href="https://www.decor-discount.com/7-revetement-de-sol" style="text-decoration: none; color: inherit; display: block;">
+        <div style="width: 100%; height: 300px; overflow: hidden;">
+          <img src="https://www.decor-discount.com/img/cms/89054.jpg" alt="Sol PVC Chêne Naturel" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
         </div>
-    </section>
-
-    <!-- How It Works -->
-    <section id="how-it-works">
-        <h2 class="section-title">Comment ça marche ?</h2>
-        <p class="section-subtitle">Trois étapes. Zéro galère.</p>
-        
-        <div class="cards">
-            <div class="card">
-                <div class="card-icon">📱</div>
-                <h3>Tu scannes</h3>
-                <p>Le QR code à l'entrée. Comme un pro du shopping 2.0.</p>
-            </div>
-            
-            <div class="card">
-                <div class="card-icon">🔍</div>
-                <h3>Tu repères</h3>
-                <p>Les macarons "Mini Budget Maxi Confort" en magasin. Impossible de louper.</p>
-            </div>
-            
-            <div class="card">
-                <div class="card-icon">✨</div>
-                <h3>Tu repars heureux</h3>
-                <p>Plus confortable, moins ruiné. Ton salon te dit merci.</p>
-            </div>
+        <div style="padding: 24px;">
+          <h3 style="font-size: 20px; font-weight: 700; margin: 0 0 12px 0; color: #1a1a1a;">Sol PVC sur feutre Chêne Naturel</h3>
+          <p style="font-size: 14px; color: #666; margin: 0 0 20px 0; line-height: 1.5;">Beauflor Texstyle • 2,5mm • Résistant grand passage</p>
+          <div style="margin-bottom: 12px;">
+            <span style="font-size: 16px; color: #999; text-decoration: line-through; margin-right: 8px;">12,49€</span>
+            <span style="background-color: #e72166; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 700;">-20%</span>
+          </div>
+          <div style="font-size: 28px; font-weight: 800; color: #e72166; margin-bottom: 4px;">9,99 €</div>
+          <div style="font-size: 14px; color: #666;">Le M²</div>
         </div>
-    </section>
+      </a>
+    </div>
 
-    <!-- Deals -->
-    <section id="deals">
-        <h2 class="section-title">Les deals de l'opé</h2>
-        <p class="section-subtitle">On ne met pas tout. Juste ce qui envoie.</p>
-        
-        <div class="deals-grid" id="dealsGrid"></div>
-    </section>
-
-    <!-- CTA -->
-    <section class="cta-section">
-        <h2 class="section-title">On t'aide à trouver vite</h2>
-        <p>T'es devant l'entrée ? Parfait.<br>Les macarons "Mini Budget Maxi Confort" te guident.</p>
-        <button class="btn-secondary" id="btnEnter">Ok, je rentre</button>
-    </section>
-
-    <!-- Footer -->
-    <footer class="page-footer">
-        <p><strong>Opération du 02/02 au 08/03</strong></p>
-        <p>Valable dans les 23 magasins Décor Discount</p>
-        <p class="tagline">Décor Discount — le confort sans l'addition salée.</p>
-    </footer>
-
-    <!-- Perf Banner -->
-    <aside class="perf-banner" id="perfBanner">
-        <div class="perf-banner-text">
-            <strong>Chargement :</strong> rapide. Comme toi quand tu vois <span class="perf-banner-stats">-20%</span>.
+    <!-- Produit 2 : Tasseau -->
+    <div style="background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
+      <a href="https://www.decor-discount.com/7-revetement-de-sol" style="text-decoration: none; color: inherit; display: block;">
+        <div style="width: 100%; height: 300px; overflow: hidden;">
+          <img src="https://www.decor-discount.com/img/cms/84678.PNG" alt="Tasseau Sonoma" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
         </div>
-        <button class="btn-dismiss" id="btnDismiss">Ok j'avoue</button>
-    </aside>
+        <div style="padding: 24px;">
+          <h3 style="font-size: 20px; font-weight: 700; margin: 0 0 12px 0; color: #1a1a1a;">Tasseau Sonoma</h3>
+          <p style="font-size: 14px; color: #666; margin: 0 0 20px 0; line-height: 1.5;">Décor chêne • Finition murale moderne</p>
+          <div style="margin-bottom: 12px;">
+            <span style="font-size: 16px; color: #999; text-decoration: line-through; margin-right: 8px;">69,00€</span>
+            <span style="background-color: #e72166; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 700;">-10€</span>
+          </div>
+          <div style="font-size: 28px; font-weight: 800; color: #e72166; margin-bottom: 4px;">59,00 €</div>
+          <div style="font-size: 14px; color: #666;">L'unité</div>
+        </div>
+      </a>
+    </div>
 
-    <script>
-        // TODO: CONFIGURATION DES DEALS
-        const DEALS = [
-            { name: "Canapé 3 places tissu gris", price: "299€", badge: "PRIX CHOC", badgeType: "primary" },
-            { name: "Matelas mémoire de forme 140x190", price: "199€", badge: "TOP VENTE", badgeType: "success" },
-            { name: "Fauteuil relax microfibre", price: "à partir de 149€", badge: "STOCK LIMITÉ", badgeType: "warning" },
-            { name: "Table basse design chêne", price: "79€", badge: "PRIX MINI", badgeType: "primary" },
-            { name: "Lampadaire LED", price: "à prix mini en magasin", badge: "NOUVEAU", badgeType: "success" },
-            { name: "Tapis salon 160x230", price: "à partir de 49€", badge: "-30%", badgeType: "primary" },
-            { name: "Lot 4 chaises scandinaves", price: "99€", badge: "BEST DEAL", badgeType: "primary" },
-            { name: "Étagère murale 5 niveaux", price: "à prix mini en magasin", badge: "", badgeType: "" }
-        ];
+    <!-- Produit 3 : Rideaux -->
+    <div style="background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
+      <a href="https://www.decor-discount.com/4-decoration-interieure" style="text-decoration: none; color: inherit; display: block;">
+        <div style="width: 100%; height: 300px; overflow: hidden;">
+          <img src="https://www.decor-discount.com/img/cms/79999.jpg" alt="Rideaux occultants" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
+        </div>
+        <div style="padding: 24px;">
+          <h3 style="font-size: 20px; font-weight: 700; margin: 0 0 12px 0; color: #1a1a1a;">Rideaux occultants courts</h3>
+          <p style="font-size: 14px; color: #666; margin: 0 0 20px 0; line-height: 1.5;">Occultant total • Plusieurs coloris disponibles</p>
+          <div style="margin-bottom: 12px; height: 28px;"></div>
+          <div style="font-size: 28px; font-weight: 800; color: #e72166; margin-bottom: 4px;">12,99 €</div>
+          <div style="font-size: 14px; color: #666;">L'unité</div>
+        </div>
+      </a>
+    </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            injectDeals();
-            setupScrollReveal();
-            setupStickers();
-            setupPerfBanner();
-            setupCTAButton();
-            setupSmoothScroll();
-        });
+  </div>
 
-        function injectDeals() {
-            const dealsGrid = document.getElementById('dealsGrid');
-            DEALS.forEach(deal => {
-                const card = document.createElement('div');
-                card.className = 'deal-card';
-                const badgeHTML = deal.badge ? `<div class="deal-badge ${deal.badgeType}">${deal.badge}</div>` : '';
-                card.innerHTML = `
-                    ${badgeHTML}
-                    <h3 class="deal-name">${deal.name}</h3>
-                    <div class="deal-price">${deal.price}</div>
-                `;
-                dealsGrid.appendChild(card);
-            });
-        }
+</div>
+<!-- ═══════════════════════════════════════════════════════════════
+       C) AVANT/APRÈS - Comparaison visuelle en grid
+  ═══════════════════════════════════════════════════════════════ -->
+<div style="padding: 80px 20px; background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%); text-align: center;">
+<h2 style="font-size: 40px; font-weight: 900; margin: 0 0 60px 0; color: #1a1a1a; letter-spacing: -0.5px;">Avant / Après</h2>
+<!-- Grid 2 colonnes -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; max-width: 1000px; margin: 0 auto; padding: 0 20px;">
+  
+  <!-- AVANT Card -->
+  <div style="text-align: center;">
+    <div style="position: relative; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 32px rgba(231, 33, 102, 0.2);">
+      <img src="https://www.decor-discount.com/img/cms/Avant.png" alt="Avant" style="width: 100%; height: 380px; object-fit: cover; display: block;" />
+      <div style="position: absolute; top: 16px; left: 16px; background-color: #e72166; color: white; padding: 10px 20px; border-radius: 20px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(231, 33, 102, 0.4);">Avant</div>
+    </div>
+  </div>
+  
+  <!-- APRÈS Card -->
+  <div style="text-align: center;">
+    <div style="position: relative; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 32px rgba(151, 27, 129, 0.2);">
+      <img src="https://www.decor-discount.com/img/cms/Après.png" alt="Après" style="width: 100%; height: 380px; object-fit: cover; display: block;" />
+      <div style="position: absolute; top: 16px; right: 16px; background: linear-gradient(135deg, #e72166 0%, #971b81 100%); color: white; padding: 10px 20px; border-radius: 20px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(151, 27, 129, 0.4);">Après</div>
+    </div>
+  </div>
 
-        function setupScrollReveal() {
-            const sections = document.querySelectorAll('section:not(.hero)');
-            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (prefersReducedMotion) {
-                sections.forEach(s => s.classList.add('visible'));
-                return;
-            }
-            const observer = new IntersectionObserver(entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) entry.target.classList.add('visible');
-                });
-            }, { threshold: 0.1 });
-            sections.forEach(s => observer.observe(s));
-        }
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════
+       D) FIN - Rappel dates + CTA final
+  ═══════════════════════════════════════════════════════════════ -->
+<div style="padding: 60px 20px; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); text-align: center; color: #ffffff;">
+  
+  <!-- Dates -->
+  <div style="background-color: #e72166; display: inline-block; padding: 12px 28px; border-radius: 8px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(231, 33, 102, 0.5);">
+    <p style="font-size: 18px; font-weight: bold; margin: 0; color: #ffffff;">📅 Du 02 février au 08 mars 2026</p>
+  </div>
+  
+  <!-- Titre -->
+  <h2 style="font-size: 32px; font-weight: 800; margin: 0 0 16px 0; color: #ffffff;">Dans nos 23 magasins</h2>
+  
+  <!-- Message -->
+  <p style="font-size: 18px; margin: 0 0 32px 0; color: #d0d0d0; max-width: 600px; margin-left: auto; margin-right: auto;">Rendez-vous en magasin pour découvrir tous les produits de l'opération Mini Budget Maxi Confort.</p>
+  
+  <!-- CTA secondaire -->
+  <a href="https://magasins.decor-discount.com/decordiscount/fr" style="display: inline-block; background-color: #f6d717; color: #1a1a1a; padding: 16px 40px; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 8px; box-shadow: 0 6px 20px rgba(246, 215, 23, 0.3);">Trouver un magasin</a>
+  
+  <!-- Mention légale mini -->
+  <p style="font-size: 13px; margin: 40px 0 0 0; color: #8a8a8a; line-height: 1.4;">Offres valables dans la limite des stocks disponibles. Non cumulables avec d'autres promotions en cours.<br />Décor Discount - Réseau de 23 magasins spécialisés en revêtements de sol et décoration.</p>
 
-        function setupStickers() {
-            document.querySelectorAll('.sticker').forEach(sticker => {
-                sticker.addEventListener('click', () => {
-                    sticker.classList.remove('tapped');
-                    void sticker.offsetWidth;
-                    sticker.classList.add('tapped');
-                    setTimeout(() => sticker.classList.remove('tapped'), 300);
-                });
-            });
-        }
-
-        function setupPerfBanner() {
-            const banner = document.getElementById('perfBanner');
-            const dismiss = document.getElementById('btnDismiss');
-            dismiss.addEventListener('click', () => {
-                banner.classList.add('hidden');
-                sessionStorage.setItem('perfBannerDismissed', 'true');
-            });
-            if (sessionStorage.getItem('perfBannerDismissed') === 'true') {
-                banner.classList.add('hidden');
-            }
-        }
-
-        function setupCTAButton() {
-            document.getElementById('btnEnter').addEventListener('click', () => {
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            });
-        }
-
-        function setupSmoothScroll() {
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', e => {
-                    const href = anchor.getAttribute('href');
-                    if (href === '#') return;
-                    e.preventDefault();
-                    const target = document.querySelector(href);
-                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-            });
-        }
-    </script>
-
-</body>
-</html>
+</div>
+</div>
