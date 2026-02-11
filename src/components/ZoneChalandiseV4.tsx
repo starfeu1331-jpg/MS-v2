@@ -78,7 +78,7 @@ export default function ZoneChalandiseV4() {
     fetch('/api/stores?action=list')
       .then(res => res.json())
       .then(data => {
-        const storesData = data.data || [];
+        const storesData = data.stores || [];
         setStores(storesData);
         
         console.log('🏪 Magasins chargés:', storesData);
