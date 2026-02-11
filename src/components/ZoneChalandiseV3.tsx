@@ -55,7 +55,7 @@ export default function ZoneChalandiseV3() {
   const [storeStats, setStoreStats] = useState<any>(null);
 
   // Fonction pour filtrer et afficher les zones selon le critère actif
-  const rankAndFilterZones = (zonesToRank: Zone[]) => {
+  const rankZones = (zonesToRank: Zone[]): Zone[] => {
     const criterionLabel = perCapitaMode ? 
       (sortCriterion === 'ca' ? 'CA/Habitant' : 
        sortCriterion === 'clients' ? 'Clients/Habitant' : 
@@ -95,8 +95,7 @@ export default function ZoneChalandiseV3() {
       console.log(`  ${z.rank}. ${z.cp} (${z.ville}): ${value}`);
     });
     
-    // Stocker TOUTES les zones classées (pas seulement le top)
-    setZones(rankedZones);
+    return rankedZones;
   };
 
   // Fonction pour récupérer la population d'un code postal
@@ -155,9 +154,10 @@ export default function ZoneChalandiseV3() {
     setLoadingPopulation(false);
     
     // Classer les zones pour ajouter les rangs
-    rankAndFilterZones(enrichedZones);
-    // Charger les géométries
-    loadGeometries(enrichedZones);
+    const ranked = rankZones(enrichedZones);
+    setZones(ranked);
+    // Charger les géométries avec les zones enrichies
+    loadGeometries(ranked);
   };
 
   // Fonction d'export Excel
@@ -365,9 +365,10 @@ export default function ZoneChalandiseV3() {
           enrichZonesWithPopulation(storeZones);
         } else {
           // Classer les zones pour ajouter les rangs
-          rankAndFilterZones(storeZones);
-          // Charger les géométries directement comme dans ZoneChalandiseSimple
-          loadGeometries(storeZones);
+          const ranked = rankZones(storeZones);
+          setZones(ranked);
+          // Charger les géométries avec les zones enrichies
+          loadGeometries(ranked);
         }
       })
       .catch(err => {
@@ -395,8 +396,9 @@ export default function ZoneChalandiseV3() {
   useEffect(() => {
     if (allZones.length > 0) {
       console.log('🔄 Critère changé, reclassement et rechargement...');
-      rankAndFilterZones(allZones);
-      loadGeometries(allZones);
+      const ranked = rankZones(allZones);
+      setZones(ranked);
+      loadGeometries(ranked);
     }
   }, [sortCriterion]);
 
@@ -405,8 +407,9 @@ export default function ZoneChalandiseV3() {
     if (allZones.length > 0 && perCapitaMode && !allZones[0].population) {
       enrichZonesWithPopulation(allZones);
     } else if (allZones.length > 0) {
-      rankAndFilterZones(allZones);
-      loadGeometries(allZones);
+      const ranked = rankZones(allZones);
+      setZones(ranked);
+      loadGeometries(ranked);
     }
   }, [perCapitaMode]);
 
