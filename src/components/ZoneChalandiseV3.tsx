@@ -154,8 +154,9 @@ export default function ZoneChalandiseV3() {
     setAllZones(enrichedZones);
     setLoadingPopulation(false);
     
-    // Filtrer et afficher les zones selon le critère
-    filterAndDisplayZones(enrichedZones);
+    // Classer les zones et charger les géométries
+    rankAndFilterZones(enrichedZones);
+    loadGeometries(enrichedZones);
   };
 
   // Fonction d'export Excel
