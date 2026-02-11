@@ -6,36 +6,36 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import * as XLSX from 'xlsx';
 
-// Icône personnalisée pour les magasins (pictogramme magasin)
-const storeIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-      <!-- Ombre -->
-      <ellipse cx="18" cy="32" rx="10" ry="2" fill="rgba(0,0,0,0.2)"/>
-      
-      <!-- Cercle principal rouge -->
-      <circle cx="18" cy="16" r="13" fill="#dc2626" stroke="#fff" stroke-width="2.5"/>
-      
-      <!-- Icône magasin simplifié -->
-      <g transform="translate(18, 16)">
-        <!-- Toit -->
-        <path d="M -6,-6 L 0,-9 L 6,-6 Z" fill="#fff" opacity="0.95"/>
-        <!-- Façade -->
-        <rect x="-6" y="-6" width="12" height="10" fill="#fff" opacity="0.95"/>
-        <!-- Porte -->
-        <rect x="-2" y="0" width="4" height="4" fill="#dc2626"/>
-        <!-- Fenêtres -->
-        <rect x="-5" y="-4" width="2" height="2" fill="#dc2626" opacity="0.6"/>
-        <rect x="3" y="-4" width="2" height="2" fill="#dc2626" opacity="0.6"/>
-      </g>
-      
-      <!-- Point lumineux -->
-      <circle cx="18" cy="16" r="4" fill="#fff" opacity="0.3"/>
-    </svg>
-  `),
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
-  popupAnchor: [0, -18],
+// Icône personnalisée pour les magasins (DivIcon avec SVG lucide)
+const storeIcon = L.divIcon({
+  html: `
+    <div style="position: relative; width: 40px; height: 40px;">
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 36px;
+        height: 36px;
+        background: #dc2626;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </div>
+    </div>
+  `,
+  className: 'custom-store-marker',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -20],
 });
 
 interface Store {
