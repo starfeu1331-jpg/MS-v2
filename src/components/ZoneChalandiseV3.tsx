@@ -154,8 +154,9 @@ export default function ZoneChalandiseV3() {
     setAllZones(enrichedZones);
     setLoadingPopulation(false);
     
-    // Classer les zones et charger les géométries
+    // Classer les zones pour ajouter les rangs
     rankAndFilterZones(enrichedZones);
+    // Charger les géométries
     loadGeometries(enrichedZones);
   };
 
@@ -363,8 +364,9 @@ export default function ZoneChalandiseV3() {
         if (perCapitaMode) {
           enrichZonesWithPopulation(storeZones);
         } else {
-          // Classer les zones et charger toutes les géométries
+          // Classer les zones pour ajouter les rangs
           rankAndFilterZones(storeZones);
+          // Charger les géométries directement comme dans ZoneChalandiseSimple
           loadGeometries(storeZones);
         }
       })
@@ -392,8 +394,9 @@ export default function ZoneChalandiseV3() {
   // Recharger et refiltrer quand le critère change
   useEffect(() => {
     if (allZones.length > 0) {
-      console.log('🔄 Critère changé, reclassement des zones...');
+      console.log('🔄 Critère changé, reclassement et rechargement...');
       rankAndFilterZones(allZones);
+      loadGeometries(allZones);
     }
   }, [sortCriterion]);
 
@@ -403,6 +406,7 @@ export default function ZoneChalandiseV3() {
       enrichZonesWithPopulation(allZones);
     } else if (allZones.length > 0) {
       rankAndFilterZones(allZones);
+      loadGeometries(allZones);
     }
   }, [perCapitaMode]);
 
@@ -472,6 +476,10 @@ export default function ZoneChalandiseV3() {
 
         // Calculer le rang percentile de cette zone (0 à 1)
         const rank = sortedZones.findIndex(z => z.cp === zone.cp);
+        if (rank === -1) {
+          console.error(`❌ CP ${normalizedCP} (${zone.ville}): Non trouvé dans sortedZones ! CP original: "${zone.cp}"`);
+          continue; // Skip cette zone
+        }
         const percentile = rank / (sortedZones.length - 1 || 1);
         
         // Attribuer une couleur basée sur le décile (10 tranches de 10%)
