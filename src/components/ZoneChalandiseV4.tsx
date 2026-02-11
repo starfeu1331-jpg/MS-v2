@@ -452,7 +452,7 @@ export default function ZoneChalandiseV4() {
   return (
     <>
       {/* Carte plein écran */}
-      <div className="h-full w-full relative">
+      <div className="h-full w-full">
         <MapContainer
           center={center}
           zoom={6}
@@ -515,166 +515,299 @@ export default function ZoneChalandiseV4() {
               </Marker>
             ))}
         </MapContainer>
+      </div>
 
-        {/* Panneau de contrôle */}
-        <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg w-80 max-h-[calc(100vh-2rem)] overflow-y-auto z-[1000]">
-          {/* Header */}
-          <div 
-            className="flex items-center justify-between p-4 border-b cursor-pointer hover:bg-gray-50"
-            onClick={() => setPanelOpen(!panelOpen)}
-          >
-            <h2 className="font-bold text-lg">Zone de Chalandise V4</h2>
-            {panelOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </div>
-
-          {panelOpen && (
-            <div className="p-4 space-y-4">
-              {/* Sélection magasin */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Magasin
-                </label>
-                <select
-                  value={selectedStore}
-                  onChange={(e) => setSelectedStore(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Sélectionner un magasin...</option>
-                  {stores
-                    .filter(s => s.lat && s.lon)
-                    .map(store => (
-                      <option key={store.code} value={store.code}>
-                        {store.code} - {store.nom}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* Critère de tri */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Critère de classement
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSortCriterion('ca')}
-                    className={`flex-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
-                      sortCriterion === 'ca'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    CA
-                  </button>
-                  <button
-                    onClick={() => setSortCriterion('clients')}
-                    className={`flex-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
-                      sortCriterion === 'clients'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Clients
-                  </button>
-                  <button
-                    onClick={() => setSortCriterion('transactions')}
-                    className={`flex-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
-                      sortCriterion === 'transactions'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Transactions
-                  </button>
-                </div>
-              </div>
-
-              {/* Mode per capita */}
-              <div>
-                <button
-                  onClick={() => setPerCapitaMode(!perCapitaMode)}
-                  disabled={loading || !selectedStore}
-                  className={`w-full px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                    perCapitaMode
-                      ? 'bg-purple-600 text-white hover:bg-purple-700'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {getPerCapitaLabel()}
-                </button>
-              </div>
-
-              {/* Légende interactive */}
-              {zones.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Légende (cliquer pour filtrer)
-                  </label>
-                  <div className="space-y-1">
-                    {[9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map(decile => {
-                      const count = zones.filter(z => z.decile === decile).length;
-                      if (count === 0) return null;
-                      
-                      return (
-                        <div
-                          key={decile}
-                          onClick={() => toggleDecile(decile)}
-                          className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={visibleDeciles.has(decile)}
-                            onChange={() => toggleDecile(decile)}
-                            className="w-4 h-4 cursor-pointer"
-                          />
-                          <div
-                            className="w-8 h-4 rounded"
-                            style={{ backgroundColor: COLORS[decile] }}
-                          />
-                          <span className="text-sm flex-1">
-                            {decile === 9 ? 'Top 10%' : 
-                             decile === 8 ? 'Top 20%' :
-                             decile === 7 ? 'Top 30%' :
-                             decile === 6 ? 'Top 40%' :
-                             decile === 5 ? 'Médian' :
-                             decile === 4 ? 'Bas 50%' :
-                             decile === 3 ? 'Bas 40%' :
-                             decile === 2 ? 'Bas 30%' :
-                             decile === 1 ? 'Bas 20%' :
-                             'Bas 10%'}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            ({count})
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Export */}
-              {zones.length > 0 && (
-                <button
-                  onClick={exportToExcel}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm"
-                >
-                  <Download size={16} />
-                  Exporter Excel
-                </button>
-              )}
-
-              {/* Stats */}
-              {zones.length > 0 && (
-                <div className="text-xs text-gray-500 pt-2 border-t">
-                  <p>{zones.length} zones chargées</p>
-                  <p>{geoData.filter(f => visibleDeciles.has(f.properties.decile)).length} géométries visibles</p>
-                  {loading && <p className="text-blue-600">Chargement...</p>}
-                </div>
-              )}
-            </div>
-          )}
+      {/* Panneau de contrôle - FIXE en haut à droite */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: '100px',
+          right: '20px',
+          zIndex: 9999,
+          minWidth: panelOpen ? '340px' : 'auto',
+          backgroundColor: 'rgba(17, 24, 39, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          border: '1px solid rgba(75, 85, 99, 0.3)',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Header */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: panelOpen ? '14px 16px' : '10px 14px',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%)',
+            cursor: 'pointer',
+          }}
+          onClick={() => setPanelOpen(!panelOpen)}
+        >
+          <h3 style={{ 
+            fontWeight: '600', 
+            color: '#93c5fd', 
+            fontSize: panelOpen ? '15px' : '13px',
+            margin: 0,
+          }}>
+            {panelOpen ? '🗺️ Zone de Chalandise V4' : '🗺️'}
+          </h3>
+          <button style={{ 
+            color: '#60a5fa', 
+            background: 'none', 
+            border: 'none', 
+            cursor: 'pointer',
+            display: 'flex',
+            padding: 0
+          }}>
+            {panelOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
         </div>
+
+        {panelOpen && (
+          <div style={{ padding: '16px' }}>
+            {/* Sélection magasin */}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: '#d1d5db', 
+                marginBottom: '8px' 
+              }}>
+                Magasin:
+              </label>
+              <select
+                value={selectedStore}
+                onChange={(e) => setSelectedStore(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  border: '1.5px solid rgba(75, 85, 99, 0.6)',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                  color: '#f3f4f6',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="">Sélectionner un magasin...</option>
+                {stores
+                  .filter(s => s.lat && s.lon)
+                  .map(store => (
+                    <option key={store.code} value={store.code}>
+                      {store.code} - {store.nom}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Critère de tri */}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: '#d1d5db', 
+                marginBottom: '8px' 
+              }}>
+                Critère de classement:
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  onClick={() => setSortCriterion('ca')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: sortCriterion === 'ca' ? '2px solid #3b82f6' : '1px solid rgba(75, 85, 99, 0.6)',
+                    backgroundColor: sortCriterion === 'ca' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.9)',
+                    color: sortCriterion === 'ca' ? '#60a5fa' : '#9ca3af',
+                    cursor: 'pointer',
+                  }}
+                >
+                  💰 CA
+                </button>
+                <button
+                  onClick={() => setSortCriterion('clients')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: sortCriterion === 'clients' ? '2px solid #3b82f6' : '1px solid rgba(75, 85, 99, 0.6)',
+                    backgroundColor: sortCriterion === 'clients' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.9)',
+                    color: sortCriterion === 'clients' ? '#60a5fa' : '#9ca3af',
+                    cursor: 'pointer',
+                  }}
+                >
+                  👥 Clients
+                </button>
+                <button
+                  onClick={() => setSortCriterion('transactions')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: sortCriterion === 'transactions' ? '2px solid #3b82f6' : '1px solid rgba(75, 85, 99, 0.6)',
+                    backgroundColor: sortCriterion === 'transactions' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.9)',
+                    color: sortCriterion === 'transactions' ? '#60a5fa' : '#9ca3af',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🛒 Tx
+                </button>
+              </div>
+            </div>
+
+            {/* Mode per capita */}
+            <div style={{ marginBottom: '14px' }}>
+              <button
+                onClick={() => setPerCapitaMode(!perCapitaMode)}
+                disabled={loading || !selectedStore}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '10px',
+                  border: perCapitaMode ? '2px solid #9333ea' : '1px solid rgba(75, 85, 99, 0.6)',
+                  backgroundColor: perCapitaMode ? 'rgba(147, 51, 234, 0.2)' : 'rgba(31, 41, 55, 0.9)',
+                  color: perCapitaMode ? '#c084fc' : '#9ca3af',
+                  cursor: (loading || !selectedStore) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || !selectedStore) ? 0.5 : 1,
+                }}
+              >
+                {getPerCapitaLabel()}
+              </button>
+            </div>
+
+            {/* Légende interactive */}
+            {zones.length > 0 && (
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '13px', 
+                  fontWeight: '600', 
+                  color: '#d1d5db', 
+                  marginBottom: '8px' 
+                }}>
+                  Légende (cliquer pour filtrer):
+                </label>
+                <div style={{ 
+                  maxHeight: '200px', 
+                  overflowY: 'auto',
+                  backgroundColor: 'rgba(31, 41, 55, 0.6)',
+                  borderRadius: '10px',
+                  padding: '8px'
+                }}>
+                  {[9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map(decile => {
+                    const count = zones.filter(z => z.decile === decile).length;
+                    if (count === 0) return null;
+                    
+                    return (
+                      <div
+                        key={decile}
+                        onClick={() => toggleDecile(decile)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          backgroundColor: visibleDeciles.has(decile) ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                          marginBottom: '4px'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleDeciles.has(decile)}
+                          onChange={() => toggleDecile(decile)}
+                          style={{ width: '14px', height: '14px', cursor: 'pointer' }}
+                        />
+                        <div
+                          style={{ 
+                            width: '24px', 
+                            height: '16px', 
+                            borderRadius: '4px',
+                            backgroundColor: COLORS[decile],
+                            border: '1px solid rgba(255,255,255,0.2)'
+                          }}
+                        />
+                        <span style={{ fontSize: '12px', color: '#e5e7eb', flex: 1 }}>
+                          {decile === 9 ? 'Top 10%' : 
+                           decile === 8 ? 'Top 20%' :
+                           decile === 7 ? 'Top 30%' :
+                           decile === 6 ? 'Top 40%' :
+                           decile === 5 ? 'Médian' :
+                           decile === 4 ? 'Bas 50%' :
+                           decile === 3 ? 'Bas 40%' :
+                           decile === 2 ? 'Bas 30%' :
+                           decile === 1 ? 'Bas 20%' :
+                           'Bas 10%'}
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                          ({count})
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Export */}
+            {zones.length > 0 && (
+              <button
+                onClick={exportToExcel}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '10px 12px',
+                  backgroundColor: 'rgba(34, 197, 94, 0.9)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '14px'
+                }}
+              >
+                <Download size={16} />
+                Exporter Excel
+              </button>
+            )}
+
+            {/* Stats */}
+            {zones.length > 0 && (
+              <div style={{ 
+                fontSize: '12px', 
+                color: '#9ca3af',
+                backgroundColor: 'rgba(31, 41, 55, 0.6)',
+                padding: '10px',
+                borderRadius: '8px',
+                borderTop: '1px solid rgba(75, 85, 99, 0.4)'
+              }}>
+                <div>{zones.length} zones chargées</div>
+                <div>{geoData.filter(f => visibleDeciles.has(f.properties.decile)).length} géométries visibles</div>
+                {loading && <div style={{ color: '#60a5fa', marginTop: '4px' }}>Chargement...</div>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
