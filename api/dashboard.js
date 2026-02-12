@@ -111,7 +111,7 @@ export default async function handler(req, res) {
         SELECT 
           TO_CHAR(date, 'YYYY-MM') as mois,
           SUM(ca)::float as ca,
-          COUNT(*)::int as tickets
+          COUNT(DISTINCT facture)::int as tickets
         FROM transactions
         WHERE date >= '${startDate}' AND date <= '${endDate}' AND depot NOT IN ('1', '41', '42') AND ca > 0
         GROUP BY TO_CHAR(date, 'YYYY-MM')
@@ -261,7 +261,7 @@ export default async function handler(req, res) {
         SELECT 
           TO_CHAR(date, 'YYYY-MM') as mois,
           SUM(ca)::float as ca,
-          COUNT(*)::int as tickets
+          COUNT(DISTINCT facture)::int as tickets
         FROM transactions
         WHERE date >= '${startDateStr}' AND date <= '${endDateStr}' AND depot NOT IN ('1', '41', '42') AND ca > 0
         GROUP BY TO_CHAR(date, 'YYYY-MM')
@@ -403,9 +403,9 @@ export default async function handler(req, res) {
         SELECT 
           TO_CHAR(date, 'YYYY-MM') as mois,
           SUM(ca)::float as ca,
-          COUNT(*)::int as tickets
+          COUNT(DISTINCT facture)::int as tickets
         FROM transactions
-        WHERE depot NOT IN (\'1\', \'41\', \'42\') AND ca > 0
+        WHERE depot NOT IN ('1', '41', '42') AND ca > 0
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY mois
       `)
@@ -548,7 +548,7 @@ export default async function handler(req, res) {
       SELECT 
         TO_CHAR(date, 'YYYY-MM') as mois,
         SUM(ca)::float as ca,
-        COUNT(*)::int as tickets
+        COUNT(DISTINCT facture)::int as tickets
       FROM transactions
       WHERE date >= '${startDateYear}' AND date <= '${endDateYear}' AND depot NOT IN ('1', '41', '42') AND ca > 0
       GROUP BY TO_CHAR(date, 'YYYY-MM')
