@@ -169,7 +169,7 @@ export default function SegmentDetail({
         color: 'purple',
         icon: '👑💎',
         description: 'Excellence absolue: les meilleurs clients',
-        criteria: 'RFM ≥ 544 (tous très élevés)',
+        criteria: 'R=5 ET F=5 ET M=5',
         action: 'VIP absolu ! Chouchouter, privilèges exclusifs, accès prioritaire'
       },
       'Champions': {
@@ -197,14 +197,14 @@ export default function SegmentDetail({
         color: 'red',
         icon: '💔',
         description: 'Clients inactifs depuis longtemps',
-        criteria: 'R≤2 (pas À Risque)',
+        criteria: 'R≤2 ET F<4',
         action: 'Dernière chance : offre exceptionnelle ou laisser partir'
       },
       'Nouveaux': {
         color: 'cyan',
         icon: '✨',
-        description: 'Nouveaux clients avec un seul achat',
-        criteria: 'F=1',
+        description: 'Nouveaux clients récents avec peu d\'achats',
+        criteria: 'F≤2 ET R≥4',
         action: 'Fidélisation ! Offre de bienvenue, communication régulière'
       },
       'Occasionnels': {

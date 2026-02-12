@@ -105,38 +105,42 @@ export function calculateClientRFM(clientData: any, allClientsData: any[] | Map<
   const RFM = R * 100 + F * 10 + M
   
   // Déterminer le segment (ordre important: du plus spécifique au plus général)
+  // Basé sur les critères stricts définis dans la documentation
   let segment = ''
   let color = ''
   let icon = ''
   
   if (R === 5 && F === 5 && M === 5) {
-    segment = 'Ultra Champions'
+    segment = 'Ultra Champions'  // Excellence absolue
     color = 'purple'
     icon = '👑💎'
   } else if (R >= 4 && F >= 4 && M >= 4) {
-    segment = 'Champions'
+    segment = 'Champions'  // Excellents partout
     color = 'emerald'
     icon = '👑'
-  } else if (R >= 3 && F >= 3 && M >= 3) {
-    segment = 'Loyaux'
-    color = 'blue'
-    icon = '💎'
-  } else if (R >= 4 && F === 3) {
-    segment = 'Nouveaux'
+  } else if (F >= 4) {
+    // Tous les clients avec haute fréquence (F≥4)
+    if (R <= 2) {
+      segment = 'À Risque'  // Anciens bons clients (R≤2 ET F≥4)
+      color = 'orange'
+      icon = '⚠️'
+    } else {
+      segment = 'Loyaux'  // Clients fidèles (F≥4, pas Champions)
+      color = 'blue'
+      icon = '💎'
+    }
+  } else if (F <= 2 && R >= 4) {
+    segment = 'Nouveaux'  // Clients récents avec peu d'achats
     color = 'cyan'
     icon = '✨'
-  } else if (R === 3 && F === 3) {
-    segment = 'Occasionnels'
-    color = 'zinc'
-    icon = '🎯'
-  } else if (F >= 3 && R <= 2) {
-    segment = 'À Risque'
-    color = 'orange'
-    icon = '⚠️'
-  } else {
-    segment = 'Perdus'
+  } else if (R <= 2) {
+    segment = 'Perdus'  // Clients inactifs (R≤2, F<4)
     color = 'red'
     icon = '💔'
+  } else {
+    segment = 'Occasionnels'  // Tous les autres cas
+    color = 'zinc'
+    icon = '🎯'
   }
   
   return { segment, R, F, M, RFM, color, icon }

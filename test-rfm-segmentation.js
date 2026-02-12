@@ -153,7 +153,7 @@ const calculateQuickRFM = () => {
     }
   };
   
-  // Assigner scores et segments
+  // Assigner scores et segments (basés sur les critères stricts définis)
   console.log('📋 Segmentation:');
   clients.forEach((client, idx) => {
     const R = getQuintile(client.recency, recencyThresholds, true);
@@ -167,21 +167,24 @@ const calculateQuickRFM = () => {
     } else if (R >= 4 && F >= 4 && M >= 4) {
       segments.champions++;
       segment = 'Champions';
-    } else if (R >= 4 && F === 3) {
+    } else if (F >= 4) {
+      // Tous les clients avec haute fréquence (F>=4)
+      if (R <= 2) {
+        segments.risque++;
+        segment = 'Risque';
+      } else {
+        segments.loyaux++;
+        segment = 'Loyaux';
+      }
+    } else if (F <= 2 && R >= 4) {
       segments.nouveaux++;
       segment = 'Nouveaux';
-    } else if (R === 3 && F === 3) {
-      segments.occasionnels++;
-      segment = 'Occasionnels';
-    } else if (R >= 3 && F >= 3 && M >= 3) {
-      segments.loyaux++;
-      segment = 'Loyaux';
-    } else if (F >= 3 && R <= 2) {
-      segments.risque++;
-      segment = 'Risque';
-    } else {
+    } else if (R <= 2) {
       segments.perdus++;
       segment = 'Perdus';
+    } else {
+      segments.occasionnels++;
+      segment = 'Occasionnels';
     }
     
     console.log(`  Client ${idx+1}: R=${R}, F=${F}, M=${M} → ${segment}`);

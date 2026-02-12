@@ -182,7 +182,7 @@ export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysis
       color: 'emerald',
       icon: '👑',
       description: 'Vos meilleurs clients : achètent récemment, fréquemment et dépensent beaucoup',
-      criteria: 'R≥4 ET F≥4',
+      criteria: 'R≥4 ET F≥4 ET M≥4',
       action: 'Récompensez-les ! Offres VIP, programme ambassadeur'
     },
     {
@@ -190,7 +190,7 @@ export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysis
       color: 'blue',
       icon: '💎',
       description: 'Clients fidèles avec bon potentiel, achètent régulièrement',
-      criteria: 'R≥3 ET F≥3 (sauf Champions)',
+      criteria: 'F≥4 (sauf Champions)',
       action: 'Montée en gamme : cross-sell, upsell, offres premium'
     },
     {
@@ -206,15 +206,15 @@ export default function RFMAnalysis({ onSearchClient, showWebData }: RFMAnalysis
       color: 'red',
       icon: '💔',
       description: 'Clients inactifs depuis longtemps',
-      criteria: 'R≤2 (pas À Risque)',
+      criteria: 'R≤2 ET F<4',
       action: 'Dernière chance : offre exceptionnelle ou laisser partir'
     },
     {
       name: 'Nouveaux',
       color: 'cyan',
       icon: '✨',
-      description: 'Nouveaux clients avec un seul achat',
-      criteria: 'F=1',
+      description: 'Nouveaux clients récents avec peu d\'achats',
+      criteria: 'F≤2 ET R≥4',
       action: 'Fidélisation ! Offre de bienvenue, communication régulière'
     },
     {

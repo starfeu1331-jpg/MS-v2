@@ -248,7 +248,7 @@ async function handleRFMAIExport(req, res) {
       SELECT * FROM rfm_scores ORDER BY monetary DESC
     `)
 
-    // 2. Appliquer la segmentation
+    // 2. Appliquer la segmentation (basée sur les critères stricts définis)
     const clientsWithSegments = clientsRFM.map(client => {
       const R = parseInt(client.r)
       const F = parseInt(client.f)
@@ -256,19 +256,22 @@ async function handleRFMAIExport(req, res) {
       
       let segment = ''
       if (R === 5 && F === 5 && M === 5) {
-        segment = 'Ultra Champions'
+        segment = 'Ultra Champions'  // Excellence absolue
       } else if (R >= 4 && F >= 4 && M >= 4) {
-        segment = 'Champions'
-      } else if (R >= 3 && F >= 3 && M >= 3) {
-        segment = 'Loyaux'
-      } else if (R >= 4 && F === 3) {
-        segment = 'Nouveaux'
-      } else if (R === 3 && F === 3) {
-        segment = 'Occasionnels'
-      } else if (F >= 3 && R <= 2) {
-        segment = 'À Risque'
+        segment = 'Champions'  // Excellents partout
+      } else if (F >= 4) {
+        // Tous les clients avec haute fréquence (F>=4)
+        if (R <= 2) {
+          segment = 'À Risque'  // Anciens bons clients (R<=2 ET F>=4)
+        } else {
+          segment = 'Loyaux'  // Clients fidèles (F>=4, pas Champions)
+        }
+      } else if (F <= 2 && R >= 4) {
+        segment = 'Nouveaux'  // Clients récents avec peu d'achats
+      } else if (R <= 2) {
+        segment = 'Perdus'  // Clients inactifs (R<=2, F<4)
       } else {
-        segment = 'Perdus'
+        segment = 'Occasionnels'  // Tous les autres cas
       }
       
       return { ...client, segment, R, F, M }

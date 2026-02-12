@@ -124,31 +124,32 @@ print(rfm['F'].value_counts().sort_index())
 print("\nScore M:")
 print(rfm['M'].value_counts().sort_index())
 
-# Segmentation (EXACTEMENT la même logique que RFMAnalysis.tsx)
+# Segmentation (EXACTEMENT la même logique que api/rfm.js et rfmCalculator.ts)
 def segment_client(row):
     R, F, M = row['R'], row['F'], row['M']
     
-    # 0. ULTRA CHAMPIONS - Les meilleurs partout
+    # Basé sur les critères stricts définis dans la documentation
+    # 0. ULTRA CHAMPIONS - Excellence absolue
     if R == 5 and F == 5 and M == 5:
         return 'Ultra Champions'
     # 1. CHAMPIONS - Excellents partout (R,F,M >= 4)
     elif R >= 4 and F >= 4 and M >= 4:
         return 'Champions'
-    # 2. LOYAUX - Bons partout (R,F,M >= 3) - AVANT Nouveaux/Occasionnels
-    elif R >= 3 and F >= 3 and M >= 3:
-        return 'Loyaux'
-    # 3. NOUVEAUX - Récence excellente (R>=4), fréquence moyenne (F=3)
-    elif R >= 4 and F == 3:
+    # 2. Tous les clients avec haute fréquence (F>=4)
+    elif F >= 4:
+        if R <= 2:
+            return 'À Risque'  # Anciens bons clients (R<=2 ET F>=4)
+        else:
+            return 'Loyaux'  # Clients fidèles (F>=4, pas Champions)
+    # 3. NOUVEAUX - Clients récents avec peu d'achats (F<=2 ET R>=4)
+    elif F <= 2 and R >= 4:
         return 'Nouveaux'
-    # 4. OCCASIONNELS - Récence et fréquence moyennes (R=3, F=3)
-    elif R == 3 and F == 3:
-        return 'Occasionnels'
-    # 5. À RISQUE - Bonne fréquence (F>=3) MAIS mauvaise récence (R<=2)
-    elif F >= 3 and R <= 2:
-        return 'À Risque'
-    # 6. PERDUS - Tous les autres cas (récence/fréquence faibles)
-    else:
+    # 4. PERDUS - Clients inactifs (R<=2, F<4)
+    elif R <= 2:
         return 'Perdus'
+    # 5. OCCASIONNELS - Tous les autres cas
+    else:
+        return 'Occasionnels'
 
 rfm['segment'] = rfm.apply(segment_client, axis=1)
 
