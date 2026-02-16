@@ -7,6 +7,9 @@ interface SegmentDetailProps {
     clients: any[]
     ca: number
     count: number
+    avecAge?: number
+    ageMoyen?: number
+    pctAge?: number
   }
   allData: any
   totalClients: number
@@ -309,7 +312,7 @@ export default function SegmentDetail({
       {/* KPIs du segment */}
       <div className="glass rounded-3xl p-8 border border-zinc-800">
         <h2 className="text-2xl font-bold text-white mb-6">📊 Indicateurs Clés</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800">
             <div className="flex items-center gap-3 mb-2">
               <Users className="w-5 h-5 text-blue-400" />
@@ -352,6 +355,26 @@ export default function SegmentDetail({
             <p className="text-sm text-zinc-400 mt-1">
               {Math.round(recenceMoyenne)}j depuis dernier achat
             </p>
+          </div>
+
+          <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800">
+            <div className="flex items-center gap-3 mb-2">
+              <Calendar className="w-5 h-5 text-cyan-400" />
+              <p className="text-xs text-zinc-500 font-semibold uppercase">Âge</p>
+            </div>
+            {segmentData.avecAge && segmentData.avecAge > 0 ? (
+              <>
+                <p className="text-3xl font-bold text-white">{segmentData.pctAge}%</p>
+                <p className="text-sm text-zinc-400 mt-1">
+                  {segmentData.avecAge.toLocaleString('fr-FR')} clients · ⌀ {segmentData.ageMoyen} ans
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-zinc-600">N/A</p>
+                <p className="text-sm text-zinc-600 mt-1">Aucune donnée</p>
+              </>
+            )}
           </div>
         </div>
       </div>

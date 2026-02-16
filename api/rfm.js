@@ -54,6 +54,7 @@ export default async function handler(req, res) {
             c.sexe::text,
             c.ville::text,
             c.cp::text,
+            c.date_naissance::text,
             COUNT(DISTINCT t.facture)::int as frequency,
             SUM(t.ca)::numeric as monetary,
             EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
           FROM clients c
           INNER JOIN transactions t ON c.carte = t.carte
           WHERE t.depot = 'WEB' AND c.carte != '0'
-          GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp
+          GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp, c.date_naissance
           HAVING SUM(t.ca) > 0
         ),
         rfm_scores AS (
@@ -76,6 +77,7 @@ export default async function handler(req, res) {
             sexe,
             ville,
             cp,
+            date_naissance,
             frequency,
             monetary,
             recency,
@@ -148,6 +150,7 @@ export default async function handler(req, res) {
             c.sexe::text,
             c.ville::text,
             c.cp::text,
+            c.date_naissance::text,
             COUNT(DISTINCT t.facture)::int as frequency,
             SUM(t.ca)::numeric as monetary,
             EXTRACT(DAY FROM (CURRENT_DATE - MAX(t.date)))::int as recency,
@@ -157,7 +160,7 @@ export default async function handler(req, res) {
           FROM clients c
           INNER JOIN transactions t ON c.carte = t.carte
           WHERE c.carte != '0'
-          GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp
+          GROUP BY c.carte, c.nom, c.prenom, c.email, c.telephone, c.sexe, c.ville, c.cp, c.date_naissance
           HAVING SUM(t.ca) > 0
         ),
         rfm_scores AS (
@@ -170,6 +173,7 @@ export default async function handler(req, res) {
             sexe,
             ville,
             cp,
+            date_naissance,
             frequency,
             monetary,
             recency,
@@ -239,6 +243,7 @@ export default async function handler(req, res) {
         sexe: client.sexe || null,
         ville: client.ville || '-',
         cp: client.cp || '-',
+        date_naissance: client.date_naissance || null,
         recency: client.recency,
         frequency: client.frequency,
         monetary: parseFloat(client.monetary),
@@ -260,12 +265,36 @@ export default async function handler(req, res) {
         segmentStats[client.segment] = {
           count: 0,
           ca: 0,
-          clients: []
+          clients: [],
+          avecAge: 0,
+          ageTotal: 0
         }
       }
       segmentStats[client.segment].count++
       segmentStats[client.segment].ca += client.monetary
       segmentStats[client.segment].clients.push(client)
+      
+      // Calcul de l'âge si date_naissance est valide
+      if (client.date_naissance && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(client.date_naissance)) {
+        const birthDate = new Date(client.date_naissance)
+        const ageDiff = Date.now() - birthDate.getTime()
+        const ageDate = new Date(ageDiff)
+        const age = Math.abs(ageDate.getUTCFullYear() - 1970)
+        
+        if (age >= 0 && age <= 120) {
+          segmentStats[client.segment].avecAge++
+          segmentStats[client.segment].ageTotal += age
+        }
+      }
+    })
+    
+    // Calculer l'âge moyen pour chaque segment
+    Object.keys(segmentStats).forEach(segment => {
+      const stats = segmentStats[segment]
+      stats.ageMoyen = stats.avecAge > 0 ? Math.round(stats.ageTotal / stats.avecAge) : null
+      stats.pctAge = stats.count > 0 ? Math.round((stats.avecAge / stats.count) * 100) : 0
+      // Supprimer ageTotal car on n'en a plus besoin
+      delete stats.ageTotal
     })
 
     // Distribution des scores pour debug
