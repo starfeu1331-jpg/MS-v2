@@ -29,10 +29,13 @@ interface DashboardData {
     avecPrenom: number
     avecEmail: number
     avecTelephone: number
+    avecAge: number
+    ageMoyen: number
     pctHommes: number
     pctFemmes: number
     pctEmail: number
     pctTelephone: number
+    pctAge: number
   }
   
   // Top données
@@ -289,7 +292,7 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
               <Users className="w-4 h-4 text-blue-400" />
               📊 Qualité des données clients
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               <div className="bg-zinc-900/50 rounded-xl p-4">
                 <p className="text-xs text-zinc-400 mb-1">Hommes / Femmes</p>
                 <p className="text-2xl font-bold text-white">
@@ -327,6 +330,16 @@ function DashboardV2({ period = { type: 'year', value: 2025 }, onNavigate }: Das
                 </p>
                 <p className="text-xs text-zinc-500 mt-1">
                   Nom: {formatNumber(data.statsClients.avecNom)} • Prénom: {formatNumber(data.statsClients.avecPrenom)}
+                </p>
+              </div>
+              
+              <div className="bg-zinc-900/50 rounded-xl p-4">
+                <p className="text-xs text-zinc-400 mb-1">🎂 Âge renseigné</p>
+                <p className="text-2xl font-bold text-orange-400">
+                  {data.statsClients.pctAge?.toFixed(1) || '0.0'}%
+                </p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {formatNumber(data.statsClients.avecAge || 0)} clients • Moy: {data.statsClients.ageMoyen || 0} ans
                 </p>
               </div>
             </div>

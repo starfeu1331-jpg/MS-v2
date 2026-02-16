@@ -54,7 +54,9 @@ export default async function handler(req, res) {
           COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.carte END)::int as avec_nom,
           COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.carte END)::int as avec_prenom,
           COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.carte END)::int as avec_email,
-          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone,
+          COUNT(DISTINCT CASE WHEN c.date_naissance IS NOT NULL AND c.date_naissance != '' AND c.date_naissance ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN c.carte END)::int as avec_age,
+          ROUND(AVG(CASE WHEN c.date_naissance ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.date_naissance::date)) END))::int as age_moyen
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
         WHERE t.date >= '${startDate}' AND t.date <= '${endDate}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
@@ -140,10 +142,13 @@ export default async function handler(req, res) {
           avecPrenom: (statsClients[0]?.avec_prenom) || 0,
           avecEmail: (statsClients[0]?.avec_email) || 0,
           avecTelephone: (statsClients[0]?.avec_telephone) || 0,
+          avecAge: (statsClients[0]?.avec_age) || 0,
+          ageMoyen: (statsClients[0]?.age_moyen) || 0,
           pctHommes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.hommes) / (statsClients[0]?.total) * 100) : 0,
           pctFemmes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.femmes) / (statsClients[0]?.total) * 100) : 0,
           pctEmail: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_email) / (statsClients[0]?.total) * 100) : 0,
-          pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0
+          pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0,
+          pctAge: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_age) / (statsClients[0]?.total) * 100) : 0
         },
         topProduits: topProduits.map(p => ({
           code: p.code,
@@ -204,7 +209,9 @@ export default async function handler(req, res) {
           COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.carte END)::int as avec_nom,
           COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.carte END)::int as avec_prenom,
           COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.carte END)::int as avec_email,
-          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone,
+          COUNT(DISTINCT CASE WHEN c.date_naissance IS NOT NULL AND c.date_naissance != '' AND c.date_naissance ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN c.carte END)::int as avec_age,
+          ROUND(AVG(CASE WHEN c.date_naissance ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.date_naissance::date)) END))::int as age_moyen
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
         WHERE t.date >= '${startDateStr}' AND t.date <= '${endDateStr}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
@@ -290,10 +297,13 @@ export default async function handler(req, res) {
           avecPrenom: (statsClients[0]?.avec_prenom) || 0,
           avecEmail: (statsClients[0]?.avec_email) || 0,
           avecTelephone: (statsClients[0]?.avec_telephone) || 0,
+          avecAge: (statsClients[0]?.avec_age) || 0,
+          ageMoyen: (statsClients[0]?.age_moyen) || 0,
           pctHommes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.hommes) / (statsClients[0]?.total) * 100) : 0,
           pctFemmes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.femmes) / (statsClients[0]?.total) * 100) : 0,
           pctEmail: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_email) / (statsClients[0]?.total) * 100) : 0,
-          pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0
+          pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0,
+          pctAge: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_age) / (statsClients[0]?.total) * 100) : 0
         },
         topProduits: topProduits.map(p => ({
           code: p.code,
@@ -346,7 +356,9 @@ export default async function handler(req, res) {
           COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.carte END)::int as avec_nom,
           COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.carte END)::int as avec_prenom,
           COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.carte END)::int as avec_email,
-          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
+          COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone,
+          COUNT(DISTINCT CASE WHEN c.date_naissance IS NOT NULL AND c.date_naissance != '' AND c.date_naissance ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN c.carte END)::int as avec_age,
+          ROUND(AVG(CASE WHEN c.date_naissance ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.date_naissance::date)) END))::int as age_moyen
         FROM clients c
         INNER JOIN transactions t ON c.carte = t.carte
         WHERE t.depot NOT IN ('1', '41', '42') AND t.ca > 0
@@ -432,10 +444,13 @@ export default async function handler(req, res) {
           avecPrenom: statsClients[0]?.avec_prenom || 0,
           avecEmail: statsClients[0]?.avec_email || 0,
           avecTelephone: statsClients[0]?.avec_telephone || 0,
+          avecAge: statsClients[0]?.avec_age || 0,
+          ageMoyen: statsClients[0]?.age_moyen || 0,
           pctHommes: statsClients[0]?.total > 0 ? (statsClients[0]?.hommes / statsClients[0]?.total * 100) : 0,
           pctFemmes: statsClients[0]?.total > 0 ? (statsClients[0]?.femmes / statsClients[0]?.total * 100) : 0,
           pctEmail: statsClients[0]?.total > 0 ? (statsClients[0]?.avec_email / statsClients[0]?.total * 100) : 0,
-          pctTelephone: statsClients[0]?.total > 0 ? (statsClients[0]?.avec_telephone / statsClients[0]?.total * 100) : 0
+          pctTelephone: statsClients[0]?.total > 0 ? (statsClients[0]?.avec_telephone / statsClients[0]?.total * 100) : 0,
+          pctAge: statsClients[0]?.total > 0 ? (statsClients[0]?.avec_age / statsClients[0]?.total * 100) : 0
         },
         topProduits: topProduits.map(p => ({
           code: p.code,
@@ -491,7 +506,9 @@ export default async function handler(req, res) {
         COUNT(DISTINCT CASE WHEN c.nom IS NOT NULL AND c.nom != '' THEN c.carte END)::int as avec_nom,
         COUNT(DISTINCT CASE WHEN c.prenom IS NOT NULL AND c.prenom != '' THEN c.carte END)::int as avec_prenom,
         COUNT(DISTINCT CASE WHEN c.email IS NOT NULL AND c.email != '' THEN c.carte END)::int as avec_email,
-        COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone
+        COUNT(DISTINCT CASE WHEN c.telephone IS NOT NULL AND c.telephone != '' THEN c.carte END)::int as avec_telephone,
+        COUNT(DISTINCT CASE WHEN c.date_naissance IS NOT NULL AND c.date_naissance != '' AND c.date_naissance ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN c.carte END)::int as avec_age,
+        ROUND(AVG(CASE WHEN c.date_naissance ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.date_naissance::date)) END))::int as age_moyen
       FROM clients c
       INNER JOIN transactions t ON c.carte = t.carte
       WHERE t.date >= '${startDateYear}' AND t.date <= '${endDateYear}' AND t.depot NOT IN ('1', '41', '42') AND t.ca > 0
@@ -577,10 +594,13 @@ export default async function handler(req, res) {
         avecPrenom: (statsClients[0]?.avec_prenom) || 0,
         avecEmail: (statsClients[0]?.avec_email) || 0,
         avecTelephone: (statsClients[0]?.avec_telephone) || 0,
+        avecAge: (statsClients[0]?.avec_age) || 0,
+        ageMoyen: (statsClients[0]?.age_moyen) || 0,
         pctHommes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.hommes) / (statsClients[0]?.total) * 100) : 0,
         pctFemmes: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.femmes) / (statsClients[0]?.total) * 100) : 0,
         pctEmail: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_email) / (statsClients[0]?.total) * 100) : 0,
-        pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0
+        pctTelephone: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_telephone) / (statsClients[0]?.total) * 100) : 0,
+        pctAge: (statsClients[0]?.total) > 0 ? ((statsClients[0]?.avec_age) / (statsClients[0]?.total) * 100) : 0
       },
       topProduits: topProduits.map(p => ({
         code: p.code,
