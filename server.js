@@ -57,7 +57,7 @@ const setupRoutes = async () => {
     const subFamiliesApi = (await import('./api/sub-families.js')).default;
     const marketingApi = (await import('./api/marketing.js')).default;
     const forecastApi = (await import('./api/forecast.js')).default;
-    const exportApi = (await import('./api/export.js')).default;
+    // const exportApi = (await import('./api/export.js')).default; // Temporaire: désactivé à cause erreur ESM/CommonJS
     const searchApi = (await import('./api/search.js')).default;
 
     // Monter les routes
@@ -70,7 +70,7 @@ const setupRoutes = async () => {
     app.get('/api/sub-families', wrapHandler(subFamiliesApi));
     app.get('/api/marketing', wrapHandler(marketingApi));
     app.get('/api/forecast', wrapHandler(forecastApi));
-    app.all('/api/export', wrapHandler(exportApi)); // POST et GET
+    // app.all('/api/export', wrapHandler(exportApi)); // POST et GET - Temporaire: désactivé
     app.get('/api/search', wrapHandler(searchApi));
 
     console.log('✅ API routes loaded');
