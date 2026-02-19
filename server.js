@@ -88,14 +88,15 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Toutes les autres routes = frontend React (SPA)
-app.get('*', (req, res) => {
-  res.sendFile(join(__dirname, 'dist', 'index.html'));
-});
-
 // Démarrer le serveur
 const startServer = async () => {
   await setupRoutes();
+  
+  // ⚠️ IMPORTANT: Cette route catch-all DOIT être après setupRoutes()
+  // Toutes les autres routes = frontend React (SPA)
+  app.get('*', (req, res) => {
+    res.sendFile(join(__dirname, 'dist', 'index.html'));
+  });
   
   app.listen(PORT, '0.0.0.0', () => {
     console.log('');
