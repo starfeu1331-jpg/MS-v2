@@ -1,13 +1,13 @@
-import { PrismaClient, Prisma } from '@prisma/client'
-import multiparty from 'multiparty'
-import fs from 'fs'
-import { parse } from 'csv-parse/sync'
+const { PrismaClient, Prisma } = require('@prisma/client')
+const multiparty = require('multiparty')
+const fs = require('fs')
+const { parse } = require('csv-parse/sync')
 
 const prisma = new PrismaClient({
   log: ['error', 'warn']
 })
 
-export const config = {
+module.exports.config = {
   api: {
     bodyParser: false,
   },
@@ -220,7 +220,7 @@ const handleWeeklyUpdate = async (files) => {
   return totals
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true')
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')

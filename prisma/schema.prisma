@@ -26,7 +26,7 @@ model Client {
   cp             String?
   ville          String?
   
-  transactions   Transaction[]
+  // transactions   Transaction[]
   
   @@map("clients")
 }
@@ -41,7 +41,7 @@ model Produit {
   sousSousFamille       String?  @map("sous_sous_famille")
   sousSousSousFamille   String?  @map("sous_sous_sous_famille")
   
-  transactions          Transaction[]
+  // transactions          Transaction[]
   
   @@map("produits")
 }
@@ -56,7 +56,7 @@ model Magasin {
   cp         String?
   ville      String?
   
-  transactions   Transaction[]
+  // transactions   Transaction[]
   
   @@map("magasins")
 }
@@ -64,7 +64,7 @@ model Magasin {
 model Transaction {
   id          BigInt   @id @default(autoincrement())
   facture     String
-  carte       String
+  carte       String?
   depot       String
   date        DateTime
   heure       Int?     @map("heure")         // ⭐ NOUVEAU (heure de la transaction)
@@ -77,9 +77,10 @@ model Transaction {
   ville       String?
   cp          String?
   
-  client      Client?  @relation(fields: [carte], references: [carte])
-  produitRef  Produit? @relation(fields: [produit], references: [id])
-  magasin     Magasin? @relation(fields: [depot], references: [code])
+  // Relations commentées temporairement pour l'import
+  // client      Client?  @relation(fields: [carte], references: [carte])
+  // produitRef  Produit? @relation(fields: [produit], references: [id])
+  // magasin     Magasin? @relation(fields: [depot], references: [code])
   
   @@index([date])
   @@index([carte])
