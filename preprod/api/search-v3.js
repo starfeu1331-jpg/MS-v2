@@ -217,7 +217,9 @@ export default async function handler(req, res) {
 
     const where = 'WHERE ' + conditions.join(' AND ')
 
-    const clientsQuery = `
+    console.log('🔍 Search V3 Debug:', { query, nom, ville, conditions: conditions.length, params: params.length,where })
+
+    const clients Query = `
       SELECT
         c.carte::text, c.nom_adresse::text as nom,
         c.civilite::text, c.sexe::text,
