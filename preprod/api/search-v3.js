@@ -253,6 +253,8 @@ export default async function handler(req, res) {
       prisma.$queryRawUnsafe(clientsQuery, ...params, exactQuery, exactQuery, limit, offset),
       prisma.$queryRawUnsafe(countQuery, ...params)
     ])
+    
+    console.log('🔍 Prisma Results:', { clientsCount: clients.length, countResult: countResult[0] })
 
     const clientTotal = countResult[0]?.total || 0
 
