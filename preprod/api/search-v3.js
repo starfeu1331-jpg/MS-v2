@@ -238,6 +238,17 @@ export default async function handler(req, res) {
     const countQuery = `SELECT COUNT(*)::int as total FROM clients c ${where} AND c.nom_adresse IS NOT NULL`
 
     const exactQuery = query || nom || carte || ''
+    
+    console.log('🔍 SQL Debug:', {
+      clientsQuery: clientsQuery.substring(0, 200),
+      paramsCount: params.length,
+      params,
+      exactQuery,
+      limit,
+      offset,
+      totalParams: [...params, exactQuery, exactQuery, limit, offset].length
+    })
+    
     const [clients, countResult] = await Promise.all([
       prisma.$queryRawUnsafe(clientsQuery, ...params, exactQuery, exactQuery, limit, offset),
       prisma.$queryRawUnsafe(countQuery, ...params)
