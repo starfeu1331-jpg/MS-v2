@@ -187,12 +187,12 @@ export default async function handler(req, res) {
       // Recherche optimisée : NOM uniquement (pas dans adresse pour éviter faux positifs)
       conditions.push(`(
         LOWER(c.nom_adresse) LIKE LOWER($${idx}) OR
-        LOWER(c.ville) LIKE LOWER($${idx}) OR
-        c.cp::text LIKE $${idx + 1} OR
-        c.carte = $${idx + 2}
+        LOWER(c.ville) LIKE LOWER($${idx + 1}) OR
+        c.cp::text LIKE $${idx + 2} OR
+        c.carte = $${idx + 3}
       )`)
-      params.push(`%${query}%`, `%${query}%`, query)
-      idx += 3
+      params.push(`%${query}%`, `%${query}%`, `%${query}%`, query)
+      idx += 4
     }
     if (nom) {
       // Filtre nom corrigé : cherche uniquement dans nom_adresse
