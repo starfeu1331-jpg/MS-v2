@@ -9,22 +9,14 @@ import './mobile.css'
 import Dashboard from './components/Dashboard/Dashboard'
 import SearchPanel from './components/Search/SearchPanel'
 import RFMAnalysis from './components/RFM/RFMAnalysis'
-import SubFamilyAnalysis from './components/Analysis/SubFamilyAnalysis'
-import CrossSellingAnalysis from './components/Analysis/CrossSellingAnalysis'
-import CohortAnalysis from './components/Analysis/CohortAnalysis'
-import ABCAnalysis from './components/Analysis/ABCAnalysis'
-import KingQuentin from './components/Marketing/KingQuentin'
-import ForecastAnomalies from './components/Marketing/ForecastAnomalies'
-import SocialMediaInsights from './components/Marketing/SocialMediaInsights'
 import Surveys from './components/Marketing/Surveys'
 import ZoneChalandise from './components/Geo/ZoneChalandise'
 import StorePerformance from './components/Geo/StorePerformance'
-import ExportData from './components/Export/ExportData'
 import SettingsView from './components/Admin/Settings'
 import AdminUsers from './components/Admin/AdminUsers'
 import ProductsPanel from './components/Products/ProductsPanel'
 
-type TabType = 'dashboard' | 'search' | 'produits' | 'rfm' | 'subFamilies' | 'crossSelling' | 'cohortes' | 'abc' | 'kingquentin' | 'zones' | 'stores' | 'forecast' | 'social' | 'surveys' | 'exports' | 'settings' | 'admin'
+type TabType = 'dashboard' | 'search' | 'produits' | 'rfm' | 'zones' | 'stores' | 'surveys' | 'settings' | 'admin'
 
 // Définition de tous les onglets pour le carousel mobile
 const ALL_TABS = [
@@ -32,27 +24,17 @@ const ALL_TABS = [
   { id: 'search' as TabType, icon: Search, color: 'text-blue-400' },
   { id: 'produits' as TabType, icon: Tag, color: 'text-orange-400' },
   { id: 'rfm' as TabType, icon: Users, color: 'text-purple-400' },
-  { id: 'subFamilies' as TabType, icon: Layers, color: 'text-indigo-400' },
-  { id: 'crossSelling' as TabType, icon: ShoppingBag, color: 'text-pink-400' },
-  { id: 'cohortes' as TabType, icon: Target, color: 'text-indigo-400' },
-  { id: 'abc' as TabType, icon: Package, color: 'text-cyan-400' },
-  { id: 'kingquentin' as TabType, icon: Crown, color: 'text-yellow-400' },
   { id: 'zones' as TabType, icon: Map, color: 'text-green-400' },
   { id: 'stores' as TabType, icon: Store, color: 'text-teal-400' },
-  { id: 'forecast' as TabType, icon: Activity, color: 'text-orange-400' },
-  { id: 'social' as TabType, icon: Megaphone, color: 'text-pink-400' },
   { id: 'surveys' as TabType, icon: ClipboardList, color: 'text-violet-400' },
-  { id: 'exports' as TabType, icon: Download, color: 'text-green-400' },
   { id: 'settings' as TabType, icon: Settings, color: 'text-zinc-400' },
 ]
 
 // ─── URL Routing ──────────────────────────────────────────────────
 const TAB_TO_PATH: Record<string, string> = {
   dashboard: 'dashboard', search: 'search', produits: 'produits', rfm: 'rfm',
-  subFamilies: 'subfamilies', crossSelling: 'cross-selling',
-  cohortes: 'cohortes', abc: 'abc', kingquentin: 'kingquentin',
-  zones: 'zones', stores: 'stores', forecast: 'forecast',
-  social: 'social', surveys: 'surveys', exports: 'exports', settings: 'settings', admin: 'admin',
+  zones: 'zones', stores: 'stores',
+  surveys: 'surveys', settings: 'settings', admin: 'admin',
 }
 const PATH_TO_TAB: Record<string, TabType> = { '': 'dashboard' }
 for (const [tab, path] of Object.entries(TAB_TO_PATH)) {
@@ -112,24 +94,23 @@ function App() {
   const { user, logout, canAccess } = useAuth()
   const scrollToTopRef = useRef(true)
 
-  // ─── Convert preference-only period types to API-compatible formats ──
+  // ─── Convert Settings period types to ones components understand ──
   const resolvePeriod = (p: { type: string; value: string | number; label?: string }) => {
     const today = new Date()
-    const fmt = (d: Date) => d.toISOString().split('T')[0]
-    const fmtFR = (d: Date) => d.toLocaleDateString('fr-FR')
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
     if (p.type === 'week') {
       const day = today.getDay()
-      const start = new Date(today)
-      start.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
-      return { type: 'custom', value: `${fmt(start)}_${fmt(today)}`, label: `Semaine : ${fmtFR(start)} → ${fmtFR(today)}` }
+      const monday = new Date(today)
+      monday.setDate(today.getDate() - ((day + 6) % 7))
+      return { type: 'custom', value: `${fmt(monday)}_${fmt(today)}`, label: p.label }
     }
     if (p.type === 'month') {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1)
-      return { type: 'custom', value: `${fmt(start)}_${fmt(today)}`, label: `Mois : ${fmtFR(start)} → ${fmtFR(today)}` }
+      const first = new Date(today.getFullYear(), today.getMonth(), 1)
+      return { type: 'custom', value: `${fmt(first)}_${fmt(today)}`, label: p.label }
     }
     if (p.type === 'ytd') {
-      const start = new Date(today.getFullYear(), 0, 1)
-      return { type: 'custom', value: `${fmt(start)}_${fmt(today)}`, label: `YTD : ${fmtFR(start)} → ${fmtFR(today)}` }
+      const jan1 = new Date(today.getFullYear(), 0, 1)
+      return { type: 'custom', value: `${fmt(jan1)}_${fmt(today)}`, label: p.label }
     }
     return p
   }
@@ -149,6 +130,7 @@ function App() {
         if (typeof prefs.scrollToTop === 'boolean') scrollToTopRef.current = prefs.scrollToTop
         if (prefs.storeView && VIEW_PRESETS[prefs.storeView]) setStoreView(prefs.storeView)
         if (prefs.defaultPeriod?.type) setCurrentPeriod(resolvePeriod(prefs.defaultPeriod))
+        // Only apply defaultPage if user landed on root (no explicit URL)
         if (prefs.defaultPage && _initRoute.page === 'dashboard' && !_initRoute.subPath) {
           const path = '/' + (TAB_TO_PATH[prefs.defaultPage] || 'dashboard')
           window.history.replaceState({ scrollTop: 0 }, '', path)
@@ -393,66 +375,7 @@ function App() {
                 <Tag className="w-5 h-5" />
                 {sidebarOpen && <span>Produits</span>}
               </button>
-              <button
-                onClick={() => handleTabChange('subFamilies')}
-                
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'subFamilies'
-                    ? 'bg-indigo-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Layers className="w-5 h-5" />
-                {sidebarOpen && <span>Sous-familles</span>}
-              </button>
-              <button
-                onClick={() => handleTabChange('crossSelling')}
-                
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'crossSelling'
-                    ? 'bg-pink-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <ShoppingBag className="w-5 h-5" />
-                {sidebarOpen && <span>Cross-Selling</span>}
-              </button>
-              <button
-                onClick={() => handleTabChange('cohortes')}
-                
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'cohortes'
-                    ? 'bg-indigo-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Target className="w-5 h-5" />
-                {sidebarOpen && <span>Cohortes</span>}
-              </button>
-              <button
-                onClick={() => handleTabChange('abc')}
-                
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'abc'
-                    ? 'bg-cyan-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Package className="w-5 h-5" />
-                {sidebarOpen && <span>ABC Analysis</span>}
-              </button>
-              <button
-                onClick={() => handleTabChange('kingquentin')}
-                
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'kingquentin'
-                    ? 'bg-yellow-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Crown className="w-5 h-5" />
-                {sidebarOpen && <span>King Quentin</span>}
-              </button>
+
               <button
                 onClick={() => handleTabChange('zones')}
                 
@@ -477,30 +400,7 @@ function App() {
                 <Store className="w-5 h-5" />
                 {sidebarOpen && <span>Magasins</span>}
               </button>
-              <button
-                onClick={() => handleTabChange('forecast')}
-                
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'forecast'
-                    ? 'bg-orange-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Activity className="w-5 h-5" />
-                {sidebarOpen && <span>Prévisions</span>}
-              </button>
-              <button
-                onClick={() => handleTabChange('social')}
-                
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'social'
-                    ? 'bg-pink-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Megaphone className="w-5 h-5" />
-                {sidebarOpen && <span>Réseaux Sociaux</span>}
-              </button>
+
               <button
                 onClick={() => handleTabChange('surveys')}
                 
@@ -513,20 +413,7 @@ function App() {
                 <ClipboardList className="w-5 h-5" />
                 {sidebarOpen && <span>Nos Enquêtes</span>}
               </button>
-              {canAccess('exports') && (
-              <button
-                onClick={() => handleTabChange('exports')}
-                
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  page === 'exports'
-                    ? 'bg-green-500 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                }`}
-              >
-                <Download className="w-5 h-5" />
-                {sidebarOpen && <span>Exports</span>}
-              </button>
-              )}
+
 
               {sidebarOpen && <div className="px-4 py-2 mt-4"><p className="text-xs text-zinc-600 font-semibold uppercase">Préférences</p></div>}
               
@@ -581,17 +468,12 @@ function App() {
               {page === 'search' && 'Recherche'}
               {page === 'produits' && 'Produits'}
               {page === 'rfm' && 'Segmentation RFM'}
-              {page === 'subFamilies' && 'Sous-familles'}
-              {page === 'crossSelling' && 'Analyse Cross-Selling'}
-              {page === 'cohortes' && 'Analyse de Cohortes'}
-              {page === 'abc' && 'ABC Analysis'}
-              {page === 'kingquentin' && 'King Quentin 👑'}
+
               {page === 'zones' && 'Zones Chalandise'}
               {page === 'stores' && 'Performance Magasins'}
-              {page === 'forecast' && 'Prévisions & Anomalies'}
-              {page === 'social' && 'Réseaux Sociaux'}
+
               {page === 'surveys' && 'Enquêtes & Études'}
-              {page === 'exports' && 'Exports de données'}
+
               {page === 'settings' && 'Préférences'}
               {page === 'admin' && 'Administration'}
             </h1>
@@ -943,17 +825,12 @@ function App() {
               onSearchClient={(carte: string) => navigate('/search/client/' + encodeURIComponent(carte))}
               onSearchProduct={(code: string) => navigate('/search/produit/' + encodeURIComponent(code))}
             /></div>}
-            {page === 'subFamilies' && <div className="p-6"><SubFamilyAnalysis data={null} showWebData={showWebData} /></div>}
-            {page === 'crossSelling' && <div className="p-6"><CrossSellingAnalysis data={null} period={currentPeriod} /></div>}
-            {page === 'cohortes' && <div className="p-6"><CohortAnalysis /></div>}
-            {page === 'abc' && <div className="p-6"><ABCAnalysis /></div>}
-            {page === 'kingquentin' && <div className="p-6"><KingQuentin data={null} /></div>}
+
             {page === 'zones' && <ZoneChalandise period={currentPeriod} initialStore={subPath?.startsWith('store/') ? subPath.split('/')[1] : undefined} />}
             {page === 'stores' && <div className="p-6"><StorePerformance period={currentPeriod} navigate={navigate} viewConfig={storeViewConfig} subPath={subPath} /></div>}
-            {page === 'forecast' && <div className="p-6"><ForecastAnomalies /></div>}
-            {page === 'social' && <div className="p-6"><SocialMediaInsights data={null} /></div>}
+
             {page === 'surveys' && <div className="p-6"><Surveys /></div>}
-            {page === 'exports' && <div className="p-6"><ExportData data={null} /></div>}
+
             {page === 'settings' && <div className="p-6"><SettingsView /></div>}
             {page === 'admin' && <div className="p-6"><AdminUsers subPath={subPath} navigate={navigate} /></div>}
         </main>
@@ -1021,46 +898,6 @@ function App() {
             
             <div className="p-4 space-y-2">
               <button
-                onClick={() => { handleTabChange('subFamilies'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <Layers className="w-6 h-6 text-indigo-400" />
-                <span className="font-medium">Sous-familles</span>
-              </button>
-              
-              <button
-                onClick={() => { handleTabChange('crossSelling'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <ShoppingBag className="w-6 h-6 text-pink-400" />
-                <span className="font-medium">Cross-Selling</span>
-              </button>
-              
-              <button
-                onClick={() => { handleTabChange('cohortes'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <Target className="w-6 h-6 text-indigo-400" />
-                <span className="font-medium">Cohortes</span>
-              </button>
-              
-              <button
-                onClick={() => { handleTabChange('abc'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <Package className="w-6 h-6 text-cyan-400" />
-                <span className="font-medium">ABC Analysis</span>
-              </button>
-              
-              <button
-                onClick={() => { handleTabChange('kingquentin'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <Crown className="w-6 h-6 text-yellow-400" />
-                <span className="font-medium">King Quentin</span>
-              </button>
-              
-              <button
                 onClick={() => { handleTabChange('zones'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
@@ -1069,35 +906,11 @@ function App() {
               </button>
               
               <button
-                onClick={() => { handleTabChange('forecast'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <Activity className="w-6 h-6 text-orange-400" />
-                <span className="font-medium">Prévisions</span>
-              </button>
-              
-              <button
-                onClick={() => { handleTabChange('social'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <Megaphone className="w-6 h-6 text-pink-400" />
-                <span className="font-medium">Réseaux Sociaux</span>
-              </button>
-              
-              <button
                 onClick={() => { handleTabChange('surveys'); setShowMobileMenu(false) }}
                 className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 <ClipboardList className="w-6 h-6 text-violet-400" />
                 <span className="font-medium">Enquêtes</span>
-              </button>
-              
-              <button
-                onClick={() => { handleTabChange('exports'); setShowMobileMenu(false) }}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                <Download className="w-6 h-6 text-green-400" />
-                <span className="font-medium">Exports</span>
               </button>
               
               <button

@@ -48,18 +48,6 @@ export default async function handler(req, res) {
     const hasCategoryFilters = famille || sous_famille || sous_sous_famille || browse === 'categories'
     const hasClientFilters = nom || prenom || adresse || carte || ville || cp || email || telephone
 
-    // Date filtering for category/product views (validated to prevent injection)
-    const { startDate: periodStart, endDate: periodEnd } = req.query
-    let tDateJoinExtra = ''
-    if (periodStart) {
-      const d = String(periodStart).replace(/[^0-9-]/g, '').substring(0, 10)
-      if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) tDateJoinExtra += ` AND t.date >= '${d}'::date`
-    }
-    if (periodEnd) {
-      const d = String(periodEnd).replace(/[^0-9-]/g, '').substring(0, 10)
-      if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) tDateJoinExtra += ` AND t.date <= '${d}'::date`
-    }
-
     const queryLooksLikeFacture = query && /^\d{8,}$/.test(query.trim())
     // Detect queries that look like product codes (3-6 digits only)
     const queryLooksLikeProductCode = query && /^\d{3,6}$/.test(query.trim())
@@ -80,7 +68,7 @@ export default async function handler(req, res) {
           SELECT p.famille::text as name,
                  COUNT(DISTINCT p.id)::int as nb_produits,
                  COALESCE(SUM(t.ca), 0)::numeric as ca_total
-          FROM produits p LEFT JOIN transactions t ON t.produit = p.id${tDateJoinExtra}
+          FROM produits p LEFT JOIN transactions t ON t.produit = p.id
           WHERE p.famille IS NOT NULL AND p.famille != ''
           GROUP BY p.famille ORDER BY ca_total DESC
         `)
@@ -89,7 +77,7 @@ export default async function handler(req, res) {
                  COALESCE(SUM(t.ca), 0)::numeric as ca_total,
                  COUNT(DISTINCT t.facture)::int as nb_tickets,
                  COUNT(DISTINCT t.carte)::int as nb_clients
-          FROM produits p LEFT JOIN transactions t ON t.produit = p.id${tDateJoinExtra}
+          FROM produits p LEFT JOIN transactions t ON t.produit = p.id
         `)
         return res.status(200).json({
           type: 'categorie',
@@ -110,7 +98,7 @@ export default async function handler(req, res) {
           SELECT p.sous_famille::text as name,
                  COUNT(DISTINCT p.id)::int as nb_produits,
                  COALESCE(SUM(t.ca), 0)::numeric as ca_total
-          FROM produits p LEFT JOIN transactions t ON t.produit = p.id${tDateJoinExtra}
+          FROM produits p LEFT JOIN transactions t ON t.produit = p.id
           ${where} AND p.sous_famille IS NOT NULL AND p.sous_famille != ''
           GROUP BY p.sous_famille ORDER BY ca_total DESC
         `, ...params)
@@ -119,7 +107,7 @@ export default async function handler(req, res) {
           SELECT p.sous_sous_famille::text as name,
                  COUNT(DISTINCT p.id)::int as nb_produits,
                  COALESCE(SUM(t.ca), 0)::numeric as ca_total
-          FROM produits p LEFT JOIN transactions t ON t.produit = p.id${tDateJoinExtra}
+          FROM produits p LEFT JOIN transactions t ON t.produit = p.id
           ${where} AND p.sous_sous_famille IS NOT NULL AND p.sous_sous_famille != ''
           GROUP BY p.sous_sous_famille ORDER BY ca_total DESC
         `, ...params)
@@ -133,7 +121,7 @@ export default async function handler(req, res) {
                COUNT(DISTINCT t.facture)::int as nb_tickets,
                COALESCE(SUM(t.ca), 0)::numeric as ca_total,
                COALESCE(SUM(t.quantite), 0)::int as quantite_totale
-        FROM produits p LEFT JOIN transactions t ON t.produit = p.id${tDateJoinExtra}
+        FROM produits p LEFT JOIN transactions t ON t.produit = p.id
         ${where}
         GROUP BY p.id, p.designation, p.reference_interne, p.famille, p.sous_famille,
                  p.sous_sous_famille, p.sous_sous_sous_famille, p.produit_web
@@ -151,7 +139,7 @@ export default async function handler(req, res) {
                COUNT(DISTINCT t.facture)::int as nb_tickets,
                COUNT(DISTINCT t.carte)::int as nb_clients,
                COALESCE(SUM(t.quantite), 0)::int as quantite_totale
-        FROM produits p LEFT JOIN transactions t ON t.produit = p.id${tDateJoinExtra}
+        FROM produits p LEFT JOIN transactions t ON t.produit = p.id
         ${where}
       `, ...params)
 
@@ -296,11 +284,11 @@ export default async function handler(req, res) {
           c.ville::text
         FROM transactions t
         LEFT JOIN clients c ON t.carte = c.carte
-        WHERE t.produit = $1${tDateJoinExtra}
+        WHERE t.produit = $1
         ORDER BY t.date DESC
         LIMIT $2 OFFSET $3
       `
-      const countQuery = `SELECT COUNT(*)::int as total FROM transactions t WHERE t.produit = $1${tDateJoinExtra}`
+      const countQuery = `SELECT COUNT(*)::int as total FROM transactions t WHERE t.produit = $1`
       const productQuery = `
         SELECT p.id::text,
                p.designation::text,
@@ -312,7 +300,7 @@ export default async function handler(req, res) {
                SUM(t.ca)::numeric as ca_total,
                SUM(t.quantite)::int as quantite_totale
         FROM produits p
-        LEFT JOIN transactions t ON t.produit = p.id${tDateJoinExtra}
+        LEFT JOIN transactions t ON t.produit = p.id
         WHERE p.id = $1
         GROUP BY p.id, p.designation, p.reference_interne, p.famille, p.sous_famille, p.sous_sous_famille, p.sous_sous_sous_famille, p.produit_web
       `
@@ -505,19 +493,8 @@ export default async function handler(req, res) {
         c.email::text, c.telephone::text,
         c.nom_adresse::text, c.adresse::text, c.adresse_2::text, c.adresse_4::text,
         c.ville::text, c.cp::text,
-        c.date_naissance::text, c.date_creation::text,
-        pref.depot::text as magasin_code,
-        pref.depot_nom::text as magasin_nom
+        c.date_naissance::text, c.date_creation::text
       FROM clients c
-      LEFT JOIN LATERAL (
-        SELECT t.depot, m.nom as depot_nom
-        FROM transactions t
-        LEFT JOIN magasins m ON m.code = t.depot
-        WHERE t.carte = c.carte AND t.depot IS NOT NULL AND t.depot != ''
-        GROUP BY t.depot, m.nom
-        ORDER BY COUNT(*) DESC
-        LIMIT 1
-      ) pref ON true
       ${where}
       ORDER BY
         CASE

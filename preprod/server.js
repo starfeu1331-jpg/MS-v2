@@ -48,42 +48,22 @@ const wrapHandler = (handler) => async (req, res) => {
 // Routes API - Import dynamique
 const setupRoutes = async () => {
   try {
-    // Dashboard
     const dashboardApi = (await import('./api/dashboard/dashboard.js')).default;
     const { prewarmCache } = await import('./api/dashboard/dashboard.js');
-
-    // RFM
+    const searchApi = (await import('./api/search/search.js')).default;
     const rfmApi = (await import('./api/rfm/rfm.js')).default;
     const { prewarmRFM } = await import('./api/rfm/rfm.js');
-
-    // Analyses
-    const cohortesApi = (await import('./api/analysis/cohortes.js')).default;
-    const crossSellingApi = (await import('./api/analysis/cross-selling.js')).default;
-    const abcAnalysisApi = (await import('./api/analysis/abc-analysis.js')).default;
-    const subFamiliesApi = (await import('./api/analysis/sub-families.js')).default;
-    const productFamiliesApi = (await import('./api/analysis/product-families.js')).default;
-
-    // Marketing
-    const marketingApi = (await import('./api/marketing/marketing.js')).default;
-    const forecastApi = (await import('./api/marketing/forecast.js')).default;
-    const surveysApi = (await import('./api/marketing/surveys.js')).default;
-    const { exportHandler: surveysExportApi } = await import('./api/marketing/surveys.js');
 
     // Géo
     const storesApi = (await import('./api/geo/stores.js')).default;
 
-    // Export
-    const exportApi = (await import('./api/export/export.js')).default;
-    const exportPenetrationApi = (await import('./api/export/export-penetration.js')).default;
+    // Products (PIM proxy + stats + favorites)
+    const { categoriesHandler, productListHandler, productDetailHandler } = await import('./api/products/pim-proxy.js');
+    const { productStatsHandler, productDetailStatsHandler, categoryStatsHandler, categoryAvgEvolutionHandler } = await import('./api/products/stats.js');
+    const { favoritesGroupsHandler, favoritesGroupHandler, favoritesItemsHandler } = await import('./api/products/favorites.js');
 
-    // Recherche
-    const searchApi = (await import('./api/search/search.js')).default;
-
-    // Clients & Tickets
     const clientTicketsApi = (await import('./api/clients/[carte]/tickets.js')).default;
     const ticketTransactionsApi = (await import('./api/tickets/[facture]/transactions.js')).default;
-
-    // Auth
     const authLoginApi = (await import('./api/auth/login.js')).default;
     const authLogoutApi = (await import('./api/auth/logout.js')).default;
     const authMeApi = (await import('./api/auth/me.js')).default;
@@ -91,26 +71,14 @@ const setupRoutes = async () => {
     const authSetupApi = (await import('./api/auth/setup.js')).default;
     const authLogsApi = (await import('./api/auth/logs.js')).default;
     const authTrackApi = (await import('./api/auth/track.js')).default;
-
-    // Products (PIM proxy + stats + favorites)
-    const { categoriesHandler, productListHandler, productDetailHandler } = await import('./api/products/pim-proxy.js');
-    const { productStatsHandler, productDetailStatsHandler, categoryStatsHandler, categoryAvgEvolutionHandler } = await import('./api/products/stats.js');
-    const { favoritesGroupsHandler, favoritesGroupHandler, favoritesItemsHandler } = await import('./api/products/favorites.js');
+    const surveysApi = (await import('./api/marketing/surveys.js')).default;
+    const { exportHandler: surveysExportApi } = await import('./api/marketing/surveys.js');
 
     // Monter les routes
     app.get('/api/dashboard', wrapHandler(dashboardApi));
-    app.get('/api/rfm', wrapHandler(rfmApi));
-    app.get('/api/cohortes', wrapHandler(cohortesApi));
-    app.get('/api/stores', wrapHandler(storesApi));
-    app.get('/api/cross-selling', wrapHandler(crossSellingApi));
-    app.get('/api/abc-analysis', wrapHandler(abcAnalysisApi));
-    app.get('/api/sub-families', wrapHandler(subFamiliesApi));
-    app.get('/api/marketing', wrapHandler(marketingApi));
-    app.get('/api/forecast', wrapHandler(forecastApi));
-    app.all('/api/export', wrapHandler(exportApi));
-    app.get('/api/export-penetration', wrapHandler(exportPenetrationApi));
     app.get('/api/search', wrapHandler(searchApi));
-    app.get('/api/product-families', wrapHandler(productFamiliesApi));
+    app.all('/api/rfm', wrapHandler(rfmApi));
+    app.get('/api/stores', wrapHandler(storesApi));
     app.get('/api/clients/:carte/tickets', wrapHandler(clientTicketsApi));
     app.get('/api/tickets/:facture/transactions', wrapHandler(ticketTransactionsApi));
     app.post('/api/auth/login', wrapHandler(authLoginApi));
@@ -123,15 +91,15 @@ const setupRoutes = async () => {
     app.delete('/api/auth/users/:id', wrapHandler(authUsersApi));
     app.get('/api/auth/logs', wrapHandler(authLogsApi));
     app.post('/api/auth/track', wrapHandler(authTrackApi));
+    app.get('/api/surveys', wrapHandler(surveysApi));
+    app.post('/api/surveys', wrapHandler(surveysApi));
+    app.delete('/api/surveys', wrapHandler(surveysApi));
+    app.get('/api/surveys/export', wrapHandler(surveysExportApi));
 
     // Preferences
     const authPreferencesApi = (await import('./api/auth/preferences.js')).default;
     app.get('/api/auth/preferences', wrapHandler(authPreferencesApi));
     app.patch('/api/auth/preferences', wrapHandler(authPreferencesApi));
-    app.get('/api/surveys', wrapHandler(surveysApi));
-    app.post('/api/surveys', wrapHandler(surveysApi));
-    app.delete('/api/surveys', wrapHandler(surveysApi));
-    app.get('/api/surveys/export', wrapHandler(surveysExportApi));
 
     // Products module routes
     app.get('/api/products/categories', wrapHandler(categoriesHandler));
@@ -150,7 +118,7 @@ const setupRoutes = async () => {
     app.delete('/api/products/favorites/:groupId/items', wrapHandler(favoritesItemsHandler));
 
     console.log('✅ API routes loaded');
-    
+
     // Préchauffer le cache dashboard + RFM en arrière-plan (ne bloque pas le démarrage)
     setTimeout(async () => {
       console.log('🔥 Préchauffage du cache dashboard...')
@@ -201,15 +169,8 @@ const startServer = async () => {
     console.log('');
     console.log('📡 API Endpoints:');
     console.log('   GET  /api/dashboard');
-    console.log('   GET  /api/rfm');
-    console.log('   GET  /api/cohortes');
-    console.log('   GET  /api/stores');
-    console.log('   GET  /api/cross-selling');
-    console.log('   GET  /api/abc-analysis');
-    console.log('   GET  /api/sub-families');
-    console.log('   GET  /api/marketing');
-    console.log('   GET  /api/forecast');
     console.log('   GET  /api/search');
+    console.log('   ALL  /api/rfm');
     console.log('   POST /api/auth/login');
     console.log('   GET  /health');
     console.log('');
