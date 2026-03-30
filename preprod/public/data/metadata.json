@@ -1,0 +1,30 @@
+{
+  "tables": {
+    "clients": {
+      "rows": 1066734,
+      "file": "clients.parquet"
+    },
+    "produits": {
+      "rows": 55730,
+      "file": "produits.parquet"
+    },
+    "magasins": {
+      "rows": 23,
+      "file": "magasins.parquet"
+    },
+    "transactions": {
+      "rows": 5887907,
+      "file": "transactions.parquet"
+    }
+  },
+  "export_date": "2026-01-26",
+  "version": "1.0",
+  "stats": {
+    "transactions": 5887907,
+    "ca_total": 143942856.2613099,
+    "date_min": "2022-01-03",
+    "date_max": "2025-12-08",
+    "clients_actifs": 534429,
+    "produits_vendus": 21140
+  }
+}

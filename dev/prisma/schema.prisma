@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  carte          String   @id @map("carte")
+  nom            String?
+  prenom         String?
+  dateCreation   String?  @map("date_creation")
+  statut         String?
+  dateValidite   String?  @map("date_validite")
+  civilite       String?
+  dateNaissance  String?  @map("date_naissance")
+  sexe           String?
+  email          String?
+  telephone      String?
+  nomAdresse     String?  @map("nom_adresse")
+  adresse        String?
+  adresse2       String?  @map("adresse_2")
+  adresse4       String?  @map("adresse_4")
+  cp             String?
+  ville          String?
+  
+  @@map("clients")
+}
+
+model Produit {
+  id                    String   @id
+  designation           String?
+  referenceInterne      String?  @map("reference_interne")
+  famille               String?
+  sousFamille           String?  @map("sous_famille")
+  sousSousFamille       String?  @map("sous_sous_famille")
+  sousSousSousFamille   String?  @map("sous_sous_sous_famille")
+  produitWeb            String?  @map("produit_web")
+  
+  @@map("produits")
+}
+
+model Magasin {
+  code       String   @id
+  zone       String?
+  nom        String
+  adresse1   String?  @map("adresse_1")
+  adresse2   String?  @map("adresse_2")
+  adresse3   String?  @map("adresse_3")
+  cp         String?
+  ville      String?
+  
+  // transactions   Transaction[]
+  
+  @@map("magasins")
+}
+
+model Transaction {
+  id          BigInt    @id @default(autoincrement())
+  carte       String?
+  facture     String?
+  depot       String?
+  date        DateTime?
+  heure       String?
+  produit     String?
+  quantite    Float?
+  prix        Float?
+  ca          Float?
+  montantTtc  Float?   @map("montant_ttc")
+  
+  @@index([date])
+  @@index([carte])
+  @@index([produit])
+  @@index([depot])
+  @@index([facture])
+  @@map("transactions")
+}
+
+// ═══════════════════════════════════════════
+// Authentification & Administration
+// ═══════════════════════════════════════════
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+model AppUser {
+  id        String     @id @default(dbgenerated("gen_random_uuid()"))
+  email     String     @unique
+  password  String
+  nom       String
+  prenom    String
+  role      UserRole   @default(VIEWER)
+  isActive  Boolean    @default(true) @map("is_active")
+  modules   String?
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  
+  sessions  AppSession[]
+  
+  @@map("app_users")
+}
+
+model AppSession {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user      AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("app_sessions")
+}
+
+model AppLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId    String?  @map("user_id")
+  userEmail String?  @map("user_email")
+  userName  String?  @map("user_name")
+  action    String
+  resource  String?
+  details   Json?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@map("app_logs")
+}

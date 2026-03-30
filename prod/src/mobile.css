@@ -1,0 +1,52 @@
+/* Mobile-specific styles using media queries */
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide desktop sidebar on mobile */
+@media (max-width: 1023px) {
+  .desktop-sidebar {
+    display: none !important;
+  }
+  
+  .desktop-toggle-btn {
+    display: none !important;
+  }
+  
+  /* Add padding bottom for mobile nav */
+  .mobile-content {
+    padding-bottom: 5rem;
+  }
+  
+  /* Style mobile bottom navigation - Instagram-like */
+  .mobile-bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 64px !important;
+    background: rgb(24, 24, 27) !important; /* zinc-900 solid */
+    border-top: 1px solid rgb(39, 39, 42) !important; /* zinc-800 */
+    z-index: 100 !important;
+    display: flex !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3) !important;
+  }
+}
+
+/* Hide mobile bottom nav on desktop */
+@media (min-width: 1024px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+  
+  .mobile-menu-drawer {
+    display: none !important;
+  }
+}

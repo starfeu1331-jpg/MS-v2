@@ -1,113 +1,52 @@
-# 📊 Décor Analytics v2.0
+# Décor Analytics
 
-Application d'analyse retail avancée pour Décor Discount - React 19 + TypeScript + PostgreSQL
+Application d'analyse retail pour Décor Discount.  
+Stack : React 19 + TypeScript + Express + PostgreSQL OVH.
 
----
+## Structure
 
-## 🚀 Démarrage rapide
-
-### Pour comprendre le projet
-**📖 Lire en priorité** : [INDEX.md](INDEX.md) - Guide complet du projet (35 min de lecture)
-
-**Documents principaux** :
-1. [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) - Vue d'ensemble (10 min)
-2. [ISSUES_AND_SOLUTIONS.md](ISSUES_AND_SOLUTIONS.md) - Problèmes identifiés (15 min)
-3. [TODO_ROADMAP.md](TODO_ROADMAP.md) - Actions à faire (10 min)
-
----
-
-## ✨ Fonctionnalités
-
-- 📈 **Dashboard complet** : KPIs, graphiques interactifs, évolution temporelle
-- 👥 **Segmentation RFM** : 7 segments clients avec quintiles dynamiques (144k clients)
-- 🔍 **Recherche avancée** : Par ticket, client ou produit
-- 📦 **ABC Analysis** : Classification Pareto des produits
-- 🔗 **Cross-Selling** : Associations de produits
-- 📊 **Sous-Familles** : Analyse par catégorie de produits
-- 🗺️ **Zone de chalandise** : Carte interactive avec heatmap
-- 📤 **Export** : Excel/CSV de toutes les analyses
-- 🎨 **Design moderne** : Interface pro avec Tailwind CSS
-- ⚡ **Performance optimisée** : Cache intelligent + lazy loading
-
-## 🚀 Installation et démarrage
-
-```bash
-# Installation
-npm install
-
-# Lancement en développement
-npm run dev
-# → Ouvre http://localhost:5173
-
-# Build production
-npm run build
-npm run preview
+```
+decor-analytics/
+├── dev/                → Développement local (toutes les features)
+├── preprod/            → Pré-production (VPS OVH 91.134.137.123)
+├── prod/               → Production (VPS OVH 91.134.141.37)
+├── scripts/            → Scripts d'analyse réutilisables (monitoring, marketing, QA)
+├── docs/               → Documentation projet (retroplanning, etc.)
+├── _archive/           → Scripts one-off terminés (conservés pour référence)
+├── deploy-preprod.sh   → Script de déploiement pré-prod
+├── deploy-prod.sh      → Script de déploiement production
+├── sync-*-from-vps.sh  → Scripts de sync inverse (VPS → local)
+└── .env.example        → Template des variables d'environnement
 ```
 
-**⚠️ Note** : Le chargement initial prend actuellement ~10 minutes (correctif prêt, 20 min d'implémentation)  
-Voir [ISSUES_AND_SOLUTIONS.md](ISSUES_AND_SOLUTIONS.md) pour la solution détaillée
+## Workflow
 
-## 📋 Format CSV attendu
+1. **Développer en local** dans `dev/`
+   ```bash
+   cd dev
+   npm install
+   node server.js        # Backend Express (port 3000)
+   npm run dev            # Frontend Vite (port 5173, proxy → 3000)
+   ```
 
-Le CSV doit contenir ces colonnes (séparateur `;`) :
+2. **Valider en pré-prod** — copier les changements dans `preprod/`, déployer :
+   ```bash
+   ./deploy-preprod.sh
+   ```
 
-- `Date`
-- `Horaire`
-- `F�️ Architecture
+3. **Pousser en production** — copier uniquement les modules validés dans `prod/`, déployer :
+   ```bash
+   ./deploy-prod.sh
+   ```
 
-### Frontend
-- **React 19.2** + TypeScript
-- **Vite 7.3** - Build ultra-rapide
-- **Tailwind CSS** - Styling moderne
-- **Recharts** - Graphiques (lazy-loaded)
-- **Leaflet** - Cartes interactives
+## Base de données
 
-### Backend
-- **Vercel Serverless** Functions
-- **Prisma 5.22** - ORM
-- **PostgreSQL** (Neon) - Database
+PostgreSQL 16 hébergé chez OVH (CloudDB). Les 3 environnements partagent la même base.  
+Schéma Prisma dans `*/prisma/schema.prisma`.
 
-### Base de données
-- 709k transactions (Q1-Q2 2025)
-- 144k clients actifs
-- 55k produits
-- 22 magasins
-- **Tailwind CSS** - Styling moderne
-- **� État actuel
+## Règles
 
-| Aspect | Status | Note |
-|--------|--------|------|
-| **Modules fonctionnels** | 9/14 (64%) | 5 modules à implémenter |
-| **Performance** | 10 min ⚠️ | Correctif prêt (20 min) |
-| **Données** | 52% complètes ⚠️ | 17 colonnes manquantes |
-| **Production** | ✅ Déployé | https://ms-v2.vercel.app |
-
-## 🔧 Problèmes connus & Solutions
-
-Voir documentation complète dans :
-- [ISSUES_AND_SOLUTIONS.md](ISSUES_AND_SOLUTIONS.md) - Détails des 4 problèmes majeurs
-- [TODO_ROADMAP.md](TODO_ROADMAP.md) - Actions prioritaires
-
-**Priorités immédiates** :
-1. ⚡ Corriger performance (20 min) → Lazy loading Recharts
-2. 📧 Obtenir colonnes CSV manquantes de Nicolas
-3. 📦 Importer catalogue web (1h)
-
-## 📞 Contact & Ressources
-
-- **Production** : https://ms-v2.vercel.app
-- **Repository** : GitHub starfeu1331-jpg/MS-v2
-- **Documentation** : [INDEX.md](INDEX.md)
-
-## 📝 Scripts disponibles
-
-```bash
-npm run dev          # Dev mode
-npm run build        # Build production
-npm run preview      # Preview build
-npm run lint         # Lint code
-```
-
----
-
-**📖 Pour démarrer** : Lire [INDEX.md](INDEX.md) puis [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)
+- Ne jamais travailler directement sur les serveurs
+- Tester en local → valider en preprod → pousser en prod
+- Un module à la fois en production
+- Les `.env` avec les vrais credentials ne sont **jamais** commités

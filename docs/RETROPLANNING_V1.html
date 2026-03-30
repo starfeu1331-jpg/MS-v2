@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Rétroplanning Magic Système</title>
+<style>
+  @page { margin: 1.5cm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    padding: 40px;
+    max-width: 900px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    padding-left: 28px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: #d0d0d0;
+  }
+  .phase {
+    position: relative;
+    margin-bottom: 18px;
+  }
+  .phase:last-child { margin-bottom: 0; }
+  .phase::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 7px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    background: #fff;
+  }
+  .phase.done::before { background: #333; }
+
+  .phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .phase-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .phase-date {
+    font-size: 13px;
+    color: #555;
+    white-space: nowrap;
+    margin-left: 16px;
+  }
+  .phase-who {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 2px;
+  }
+  .phase-desc {
+    font-size: 13px;
+    color: #444;
+  }
+
+  /* Table recap */
+  .recap {
+    margin-top: 16px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+  }
+  .recap h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    padding: 5px 12px;
+    border-bottom: 2px solid #333;
+    font-weight: 600;
+  }
+  td {
+    padding: 5px 12px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* Action box */
+  .action-box {
+    margin-top: 18px;
+    border: 1px solid #bbb;
+    padding: 10px 20px;
+    border-radius: 4px;
+  }
+  .action-box h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .action-box ul {
+    list-style: none;
+    font-size: 13px;
+  }
+  .action-box li {
+    margin-bottom: 6px;
+    padding-left: 0;
+  }
+  .action-box li strong {
+    display: inline-block;
+    min-width: 160px;
+  }
+
+  /* Bouton imprimer */
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .print-btn:hover { background: #555; }
+
+  @media print {
+    body { padding: 0; }
+    .print-btn { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">Imprimer</button>
+
+<h1>Rétroplanning — Magic Système</h1>
+<div class="subtitle">Marceau — 3 mars 2026</div>
+
+<div class="timeline">
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Finalisation V1 + vérification données</span>
+      <span class="phase-date">2 — 6 mars</span>
+    </div>
+    <div class="phase-who">Marceau</div>
+    <div class="phase-desc">Stabilisation des modules en prod, vérification de la cohérence des données.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Validation des données</span>
+      <span class="phase-date">03/03 — 15h</span>
+    </div>
+    <div class="phase-who">Marceau + Nicolas</div>
+    <div class="phase-desc">Point de 2-3h pour croiser et valider les données ensemble.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Validation stratégique</span>
+      <span class="phase-date">05/03 — 14h30</span>
+    </div>
+    <div class="phase-who">Marceau + Clémence</div>
+    <div class="phase-desc">Point de cadrage sur les besoins, les problématiques et le périmètre V1.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Présentation équipe Marketing</span>
+      <span class="phase-date">début avril — à fixer</span>
+    </div>
+    <div class="phase-who">Marceau + Équipe Marketing / Com</div>
+    <div class="phase-desc">Présentation de l'outil en présentiel, avant ouverture des accès.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Présentation Olivier &amp; Philippe</span>
+      <span class="phase-date">début avril — à fixer</span>
+    </div>
+    <div class="phase-who">Marceau + Olivier + Philippe</div>
+    <div class="phase-desc">Présentation dédiée en parallèle de celle de l'équipe Marketing.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Test en conditions réelles</span>
+      <span class="phase-date">3 jours après présentations</span>
+    </div>
+    <div class="phase-who">Équipe Mkt / Com + Olivier + Philippe</div>
+    <div class="phase-desc">Ouverture des comptes le lendemain des présentations. Test pendant 3 jours.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Version finale V1</span>
+      <span class="phase-date">~2 jours après tests</span>
+    </div>
+    <div class="phase-who">Marceau</div>
+    <div class="phase-desc">Intégration des derniers retours, corrections, livraison V1 stabilisée.</div>
+  </div>
+
+</div>
+
+<div class="recap">
+  <h2>Récapitulatif</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Qui</th>
+        <th>Quand</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Finalisation + vérif données</td><td>Marceau</td><td>2 — 6 mars</td></tr>
+      <tr><td>Validation données</td><td>Marceau + Nicolas</td><td>03/03 — 15h</td></tr>
+      <tr><td>Validation stratégique</td><td>Marceau + Clémence</td><td>05/03 — 14h30</td></tr>
+      <tr><td>Présentation équipe Mkt</td><td>Marceau + Équipe Mkt / Com</td><td>début avril — à fixer</td></tr>
+      <tr><td>Présentation direction</td><td>Marceau + Olivier + Philippe</td><td>début avril — à fixer</td></tr>
+      <tr><td>Test réel (3j)</td><td>Tous</td><td>lendemain des présentations</td></tr>
+      <tr><td>V1 finale (~2j)</td><td>Marceau</td><td>après les tests</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

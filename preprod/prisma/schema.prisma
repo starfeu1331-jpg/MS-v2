@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  carte          String   @id @map("carte")
+  nom            String?
+  prenom         String?
+  dateCreation   String?  @map("date_creation")
+  statut         String?
+  dateValidite   String?  @map("date_validite")
+  civilite       String?
+  dateNaissance  String?  @map("date_naissance")
+  sexe           String?
+  email          String?
+  telephone      String?
+  nomAdresse     String?  @map("nom_adresse")
+  adresse        String?
+  adresse2       String?  @map("adresse_2")
+  adresse4       String?  @map("adresse_4")
+  cp             String?
+  ville          String?
+
+  // ── RFM pré-calculé (mis à jour quotidiennement à 00:00) ──
+  rfmR           Int?       @map("rfm_r")
+  rfmF           Int?       @map("rfm_f")
+  rfmM           Int?       @map("rfm_m")
+  rfmScore       Int?       @map("rfm_score")         // R*100 + F*10 + M
+  rfmSegment     String?    @map("rfm_segment")       // 'Champions', 'Loyaux', etc.
+  rfmRecency     Int?       @map("rfm_recency")       // jours depuis dernier achat
+  rfmFrequency   Int?       @map("rfm_frequency")     // nb factures distinctes
+  rfmMonetary    Float?     @map("rfm_monetary")      // CA total
+  rfmLastDate    String?    @map("rfm_last_date")     // date dernier achat
+  rfmFirstDate   String?    @map("rfm_first_date")    // date premier achat
+  rfmComputedAt  DateTime?  @map("rfm_computed_at")
+
+  @@index([rfmSegment], map: "idx_clients_rfm_segment")
+  @@map("clients")
+}
+
+model Produit {
+  id                    String   @id
+  designation           String?
+  referenceInterne      String?  @map("reference_interne")
+  famille               String?
+  sousFamille           String?  @map("sous_famille")
+  sousSousFamille       String?  @map("sous_sous_famille")
+  sousSousSousFamille   String?  @map("sous_sous_sous_famille")
+  produitWeb            String?  @map("produit_web")
+  
+  @@map("produits")
+}
+
+model Magasin {
+  code       String   @id
+  zone       String?
+  nom        String
+  adresse1   String?  @map("adresse_1")
+  adresse2   String?  @map("adresse_2")
+  adresse3   String?  @map("adresse_3")
+  cp         String?
+  ville      String?
+  
+  // transactions   Transaction[]
+  
+  @@map("magasins")
+}
+
+model Transaction {
+  id          BigInt    @id @default(autoincrement())
+  carte       String?
+  facture     String?
+  depot       String?
+  date        DateTime?
+  heure       String?
+  produit     String?
+  quantite    Float?
+  prix        Float?
+  ca          Float?
+  montantTtc  Float?   @map("montant_ttc")
+  
+  @@index([date])
+  @@index([carte])
+  @@index([produit])
+  @@index([depot])
+  @@index([facture])
+  @@map("transactions")
+}
+
+// ═══════════════════════════════════════════
+// Authentification & Administration
+// ═══════════════════════════════════════════
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+model AppUser {
+  id        String     @id @default(dbgenerated("gen_random_uuid()"))
+  email     String     @unique
+  password  String
+  nom       String
+  prenom    String
+  role      UserRole   @default(VIEWER)
+  isActive  Boolean    @default(true) @map("is_active")
+  modules   String?
+  preferences Json?
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  
+  sessions  AppSession[]
+  favoriteGroups ProductFavoriteGroup[]
+  
+  @@map("app_users")
+}
+
+model AppSession {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user      AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("app_sessions")
+}
+
+model AppLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId    String?  @map("user_id")
+  userEmail String?  @map("user_email")
+  userName  String?  @map("user_name")
+  action    String
+  resource  String?
+  details   Json?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@map("app_logs")
+}
+
+// ═══════════════════════════════════════════
+// Études & Enquêtes clients
+// ═══════════════════════════════════════════
+
+enum SurveyQuestionType {
+  SINGLE_CHOICE      // choix unique (radio)
+  MULTIPLE_CHOICE    // choix multiples (checkbox)
+  LIKERT             // échelle (Excellent → Insuffisant)
+  NPS                // score numérique 0-10
+  FREE_TEXT          // texte libre
+  NUMERIC            // nombre brut
+}
+
+model Survey {
+  id           String    @id @default(dbgenerated("gen_random_uuid()"))
+  title        String                                     // "ENQUÊTE CLIENT 02.2026"
+  description  String?
+  sourceFile   String?   @map("source_file")              // Nom du CSV original
+  respondents  Int       @default(0)                      // Nombre total de répondants
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  questions     SurveyQuestion[]
+  surveyRespondents SurveyRespondent[]
+
+  @@map("surveys")
+}
+
+model SurveyQuestion {
+  id           String             @id @default(dbgenerated("gen_random_uuid()"))
+  surveyId     String             @map("survey_id")
+  position     Int                                        // Ordre d'affichage (1, 2, 3…)
+  questionKey  String             @map("question_key")    // Identifiant court (ex: "Q1", "Q14_prix")
+  label        String                                     // Libellé complet de la question
+  shortLabel   String?            @map("short_label")     // Label court pour les graphes
+  type         SurveyQuestionType                         // Type auto-détecté
+  isGrouped    Boolean            @default(false) @map("is_grouped") // Sous-question d'un groupe (ex: Q14, Q17)
+  groupLabel   String?            @map("group_label")     // Label du groupe parent
+  options      Json?                                      // Options possibles (si applicable) en JSONB
+  isIdentity   Boolean            @default(false) @map("is_identity") // Colonne d'identification (nom, email…)
+
+  survey       Survey             @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers      SurveyAnswer[]
+
+  @@index([surveyId], map: "idx_sq_survey")
+  @@unique([surveyId, questionKey], map: "uq_sq_survey_key")
+  @@map("survey_questions")
+}
+
+model SurveyRespondent {
+  id           String    @id @default(dbgenerated("gen_random_uuid()"))
+  surveyId     String    @map("survey_id")
+  respondedAt  DateTime? @map("responded_at")             // Horodateur
+  firstName    String?   @map("first_name")
+  lastName     String?   @map("last_name")
+  email        String?
+
+  survey       Survey    @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers      SurveyAnswer[]
+
+  @@index([surveyId], map: "idx_sr_survey")
+  @@map("survey_respondents")
+}
+
+model SurveyAnswer {
+  id             String   @id @default(dbgenerated("gen_random_uuid()"))
+  respondentId   String   @map("respondent_id")
+  questionId     String   @map("question_id")
+  value          String?                                   // Réponse brute (texte)
+  numericValue   Float?   @map("numeric_value")            // Valeur numérique (NPS, etc.)
+
+  respondent     SurveyRespondent @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  question       SurveyQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([respondentId], map: "idx_sa_respondent")
+  @@index([questionId], map: "idx_sa_question")
+  @@index([questionId, value], map: "idx_sa_question_value")
+  @@map("survey_answers")
+}
+
+// ═══════════════════════════════════════════
+// Cache pré-calcul des modules analytiques
+// ═══════════════════════════════════════════
+
+// ═══════════════════════════════════════════
+// Favoris produits (module Produits PIM)
+// ═══════════════════════════════════════════
+
+model ProductFavoriteGroup {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId    String   @map("user_id")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     ProductFavoriteItem[]
+
+  @@index([userId], map: "idx_pfg_user")
+  @@map("product_favorite_groups")
+}
+
+model ProductFavoriteItem {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  groupId   String   @map("group_id")
+  productId String   @map("product_id")
+  addedAt   DateTime @default(now()) @map("added_at")
+
+  group     ProductFavoriteGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, productId], map: "uq_pfg_product")
+  @@index([groupId], map: "idx_pfi_group")
+  @@map("product_favorite_items")
+}
+
+model ApplicationCache {
+  id          Int       @id @default(autoincrement())
+  module      String                                     // 'dashboard', 'rfm', 'abc', 'cohortes'...
+  periodType  String    @map("period_type")              // 'year', 'month', 'last_3m', 'last_6m', 'last_12m', 'ytd'
+  periodValue String    @map("period_value")             // '2025', '2025-01', 'rolling'...
+  storeCode   String?   @map("store_code")               // NULL = global, '14' = par magasin
+  data        Json                                       // Résultat complet du module en JSONB
+  computedAt  DateTime  @default(now()) @map("computed_at")
+  expiresAt   DateTime  @map("expires_at")
+  version     Int       @default(1)                      // Pour invalider si le format change
+
+  @@unique([module, periodType, periodValue, storeCode], map: "uq_cache_entry")
+  @@index([module, periodType], map: "idx_cache_module_period")
+  @@index([expiresAt], map: "idx_cache_expires")
+  @@map("application_cache")
+}

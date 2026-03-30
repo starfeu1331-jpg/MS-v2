@@ -1,0 +1,309 @@
+/* Mobile-specific styles using media queries */
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ═══ MOBILE (<1024px) ═══════════════════════════════════════════ */
+@media (max-width: 1023px) {
+
+  /* ── Layout: hide desktop, show mobile nav ──────────────── */
+  .desktop-sidebar {
+    display: none !important;
+  }
+  .desktop-toggle-btn {
+    display: none !important;
+  }
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Page padding override */
+  .mobile-content > div {
+    padding: 0.75rem !important;
+  }
+  .mobile-content {
+    padding-bottom: 4.5rem;
+  }
+
+  /* Bottom tab bar */
+  .mobile-bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: calc(60px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+    background: rgb(24, 24, 27) !important;
+    border-top: 1px solid rgb(39, 39, 42) !important;
+    z-index: 200 !important;
+    display: flex !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* ── App header (fixed top, iPhone status bar color) ──── */
+  .app-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    background: #18181b !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    padding: 0.625rem 0.75rem !important;
+    padding-top: calc(0.625rem + env(safe-area-inset-top)) !important;
+    z-index: 10001 !important;
+  }
+
+  /* Push content below the fixed header */
+  .main-content-wrapper {
+    padding-top: calc(52px + env(safe-area-inset-top)) !important;
+  }
+  .app-header-left {
+    gap: 0.5rem !important;
+    min-width: 0;
+    flex: 1;
+  }
+  .app-header-title {
+    font-size: 0.875rem !important; /* text-sm */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── Dashboard KPIs ─────────────────────────────────────── */
+  .dash-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Let the 5th card (odd) span full width centered */
+  .dash-kpi-grid .dash-kpi-card:last-child {
+    grid-column: 1 / -1 !important;
+    max-width: 50% !important;
+    margin: 0 auto !important;
+  }
+
+  /* Card inner layout */
+  .dash-kpi-card {
+    padding: 0.625rem 0.75rem !important;
+    border-radius: 0.875rem !important;
+    overflow: hidden !important;
+    min-width: 0 !important;
+  }
+
+  .dash-kpi-header {
+    gap: 0.375rem !important;
+    margin-bottom: 0.375rem !important;
+  }
+
+  .dash-kpi-icon {
+    padding: 0.25rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .dash-kpi-icon svg {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+  }
+
+  .dash-kpi-label {
+    font-size: 0.5625rem !important;
+    line-height: 1.1 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    min-width: 0 !important;
+  }
+
+  .dash-kpi-value-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.125rem !important;
+  }
+
+  .dash-kpi-value {
+    font-size: 1.125rem !important;
+    line-height: 1.2 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+  }
+
+  .dash-kpi-evo {
+    font-size: 0.625rem !important;
+    margin-bottom: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* ── Evolution mensuelle chart ──────────────────────────── */
+  .dash-evo-card {
+    padding: 0.75rem !important;
+    border-radius: 0.875rem !important;
+  }
+
+  .dash-evo-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .dash-evo-header h3 {
+    font-size: 0.9375rem !important;
+  }
+
+  /* Tab bar: full width, bigger touch targets */
+  .dash-evo-tabs {
+    display: flex !important;
+    width: 100% !important;
+    padding: 0.25rem !important;
+    border-radius: 0.625rem !important;
+    gap: 0.25rem !important;
+  }
+
+  .dash-evo-tab {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 0.5rem 0.25rem !important;
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    border-radius: 0.5rem !important;
+  }
+
+  /* Chart wrapper: overflow hidden to clip */
+  .dash-evo-card {
+    overflow: hidden !important;
+    padding: 0.75rem !important;
+  }
+
+  /* Chart container height on mobile */
+  .dash-evo-chart-container {
+    height: 180px !important;
+    width: 100% !important;
+  }
+
+  /* Smaller tick text on axes */
+  .dash-evo-chart .recharts-cartesian-axis-tick-value {
+    font-size: 8px !important;
+  }
+
+  /* Hide Y-axis on mobile — values visible via tooltip on tap */
+  .dash-evo-yaxis {
+    display: none !important;
+  }
+
+  /* ── Dashboard familles ─────────────────────────────────── */
+  .dash-familles-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    padding: 1rem !important;
+    gap: 0.75rem !important;
+  }
+
+  /* ── RFM KPIs ───────────────────────────────────────────── */
+  .rfm-kpi-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+
+  /* ── RFM modal grid (R/F/M explication) ─────────────────── */
+  .rfm-modal-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  /* ── RFM segments grid → 2 cols ─────────────────────────── */
+  .segments-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem !important;
+  }
+
+  /* ── RFM top produits header ────────────────────────────── */
+  .rfm-produits-header {
+    padding: 0.75rem 1rem !important;
+  }
+  .rfm-produits-header h3 {
+    font-size: 0.875rem !important;
+  }
+  .rfm-produits-controls {
+    gap: 0.25rem !important;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* ── Segment Detail header ──────────────────────────────── */
+  .segment-header {
+    padding: 1rem !important;
+  }
+  .segment-header-flex {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+  .segment-title-row {
+    flex-wrap: wrap;
+    gap: 0.5rem !important;
+  }
+  .segment-title-row h1 {
+    font-size: 1.125rem !important; /* text-lg */
+  }
+  .segment-title-row span {
+    font-size: 10px !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* ── Segment Detail KPIs ────────────────────────────────── */
+  .segment-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+
+  /* ── Segment Detail stats ───────────────────────────────── */
+  .segment-stats-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+  .segment-stats-card {
+    padding: 1rem !important;
+  }
+
+  /* ── Segment Detail clients list ────────────────────────── */
+  .segment-clients-header {
+    padding: 0.75rem !important;
+  }
+  .segment-clients-flex {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+  .segment-sort-buttons {
+    flex-wrap: wrap;
+    gap: 0.375rem !important;
+  }
+  .segment-pagination {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+}
+
+/* ═══ DESKTOP (≥1024px) ══════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+  .mobile-menu-drawer {
+    display: none !important;
+  }
+  .mobile-only {
+    display: none !important;
+  }
+}
